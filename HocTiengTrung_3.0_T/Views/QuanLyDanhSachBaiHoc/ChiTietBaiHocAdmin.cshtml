@@ -1,0 +1,798 @@
+﻿@using HocTiengTrung_3._0_T.Controllers.QuanLyBaiHoc
+@model List<dynamic>
+@using Newtonsoft.Json
+@{
+    ViewData["Title"] = "Quản Trị Chi Tiết Bài Học Hoàng Gia";
+    int idBaiHoc = ViewBag.IdBaiHoc ?? 0;
+    int currentLoaiId = ViewBag.CurrentLoaiId ?? 1;
+    int currentDeSo = ViewBag.CurrentDeSo ?? 1;
+    int tongSoDe = ViewBag.TongSoDe ?? 1;
+    var danhSachTuVung = ViewBag.DanhSachTuVung as List<dynamic> ?? new List<dynamic>();
+    var menuLoai = ViewBag.MenuLoai as List<MenuLoaiModel> ?? new List<MenuLoaiModel>();
+}
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewData["Title"]</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
+
+    <style>
+        :root {
+            --royal-gold: #d4af37;
+            --royal-blue: #002366;
+            --royal-light: #f1f4f9;
+            --royal-dark: #001233;
+        }
+
+        body {
+            background-color: #f4f6f9;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .admin-header {
+            background: linear-gradient(135deg, var(--royal-dark) 0%, var(--royal-blue) 100%);
+            color: white;
+            border-radius: 15px;
+            padding: 2rem;
+            border-bottom: 4px solid var(--royal-gold);
+        }
+
+        .custom-nav-tabs .nav-link {
+            color: #495057;
+            font-weight: 600;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 10px 10px 0 0;
+            transition: all 0.3s;
+        }
+
+            .custom-nav-tabs .nav-link.active {
+                background-color: #fff;
+                color: var(--royal-blue);
+                border-top: 3px solid var(--royal-gold);
+                box-shadow: 0 -4px 10px rgba(0,0,0,0.05);
+            }
+
+        .sidebar-menu .list-group-item {
+            border: none;
+            margin-bottom: 5px;
+            border-radius: 10px !important;
+            font-weight: 600;
+            color: #495057;
+            transition: all 0.2s;
+        }
+
+            .sidebar-menu .list-group-item:hover {
+                background-color: rgba(0, 35, 102, 0.05);
+                color: var(--royal-blue);
+            }
+
+            .sidebar-menu .list-group-item.active {
+                background-color: var(--royal-blue);
+                color: #fff;
+                box-shadow: 0 4px 10px rgba(0, 35, 102, 0.2);
+            }
+
+        .card-question {
+            border: 1px solid #e3e6f0;
+            border-radius: 12px;
+            transition: all 0.3s;
+            background: #fff;
+        }
+
+            .card-question:hover {
+                box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+                border-color: var(--royal-gold);
+            }
+
+        .btn-royal {
+            background-color: var(--royal-blue);
+            color: white;
+            border-radius: 8px;
+            font-weight: 600;
+        }
+
+            .btn-royal:hover {
+                background-color: var(--royal-dark);
+                color: white;
+            }
+
+        .btn-gold {
+            background-color: var(--royal-gold);
+            color: var(--royal-dark);
+            font-weight: 700;
+            border-radius: 8px;
+        }
+
+            .btn-gold:hover {
+                background-color: #c19e2e;
+                color: var(--royal-dark);
+            }
+    </style>
+</head>
+<body>
+
+    <div class="container-fluid py-4 px-4">
+        <div class="admin-header d-flex justify-content-between align-items-center mb-4 shadow-sm">
+            <div>
+                <span class="badge bg-warning text-dark mb-2 fw-bold"><i class="fas fa-user-shield me-1"></i> BÀN LÀM VIỆC ADMIN</span>
+                <h1 class="h3 fw-bold m-0"><i class="fas fa-edit text-warning me-2"></i>Bài Học: @ViewBag.TenBaiHoc</h1>
+                <small class="text-white-50">Quản lý, chỉnh sửa, thêm mới nội dung kiến thức và bộ câu hỏi bài tập.</small>
+            </div>
+            <div>
+                <a href="/QuanLyDanhSachBaiHoc/DanhSachBaiHoc?capdo=@ViewBag.IdCapDo" class="btn btn-outline-light border-2 rounded-pill px-4">
+                    <i class="fas fa-arrow-left me-2"></i>Quay lại kho tàng
+                </a>
+            </div>
+        </div>
+
+        <ul class="nav nav-tabs custom-nav-tabs border-0 mb-3" id="adminTab" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="tuvung-tab" data-bs-toggle="tab" data-bs-target="#tuvung-panel" type="button" role="tab">
+                    <i class="fas fa-book me-2"></i>Quản Lý Từ Vựng Liên Kết (@danhSachTuVung.Count)
+                </button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="baitap-tab" data-bs-toggle="tab" data-bs-target="#baitap-panel" type="button" role="tab">
+                    <i class="fas fa-graduation-cap me-2"></i>Quản Lý Bộ Câu Hỏi Bài Tập
+                </button>
+            </li>
+        </ul>
+
+        <div class="tab-content" id="adminTabContent">
+            <div class="tab-pane fade show active text-dark" id="tuvung-panel" role="tabpanel">
+                <div class="card border-0 shadow-sm rounded-4 p-4 bg-white">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h4 class="fw-bold m-0 text-dark"><i class="fas fa-list text-primary me-2"></i>Danh sách Từ vựng trong bài</h4>
+                       
+                        <button type="button" class="btn btn-success rounded-3 fw-bold"
+                                onclick="openModalThemTuVung(this)"
+                                data-id-baihoc="@idBaiHoc">
+                            <i class="bi bi-plus-circle"></i> Ghép thêm từ vựng
+                        </button>
+
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th style="width: 8%">Thứ tự</th>
+                                    <th style="width: 15%">Chữ Hán</th>
+                                    <th style="width: 15%">Pinyin</th>
+                                    <th style="width: 20%">Nghĩa Việt</th>
+                                    <th style="width: 15%">Âm Hán</th>
+                                    <th style="width: 12%">Phân Loại</th>
+                                    <th class="text-center" style="width: 15%">Thao tác</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if (danhSachTuVung.Count > 0)
+                                {
+                                    foreach (var item in danhSachTuVung)
+                                    {
+                                        var tv = item.idTuVungNavigation;
+                                        <tr id="row-tuvung-@item.idTuVung">
+                                            <td><span class="fw-bold bg-light border px-2 py-1 rounded">@item.thuTu</span></td>
+                                            <td class="fs-4 fw-bold text-success">@tv?.chuHan</td>
+                                            <td class="text-primary fw-semibold">@tv?.pinyin</td>
+                                            <td><strong>@tv?.nghiaViet</strong></td>
+                                            <td class="text-muted">@tv?.amHan</td>
+                                            <td>
+                                                @if (item.laTuMoi == true)
+                                                {
+                                                    <span class="badge bg-danger">Từ mới</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-secondary">Từ ôn tập</span>
+                                                }
+                                            </td>
+                                            <td class="text-center">
+                                                <button class="btn btn-outline-danger btn-sm rounded-3" onclick="xoaLienKetTuVung(@idBaiHoc, @item.idTuVung)">
+                                                    <i class="fas fa-unlink me-1"></i> Gỡ liên kết
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    }
+                                }
+                                else
+                                {
+                                    <tr><td colspan="7" class="text-center text-muted py-4">Bài học này chưa được liên kết với từ vựng nào.</td></tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="tab-pane fade text-dark" id="baitap-panel" role="tabpanel">
+                <div class="row text-dark">
+                    <div class="col-md-3 mb-4">
+                        <div class="card border-0 shadow-sm rounded-4 p-3 bg-white">
+                            <h5 class="fw-bold mb-3 px-2 text-dark"><i class="fas fa-filter text-warning me-2"></i>Phân loại câu hỏi</h5>
+                            <div class="list-group sidebar-menu">
+                                @foreach (var loai in menuLoai)
+                                {
+                                    <a href="/QuanLyDanhSachBaiHoc/ChiTietBaiHocAdmin?id=@idBaiHoc&loaiId=@loai.IdLoai&deSo=1"
+                                       class="list-group-item list-group-item-action d-flex justify-content-between align-items-center @(currentLoaiId == loai.IdLoai ? "active" : "")">
+                                        <div><i class="fas @loai.Icon me-2"></i>@loai.TenLoai</div>
+                                        <span class="badge rounded-pill bg-light text-dark shadow-sm border">@loai.TotalCount</span>
+                                    </a>
+                                }
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-9 mb-4">
+                        <div class="card border-0 shadow-sm rounded-4 p-4 bg-white">
+                            <div class="d-flex justify-content-between align-items-center mb-4">
+                                <div>
+                                    <h4 class="fw-bold m-0 text-dark"><i class="fas fa-tasks text-primary me-2"></i>Danh Sách Câu Hỏi</h4>
+                                    <small class="text-muted">Đang xem: Bộ đề số @currentDeSo</small>
+                                </div>
+                                <button class="btn btn-royal fw-bold px-3 shadow-sm" onclick="openModalCauHoi(false)">
+                                    <i class="fas fa-plus-circle me-1"></i> Thêm câu hỏi mới vào đề này
+                                </button>
+                            </div>
+
+                            <div class="question-container">
+                                @if (Model != null && Model.Count > 0)
+                                {
+                                    int index = 1;
+                                    foreach (var cauHoi in Model)
+                                    {
+                                        <div class="card-question p-4 mb-3 shadow-sm" id="card-cauhoi-@cauHoi.idCauHoi">
+                                            <div class="d-flex justify-content-between align-items-start border-bottom pb-2 mb-3">
+                                                <span class="badge bg-dark px-3 py-2 fs-6">Câu hỏi @(index++) (ID: @cauHoi.idCauHoi)</span>
+                                                <div>
+                                                    <button class="btn btn-outline-primary btn-sm me-2 rounded-2"
+                                                            onclick="openModalCauHoi(true, @JsonConvert.SerializeObject(cauHoi))">
+                                                        <i class="fas fa-edit"></i> Sửa câu
+                                                    </button>
+                                                    <button class="btn btn-outline-danger btn-sm rounded-2" onclick="xoaLienKetCauHoi(@idBaiHoc, @cauHoi.idCauHoi)">
+                                                        <i class="fas fa-trash-alt"></i> Gỡ khỏi bài
+                                                    </button>
+                                                </div>
+                                            </div>
+
+                                            <div class="mb-3 fs-5 fw-semibold text-dark">
+                                                @if (cauHoi.doanVan != null)
+                                                {
+                                                    <div class="bg-light p-3 rounded mb-2 text-muted fs-6" style="border-left: 4px solid var(--royal-gold)">
+                                                        <strong>Đoạn văn đi kèm:</strong> @cauHoi.doanVan.noiDungHan
+                                                    </div>
+                                                }
+                                                <span class="text-primary">Đề bài:</span> @cauHoi.noiDung
+                                            </div>
+
+                                            @if (cauHoi.dapAns != null)
+                                            {
+                                                <div class="row g-2 mb-3">
+                                                    @foreach (var da in cauHoi.dapAns)
+                                                    {
+                                                        <div class="col-md-6">
+                                                            <div class="p-2 border rounded bg-light d-flex align-items-center">
+                                                                <i class="fas @(da.laDapAnDung == true ? "fa-check-circle text-success" : "fa-circle text-muted") me-2 fs-5"></i>
+                                                                <span class="@(da.laDapAnDung == true ? "fw-bold text-success" : "")">@da.noiDungDapAn</span>
+                                                            </div>
+                                                        </div>
+                                                    }
+                                                </div>
+                                            }
+
+                                            <div class="text-muted small bg-light p-2 rounded">
+                                                <i class="fas fa-info-circle text-info me-1"></i><strong>Giải thích:</strong> @(cauHoi.giaiThich ?? "Chưa cấu hình lời giải chi tiết.")
+                                            </div>
+                                        </div>
+                                    }
+                                }
+                                else
+                                {
+                                    <div class="text-center py-5 text-muted border border-dashed rounded-4">
+                                        <i class="fas fa-folder-open display-4 mb-3 opacity-50"></i>
+                                        <p class="m-0 fs-5">Phân loại này hiện tại chưa có câu hỏi nào trong Đề số @currentDeSo.</p>
+                                    </div>
+                                }
+                            </div>
+
+                            @if (tongSoDe > 1)
+                            {
+                                <nav class="mt-4">
+                                    <ul class="pagination justify-content-center">
+                                        <li class="page-item @(currentDeSo == 1 ? "disabled" : "")">
+                                            <a class="page-link shadow-sm text-dark fw-bold rounded-start" href="/QuanLyDanhSachBaiHoc/ChiTietBaiHocAdmin?id=@idBaiHoc&loaiId=@currentLoaiId&deSo=@(currentDeSo - 1)">
+                                                <i class="fas fa-chevron-left me-1"></i> Đề trước
+                                            </a>
+                                        </li>
+                                        @for (int i = 1; i <= tongSoDe; i++)
+                                        {
+                                            <li class="page-item @(i == currentDeSo ? "active" : "")">
+                                                <a class="page-link shadow-sm fw-bold mx-1 rounded" href="/QuanLyDanhSachBaiHoc/ChiTietBaiHocAdmin?id=@idBaiHoc&loaiId=@currentLoaiId&deSo=@i">Đề @i</a>
+                                            </li>
+                                        }
+                                        <li class="page-item @(currentDeSo == tongSoDe ? "disabled" : "")">
+                                            <a class="page-link shadow-sm text-dark fw-bold rounded-end" href="/QuanLyDanhSachBaiHoc/ChiTietBaiHocAdmin?id=@idBaiHoc&loaiId=@currentLoaiId&deSo=@(currentDeSo + 1)">
+                                                Đề sau <i class="fas fa-chevron-right ms-1"></i>
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </nav>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modalCauHoi" data-bs-backdrop="static" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content text-dark rounded-4 shadow border-0">
+                <form id="formCauHoi" onsubmit="saveCauHoi(event)">
+                    <div class="modal-header bg-dark text-white rounded-top-4 py-3">
+                        <h5 class="modal-title fw-bold" id="modalTitle"><i class="fas fa-question-circle me-2 text-warning"></i>Cấu Hình Câu Hỏi</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body p-4 text-dark">
+                        <input type="hidden" id="txtIdCauHoi" name="idCauHoi" value="" />
+                        <input type="hidden" id="txtIdBaiHoc" name="idBaiHoc" value="@idBaiHoc" />
+                        <input type="hidden" id="txtIdLoai" name="idLoai" value="@currentLoaiId" />
+                        <input type="hidden" id="txtIdCapDo" name="idCapDo" value="@ViewBag.IdCapDo" />
+
+                        <div class="row g-3">
+                            <div class="col-md-9">
+                                <label class="form-label fw-bold text-dark">Nội dung / Đề bài câu hỏi</label>
+                                <textarea class="form-control rounded-3 text-dark" id="txtNoiDung" name="noiDung" rows="3" required placeholder="Nhập câu hỏi tiếng Trung hoặc tiếng Việt..."></textarea>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label fw-bold text-dark">Thứ tự hiển thị</label>
+                                <input type="number" class="form-control rounded-3 text-dark" id="txtThuTu" name="thuTu" value="1" min="1" required />
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label fw-bold text-dark">Lời giải chi tiết / Giải thích</label>
+                                <textarea class="form-control rounded-3 text-dark" id="txtGiaiThich" name="giaiThich" rows="2" placeholder="Giải thích ngữ pháp hoặc từ vựng tham khảo..."></textarea>
+                            </div>
+
+                            <div class="col-12 border-top pt-3 mt-3">
+                                <label class="form-label fw-bold text-dark d-block mb-2">
+                                    <i class="fas fa-list-ol text-warning me-1"></i> Hệ thống đáp án lựa chọn (Tích chọn nút tròn để đặt đáp án Đúng)
+                                </label>
+                                <div id="dapAnContainer" class="row g-3">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer bg-light rounded-bottom-4 py-3">
+                        <button type="button" class="btn btn-secondary rounded-3 fw-bold px-3" data-bs-dismiss="modal">Đóng</button>
+                        <button type="submit" class="btn btn-royal rounded-3 fw-bold px-4" id="btnSaveSubmit">Lưu Thay Đổi</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modalThemTuVung" tabindex="-1" aria-labelledby="modalThemTuVungLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="modalThemTuVungLabel">Thêm Từ Vựng Vào Bài Học</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="formThemTuVung">
+                        <input type="hidden" id="IdBaiHoc" name="IdBaiHoc">
+
+                        <h6 class="text-primary mb-3">Thông tin Từ Vựng</h6>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">Chữ Hán <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="ChuHan" name="ChuHan" required placeholder="Nhập chữ Hán">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Pinyin</label>
+                                <input type="text" class="form-control" id="Pinyin" name="Pinyin" placeholder="Nhập Pinyin">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Nghĩa Việt</label>
+                                <input type="text" class="form-control" id="NghiaViet" name="NghiaViet" placeholder="Nhập nghĩa tiếng Việt">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Loại Từ</label>
+                                <input type="text" class="form-control" id="LoaiTu" name="LoaiTu" placeholder="VD: Danh từ, Động từ...">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Âm Hán Việt</label>
+                                <input type="text" class="form-control" id="AmHan" name="AmHan" placeholder="Nhập âm Hán Việt">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label" for="IdCapDo">ID Cấp độ HSK</label>
+                                <select class="form-select" id="IdCapDo" name="IdCapDo">
+                                    <option value="">-- Chọn cấp độ --</option>
+                                    <option value="1">HSK 1</option>
+                                    <option value="2">HSK 2</option>
+                                    <option value="3">HSK 3</option>
+                                    <option value="4">HSK 4</option>
+                                    <option value="5">HSK 5</option>
+                                    <option value="6">HSK 6</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <hr class="my-4">
+
+                        <h6 class="text-success mb-3">Ví dụ minh họa (Tùy chọn)</h6>
+                        <div class="mb-3">
+                            <label class="form-label">Câu ví dụ (Chữ Hán)</label>
+                            <textarea class="form-control" id="ViDuHan" name="ViDuHan" rows="2" placeholder="Nhập câu ví dụ bằng chữ Hán"></textarea>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Câu ví dụ (Pinyin)</label>
+                                <input type="text" class="form-control" id="ViDuPinyin" name="ViDuPinyin" placeholder="Pinyin của câu ví dụ">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Câu ví dụ (Nghĩa Việt)</label>
+                                <input type="text" class="form-control" id="ViDuViet" name="ViDuViet" placeholder="Nghĩa của câu ví dụ">
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="button" class="btn btn-primary" id="btnSaveTuVung" onclick="callApiThemTuVung()">
+                        <span id="btnSaveText">Lưu Từ Vựng</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <script>
+        let myModalCauHoi;
+        let currentEditingCauHoi = null;
+
+        document.addEventListener("DOMContentLoaded", function () {
+            myModalCauHoi = new bootstrap.Modal(document.getElementById('modalCauHoi'));
+
+            // Giữ vị trí tab đang làm việc khi trang reload
+            const activeTab = localStorage.getItem('adminActiveTab');
+            if (activeTab) {
+                const tabBtn = document.querySelector(`#${activeTab}`);
+                if (tabBtn) bootstrap.Tab.getOrCreateInstance(tabBtn).show();
+            }
+            document.querySelectorAll('button[data-bs-toggle="tab"]').forEach(tab => {
+                tab.addEventListener('shown.bs.tab', (e) => {
+                    localStorage.setItem('adminActiveTab', e.target.id);
+                });
+            });
+        });
+
+        // ========================================== XÓA LIÊN KẾT TỪ VỰNG ==========================================
+        function xoaLienKetTuVung(idBaiHoc, idTuVung) {
+            Swal.fire({
+                title: 'Gỡ từ vựng?',
+                text: "Hành động này sẽ xóa từ vựng khỏi bài học này (Không xóa từ vựng gốc trong từ điển).",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'Đồng ý gỡ!',
+                cancelButtonText: 'Hủy'
+            }).then(async (result) => {
+                if (result.isConfirmed) {
+                    try {
+                        const response = await fetch(`/api/quanlybaihoc/xoalienket-tuvung/${idBaiHoc}/${idTuVung}`, {
+                            method: 'DELETE'
+                        });
+                        const resData = await response.json();
+
+                        if (resData.success) {
+                            Swal.fire('Thành công!', resData.message, 'success');
+                            document.getElementById(`row-tuvung-${idTuVung}`).remove();
+                        } else {
+                            Swal.fire('Thất bại', resData.message, 'error');
+                        }
+                    } catch (error) {
+                        Swal.fire('Lỗi kết nối', 'Không thể gửi yêu cầu lên máy chủ.', 'error');
+                    }
+                }
+            });
+        }
+
+        // ========================================== XÓA LIÊN KẾT CÂU HỎI ==========================================
+        function xoaLienKetCauHoi(idBaiHoc, idCauHoi) {
+            Swal.fire({
+                title: 'Gỡ câu hỏi?',
+                text: "Câu hỏi này sẽ không xuất hiện trong bài học này nữa. Hãy chắc chắn!",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'Đồng ý gỡ!',
+                cancelButtonText: 'Hủy'
+            }).then(async (result) => {
+                if (result.isConfirmed) {
+                    try {
+                        const response = await fetch(`/api/quanlybaihoc/xoalienket-cauhoi/${idBaiHoc}/${idCauHoi}`, {
+                            method: 'DELETE'
+                        });
+                        const resData = await response.json();
+
+                        if (resData.success) {
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Đã gỡ bỏ!',
+                                text: resData.message,
+                                timer: 2000
+                            });
+                            document.getElementById(`card-cauhoi-${idCauHoi}`).remove();
+                        } else {
+                            Swal.fire('Thất bại', resData.message, 'error');
+                        }
+                    } catch (error) {
+                        Swal.fire('Lỗi kết nối', 'Không thể kết nối đến API hệ thống.', 'error');
+                    }
+                }
+            });
+        }
+
+        // ========================================== HÀM SINH GIAO DIỆN ĐÁP ÁN DỰA TRÊN DỮ LIỆU CÓ SẴN ==========================================
+        function renderDapAnInputs(dapAnsList) {
+            const container = document.getElementById('dapAnContainer');
+            container.innerHTML = '';
+
+            // Nếu thêm mới hoặc câu hỏi chưa có sẵn đáp án, tự khởi tạo cấu trúc 4 đáp án trống A, B, C, D
+            if (!dapAnsList || dapAnsList.length === 0) {
+                dapAnsList = [
+                    { idDapAn: 0, noiDungDapAn: '', laDapAnDung: true }, // Mặc định tích câu đầu làm đáp án đúng ban đầu
+                    { idDapAn: 0, noiDungDapAn: '', laDapAnDung: false },
+                    { idDapAn: 0, noiDungDapAn: '', laDapAnDung: false },
+                    { idDapAn: 0, noiDungDapAn: '', laDapAnDung: false }
+                ];
+            }
+
+            dapAnsList.forEach((da, index) => {
+                const labelChar = String.fromCharCode(65 + index); // Tạo ký tự tự động A, B, C, D...
+                const checkedAttr = da.laDapAnDung ? 'checked' : '';
+
+                const htmlRow = `
+                    <div class="col-md-6 cls-answer-item">
+                        <input type="hidden" class="hdIdDapAn" value="${da.idDapAn || 0}" />
+                        <div class="input-group shadow-sm">
+                            <span class="input-group-text bg-white fw-bold text-dark border-end-0">
+                                <input class="form-check-input me-2 rdoLaDapAnDung" type="radio" name="rdGroupDapAn" id="rdoDapAn_${index}" ${checkedAttr} required />
+                                <label class="form-check-label text-primary fw-bold" for="rdoDapAn_${index}">${labelChar}</label>
+                            </span>
+                            <input type="text" class="form-control text-dark txtNoiDungDapAn border-start-0 ps-1" value="${da.noiDungDapAn || ''}" placeholder="Nhập nội dung đáp án ${labelChar}..." required />
+                        </div>
+                    </div>
+                `;
+                container.insertAdjacentHTML('beforeend', htmlRow);
+            });
+        }
+
+        // ========================================== MỞ MODAL THÊM / SỬA CÂU HỎI ==========================================
+        function openModalCauHoi(isEdit, data = null) {
+            const form = document.getElementById('formCauHoi');
+            form.reset();
+
+            currentEditingCauHoi = isEdit ? data : null;
+
+            if (isEdit && data) {
+                document.getElementById('modalTitle').innerHTML = '<i class="fas fa-edit me-2 text-warning"></i>Cập Nhật Câu Hỏi & Toàn Bộ Đáp Án';
+                document.getElementById('txtIdCauHoi').value = data.idCauHoi || '';
+                document.getElementById('txtNoiDung').value = data.noiDung || '';
+                document.getElementById('txtGiaiThich').value = data.giaiThich || '';
+                document.getElementById('txtThuTu').value = data.thuTu || '1';
+                document.getElementById('btnSaveSubmit').innerText = "Cập nhật dữ liệu";
+
+                // Đổ dữ liệu đáp án gốc vào sinh giao diện
+                renderDapAnInputs(data.dapAns);
+            } else {
+                document.getElementById('modalTitle').innerHTML = '<i class="fas fa-plus-circle me-2 text-success"></i>Thêm Mới Câu Hỏi & Thiết Lập Đáp Án';
+                document.getElementById('txtIdCauHoi').value = '';
+                document.getElementById('txtThuTu').value = '1';
+                document.getElementById('btnSaveSubmit').innerText = "Tạo câu hỏi mới";
+
+                // Sinh 4 ô nhập trống cho câu hỏi mới
+                renderDapAnInputs(null);
+            }
+            myModalCauHoi.show();
+        }
+
+        // ========================================== SUBMIT FORM (XỬ LÝ CẢ THÊM & SỬA) ==========================================
+        async function saveCauHoi(event) {
+            event.preventDefault();
+
+            const idCauHoiVal = document.getElementById('txtIdCauHoi').value;
+            const isEdit = idCauHoiVal !== '';
+
+            // Thu thập dữ liệu từ các dòng đáp án động trong DOM thay vì lấy từ dữ liệu cũ
+            const answerElements = document.querySelectorAll('.cls-answer-item');
+            const dapAnsPayload = Array.from(answerElements).map(el => {
+                return {
+                    IdDapAn: parseInt(el.querySelector('.hdIdDapAn').value) || 0,
+                    NoiDungDapAn: el.querySelector('.txtNoiDungDapAn').value,
+                    LaDapAnDung: el.querySelector('.rdoLaDapAnDung').checked
+                };
+            });
+
+            let url = '/api/quanlybaihoc/capnhat-cauhoi'; // Route thêm mới mặc định của bạn
+            let method = 'POST';
+            let payload = {};
+
+            if (isEdit) {
+                const id = parseInt(idCauHoiVal);
+                url = `/api/quanlybaitap/sua-cau-hoi/${id}`;
+                method = 'PUT';
+
+                payload = {
+                    IdCauHoi: id,
+                    NoiDung: document.getElementById('txtNoiDung').value,
+                    GiaiThich: document.getElementById('txtGiaiThich').value,
+                    IdLoai: parseInt(document.getElementById('txtIdLoai').value),
+                    IdCapDo: parseInt(document.getElementById('txtIdCapDo').value),
+                    AmThanhPath: currentEditingCauHoi ? currentEditingCauHoi.amThanhPath : null,
+                    DoKho: currentEditingCauHoi ? currentEditingCauHoi.doKho : null,
+
+                    // Đồng bộ giữ thông tin đoạn văn đi kèm cũ
+                    IdChuDe: currentEditingCauHoi && currentEditingCauHoi.doanVan ? currentEditingCauHoi.doanVan.idChuDe : null,
+                    TieuDe: currentEditingCauHoi && currentEditingCauHoi.doanVan ? currentEditingCauHoi.doanVan.tieuDe : null,
+                    NoiDungHan: currentEditingCauHoi && currentEditingCauHoi.doanVan ? currentEditingCauHoi.doanVan.noiDungHan : null,
+                    NoiDungPinyin: currentEditingCauHoi && currentEditingCauHoi.doanVan ? currentEditingCauHoi.doanVan.noiDungPinyin : null,
+                    NoiDungViet: currentEditingCauHoi && currentEditingCauHoi.doanVan ? currentEditingCauHoi.doanVan.noiDungViet : null,
+                    AnhMinhHoa: currentEditingCauHoi && currentEditingCauHoi.doanVan ? currentEditingCauHoi.doanVan.anhMinhHoa : null,
+
+                    // Nạp mảng danh sách đáp án mới lấy trực tiếp từ Form cấu hình
+                    DapAns: dapAnsPayload
+                };
+            } else {
+                // Đối với trường hợp thêm mới câu hỏi
+                payload = {
+                    IdBaiHoc: parseInt(document.getElementById('txtIdBaiHoc').value),
+                    NoiDung: document.getElementById('txtNoiDung').value,
+                    GiaiThich: document.getElementById('txtGiaiThich').value,
+                    IdLoai: parseInt(document.getElementById('txtIdLoai').value),
+                    IdCapDo: parseInt(document.getElementById('txtIdCapDo').value),
+                    ThuTu: parseInt(document.getElementById('txtThuTu').value),
+                    DapAns: dapAnsPayload // Gửi kèm danh sách đáp án nếu API hỗ trợ tạo đồng thời
+                };
+            }
+
+            try {
+                document.getElementById('btnSaveSubmit').disabled = true;
+
+                const response = await fetch(url, {
+                    method: method,
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                const resData = await response.json();
+
+                if (response.ok && resData.success) {
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Thành công!',
+                        text: resData.message || 'Thao tác dữ liệu thành công.',
+                        timer: 1500
+                    }).then(() => {
+                        myModalCauHoi.hide();
+                        location.reload();
+                    });
+                } else {
+                    Swal.fire('Thất bại', resData.message || 'Có lỗi xảy ra từ máy chủ.', 'error');
+                }
+            } catch (error) {
+                Swal.fire('Lỗi kết nối', 'Không thể gửi yêu cầu chỉnh sửa đến API hệ thống.', 'error');
+            } finally {
+                document.getElementById('btnSaveSubmit').disabled = false;
+            }
+        }
+
+
+                // Biến toàn cục để điều khiển Modal Bootstrap
+        let modalThemTuVungInstance;
+
+        document.addEventListener("DOMContentLoaded", function() {
+            // Khởi tạo Modal khi trang đã tải xong
+            const modalElement = document.getElementById('modalThemTuVung');
+            if (modalElement) {
+                modalThemTuVungInstance = new bootstrap.Modal(modalElement);
+            }
+        });
+
+        // Hàm mở Modal lấy trực tiếp Element nút bấm
+        function openModalThemTuVung(btnElement) {
+            // Lấy ID Bài Học từ thuộc tính data của nút
+            const idBaiHoc = btnElement.getAttribute('data-id-baihoc');
+
+            // Xóa dữ liệu cũ trong form
+            document.getElementById('formThemTuVung').reset();
+
+            // Gán ID Bài Học vào input ẩn để gửi lên API
+            document.getElementById('IdBaiHoc').value = idBaiHoc;
+
+            // Hiển thị Modal
+            modalThemTuVungInstance.show();
+        }
+
+        // Hàm gọi API để thêm từ vựng
+        async function callApiThemTuVung() {
+            const form = document.getElementById('formThemTuVung');
+
+            // Kiểm tra validation của HTML5
+            if (!form.checkValidity()) {
+                form.reportValidity();
+                return;
+            }
+
+            // Lấy ID đã lưu ở hidden input
+            const idBaiHoc = document.getElementById('IdBaiHoc').value;
+
+            // Build Payload
+            const requestData = {
+                IdBaiHoc: parseInt(idBaiHoc),
+                ChuHan: document.getElementById('ChuHan').value,
+                Pinyin: document.getElementById('Pinyin').value,
+                NghiaViet: document.getElementById('NghiaViet').value,
+                LoaiTu: document.getElementById('LoaiTu').value,
+                AmHan: document.getElementById('AmHan').value,
+                IdCapDo: document.getElementById('IdCapDo').value ? parseInt(document.getElementById('IdCapDo').value) : null,
+                ViDuHan: document.getElementById('ViDuHan').value,
+                ViDuPinyin: document.getElementById('ViDuPinyin').value,
+                ViDuViet: document.getElementById('ViDuViet').value
+            };
+
+            const btnSave = document.getElementById('btnSaveTuVung');
+            const originalBtnText = btnSave.innerHTML; // Lưu lại text gốc
+
+            try {
+                // Cập nhật trạng thái loading cho nút lưu
+                btnSave.disabled = true;
+                btnSave.innerText = "Đang lưu...";
+
+                // GỌI API (Lưu ý đường dẫn /api/...)
+                const response = await fetch('/api/quanlybaihoc/themtuvung-baihoc', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(requestData)
+                });
+
+                const result = await response.json();
+
+                if (response.ok && result.success) {
+                    alert(result.message || "Đã thêm từ vựng thành công!");
+                    modalThemTuVungInstance.hide();
+
+                    // Reload lại trang để thấy từ vựng mới (hoặc gọi hàm tải lại table tại đây)
+                    location.reload();
+                } else {
+                    alert("Lỗi: " + (result.message || "Không thể thêm từ vựng."));
+                }
+            } catch (error) {
+                console.error("Lỗi khi gọi API:", error);
+                alert("Lỗi kết nối đến máy chủ. Vui lòng kiểm tra lại mạng.");
+            } finally {
+                // Trả lại trạng thái ban đầu cho nút Lưu
+                btnSave.disabled = false;
+                btnSave.innerHTML = originalBtnText;
+            }
+        }
+    </script>
+</body>
+</html>

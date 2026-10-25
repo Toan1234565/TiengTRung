@@ -1,0 +1,11 @@
+﻿namespace HocTiengTrung_3._0_T.Models12.QuanLyTrungTam
+{
+    public class ThemHocVienVaoLopRequest
+    {
+        public int IdLopHoc { get; set; }
+        public string HoTen { get; set; } = null!;
+        public string? Email { get; set; }
+        public string? SoDienThoai { get; set; }
+        public DateOnly? NgaySinh { get; set; }
+    }
+}

@@ -1,0 +1,286 @@
+﻿@model List<HocTiengTrung_3._0_T.Models12.QuanLyDeThi.DeThiModels>
+@{
+    ViewData["Title"] = "Quản Lý Đề Thi";
+}
+
+<div class="container-fluid py-4">
+    <div class="card shadow border-0">
+        <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+            <h5 class="m-0 font-weight-bold text-primary"><i class="fas fa-file-alt me-2"></i>Quản Lý Đề Thi</h5>
+            <button class="btn btn-success btn-sm shadow-sm" onclick="location.href='/Admin/ThemDeThi'">
+                <i class="fas fa-plus me-1"></i> Thêm Đề Thi Mới
+            </button>
+        </div>
+
+        <div class="card-body">
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <label class="small fw-bold text-muted mb-1">Cấp độ (HSK)</label>
+                    <select id="filterCapDo" class="form-select shadow-none" onchange="LocDanhSach()">
+                        @for (int i = 1; i <= 6; i++)
+                        {
+                            <!option value="@i" @(ViewBag.IdCapDo == i ? "selected" : "")>Cấp độ @i</!option>
+                        }
+                    </select>
+                </div>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table table-hover align-middle border">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="text-center" style="width: 50px;">ID</th>
+                            <th>Tên Đề Thi</th>
+                            <th class="text-center">Số Câu</th>
+                            <th class="text-center">Thời Gian</th>
+                            <th class="text-center">Trạng Thái</th>
+                            <th>Loại đề</th>
+                            <th class="text-center" style="width: 180px;">Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model != null && Model.Any())
+                        {
+                            foreach (var item in Model)
+                            {
+                                <tr id="row-@item.IdDeThi">
+                                    <td class="text-center fw-bold">@item.IdDeThi</td>
+                                    <td>
+                                        <div class="fw-bold">@item.TenDe</div>
+                                        <small class="text-muted">Ngày tạo: @item.NgayTao?.ToString("dd/MM/yyyy")</small>
+                                    </td>
+                                    <td class="text-center"><span class="badge bg-info text-dark">@item.TongSoCau câu</span></td>
+                                    <td class="text-center">@item.ThoiGianLamBai phút</td>
+
+                                    <td class="text-center" id="trangthai-cell-@item.IdDeThi">
+                                        @if (item.TrangThai == true)
+                                        {
+                                            <span class="badge bg-success">Hiển thị</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-secondary">Khóa</span>
+                                        }
+                                    </td>
+
+                                    <td id="premium-cell-@item.IdDeThi">
+                                        @if (item.IsPremium == true)
+                                        {
+                                            <span class="badge bg-danger">VIP Premium</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-success">Miễn phí</span>
+                                        }
+                                    </td>
+                                    <td class="text-center align-middle">
+                                        <div class="d-flex justify-content-center gap-2">
+                                            <a asp-action="ChiTietDeThiAdmin" asp-route-id="@item.IdDeThi"
+                                               class="btn btn-outline-primary btn-sm rounded-pill px-2 shadow-sm">
+                                                <i class="fas fa-external-link-alt"></i> Xem
+                                            </a>
+
+                                            <button class="btn btn-outline-warning btn-sm rounded-pill px-2 shadow-sm"
+                                                    onclick="OpenStatusModal(@item.IdDeThi, '@item.TrangThai', '@item.IsPremium')">
+                                                <i class="fas fa-toggle-on"></i> Đổi
+                                            </button>
+
+                                            <button onclick="DeleteDeThi(@item.IdDeThi, '@item.TenDe')"
+                                                    class="btn btn-outline-danger btn-sm rounded-circle shadow-sm"
+                                                    style="width: 32px; height: 32px; padding: 0;">
+                                                <i class="fas fa-times"></i>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="7" class="text-center py-4 text-muted">Không có đề thi nào ở cấp độ này.</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="statusModal" tabindex="-1" aria-labelledby="statusModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content shadow border-0">
+            <div class="modal-header bg-light py-2">
+                <h6 class="modal-title fw-bold text-dark" id="statusModalLabel">Chuyển trạng thái đề thi</h6>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" style="font-size: 0.8rem;"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="modalDeThiId" />
+
+                <div class="mb-3">
+                    <label class="form-label small fw-bold text-muted mb-1">Trạng thái hệ thống</label>
+                    <div class="form-check form-switch">
+                        <input class="form-check-input shadow-none" type="checkbox" id="modalTrangThai">
+                        <label class="form-check-label small" for="modalTrangThai" id="lblTrangThai">Cho phép hiển thị</label>
+                    </div>
+                </div>
+
+                <div>
+                    <label class="form-label small fw-bold text-muted mb-1">Phân loại đề thi</label>
+                    <div class="form-check form-switch">
+                        <input class="form-check-input shadow-none" type="checkbox" id="modalIsPremium">
+                        <label class="form-check-label small" for="modalIsPremium" id="lblPremium">Kích hoạt VIP Premium</label>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer bg-light py-2 justify-content-end">
+                <button type="button" class="btn btn-secondary btn-sm px-3" data-bs-dismiss="modal">Đóng</button>
+                <button type="button" class="btn btn-primary btn-sm px-3 shadow-sm" onclick="SaveChangesStatus()">Lưu lại</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        // Khởi tạo Bootstrap Modal instance
+        let bootstrapStatusModal;
+        document.addEventListener("DOMContentLoaded", function () {
+            bootstrapStatusModal = new bootstrap.Modal(document.getElementById('statusModal'));
+
+            // Lắng nghe sự kiện click thay đổi text nhãn real-time trên Modal (Tăng UX)
+            document.getElementById('modalTrangThai').addEventListener('change', function() {
+                document.getElementById('lblTrangThai').innerText = this.checked ? "Cho phép hiển thị" : "Khóa / Ẩn đề";
+            });
+            document.getElementById('modalIsPremium').addEventListener('change', function() {
+                document.getElementById('lblPremium').innerText = this.checked ? "Yêu cầu VIP Premium" : "Bản miễn phí (Free)";
+            });
+        });
+
+        // Tự động lọc khi thay đổi dropdown
+        function LocDanhSach() {
+            var idCapDo = document.getElementById("filterCapDo").value;
+            window.location.href = "/QuanLyDeThi/DanhSachDeThiAdmin?idCapDo=" + idCapDo;
+        }
+
+        // Mở Modal và đổ dữ liệu hiện tại từ hàng được chọn vào form điều khiển
+        function OpenStatusModal(id, trangThai, isPremium) {
+            document.getElementById('modalDeThiId').value = id;
+
+            // Chuẩn hóa dữ liệu bool từ Razor sang JS
+            const isTrangThaiTrue = (trangThai.toLowerCase() === 'true');
+            const isPremiumTrue = (isPremium.toLowerCase() === 'true');
+
+            const cbTrangThai = document.getElementById('modalTrangThai');
+            const cbPremium = document.getElementById('modalIsPremium');
+
+            cbTrangThai.checked = isTrangThaiTrue;
+            cbPremium.checked = isPremiumTrue;
+
+            // Đồng bộ text mô tả nhãn đi kèm tương ứng
+            document.getElementById('lblTrangThai').innerText = isTrangThaiTrue ? "Cho phép hiển thị" : "Khóa / Ẩn đề";
+            document.getElementById('lblPremium').innerText = isPremiumTrue ? "Yêu cầu VIP Premium" : "Bản miễn phí (Free)";
+
+            // Hiển thị modal lên màn hình
+            bootstrapStatusModal.show();
+        }
+
+        // Thực hiện gửi yêu cầu PUT/PATCH cập nhật dữ liệu qua API ngầm
+        async function SaveChangesStatus() {
+            const id = document.getElementById('modalDeThiId').value;
+            const trangThaiValue = document.getElementById('modalTrangThai').checked;
+            const isPremiumValue = document.getElementById('modalIsPremium').checked;
+
+            try {
+                // Bạn có thể đổi lại endpoint URL này để khớp chính xác với Router Backend thực tế của bạn
+                const response = await fetch(`/api/quanlydethi/cap-nhat-trang-thai/${id}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        TrangThai: trangThaiValue,
+                        IsPremium: isPremiumValue
+                    })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    bootstrapStatusModal.hide();
+
+                    // 1. Đồng bộ giao diện ô "Trạng thái" tại dòng vừa sửa mà không cần f5 trang
+                    const cellTrangThai = document.getElementById(`trangthai-cell-${id}`);
+                    if (trangThaiValue) {
+                        cellTrangThai.innerHTML = `<span class="badge bg-success">Hiển thị</span>`;
+                    } else {
+                        cellTrangThai.innerHTML = `<span class="badge bg-secondary">Khóa</span>`;
+                    }
+
+                    // 2. Đồng bộ giao diện ô "Loại đề" tại dòng vừa sửa
+                    const cellPremium = document.getElementById(`premium-cell-${id}`);
+                    if (isPremiumValue) {
+                        cellPremium.innerHTML = `<span class="badge bg-danger">VIP Premium</span>`;
+                    } else {
+                        cellPremium.innerHTML = `<span class="badge bg-success">Miễn phí</span>`;
+                    }
+
+                    // 3. Cập nhật lại thuộc tính inline của nút bấm để mở modal lần sau chứa đúng dữ liệu mới
+                    const btnDoi = document.querySelector(`#row-${id} button[onclick^="OpenStatusModal"]`);
+                    if (btnDoi) {
+                        btnDoi.setAttribute('onclick', `OpenStatusModal(${id}, '${trangThaiValue}', '${isPremiumValue}')`);
+                    }
+
+                    // Hiển thị thông báo Toast thành công dạng gọn nhẹ bằng SweetAlert2
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Thành công',
+                        text: 'Trạng thái đề thi đã được cập nhật!',
+                        timer: 1500,
+                        showConfirmButton: false
+                    });
+                } else {
+                    Swal.fire('Lỗi!', data.message || 'Không thể lưu thay đổi.', 'error');
+                }
+            } catch (error) {
+                console.error(error);
+                Swal.fire('Lỗi!', 'Đã xảy ra sự cố kết nối tới API.', 'error');
+            }
+        }
+
+        // Hàm xóa đề thi giữ nguyên của bạn
+        async function DeleteDeThi(id, name) {
+            const result = await Swal.fire({
+                title: 'Bạn có chắc chắn?',
+                text: `Đề thi "${name}" và các dữ liệu liên quan sẽ bị xóa!`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d6',
+                confirmButtonText: 'Xóa ngay',
+                cancelButtonText: 'Hủy'
+            });
+
+            if (result.isConfirmed) {
+                try {
+                    const response = await fetch(`/api/quanlydethi/xoa-de-thi/${id}`, {
+                        method: 'DELETE'
+                    });
+                    const data = await response.json();
+
+                    if (data.success) {
+                        Swal.fire('Thành công!', data.message, 'success').then(() => {
+                            location.reload();
+                        });
+                    } else {
+                        Swal.fire('Lỗi!', data.message, 'error');
+                    }
+                } catch (error) {
+                    Swal.fire('Lỗi!', 'Không thể thực hiện yêu cầu xóa.', 'error');
+                }
+            }
+        }
+    </script>
+}

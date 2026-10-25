@@ -1,0 +1,306 @@
+﻿@model List<HocTiengTrung_3._0_T.Models12.QuanLyTrungTam.NhanSuTrungTamModel>
+@{
+    ViewData["Title"] = "Danh sách Nhân sự - Quản lý cơ sở";
+
+    int idTrungTam = ViewBag.IdTrungTam ?? 0;
+    string tuKhoa = ViewBag.TuKhoa ?? "";
+    int? idVaiTro = ViewBag.IdVaiTro;
+    bool? trangThai = ViewBag.TrangThai;
+
+    var listNhanSu = Model ?? new List<HocTiengTrung_3._0_T.Models12.QuanLyTrungTam.NhanSuTrungTamModel>();
+
+    int countTong = listNhanSu.Count;
+    int countQuanLy = listNhanSu.Count(x => !string.IsNullOrEmpty(x.TenVaiTro) &&
+        (x.TenVaiTro.ToLower().Contains("quản lý") || x.TenVaiTro.ToLower().Contains("quan ly")));
+    int countGiangVien = listNhanSu.Count(x => !string.IsNullOrEmpty(x.TenVaiTro) &&
+        (x.TenVaiTro.ToLower().Contains("giảng viên") || x.TenVaiTro.ToLower().Contains("giang vien")));
+    int countHoatDong = listNhanSu.Count(x => x.TrangThai);
+}
+
+<div class="container-fluid py-4">
+    <!-- Breadcrumb & Header Navigation -->
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+        <div>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-1">
+                    <li class="breadcrumb-item"><a asp-action="DanhSachTrungTam" class="text-decoration-none">Quản lý trung tâm</a></li>
+                    @if (idTrungTam > 0)
+                    {
+                        <li class="breadcrumb-item"><a asp-action="ChiTietTrungTam" asp-route-id="@idTrungTam" class="text-decoration-none">Cơ sở #@idTrungTam</a></li>
+                    }
+                    <li class="breadcrumb-item active" aria-current="page">Danh sách nhân sự</li>
+                </ol>
+            </nav>
+            <h3 class="fw-bold text-dark mb-0">Đội ngũ Giảng viên & Quản lý</h3>
+        </div>
+
+        <div class="d-flex align-items-center gap-2">
+            <button type="button" onclick="history.back()" class="btn btn-outline-secondary d-flex align-items-center gap-2">
+                <i class="fa-solid fa-arrow-left"></i> Quay lại
+            </button>
+            <button type="button" class="btn btn-primary d-flex align-items-center gap-2 shadow-sm" onclick="moModalThemNhanSu()">
+                <i class="fa-solid fa-user-plus"></i> Thêm tài khoản mới
+            </button>
+        </div>
+    </div>
+
+    <!-- KPI Cards Thống Kê Nhân Sự -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-3 col-sm-6">
+            <div class="card border-0 shadow-sm p-3 h-100">
+                <div class="d-flex align-items-center">
+                    <div class="rounded-3 bg-primary-subtle text-primary p-3 me-3 fs-4">
+                        <i class="fa-solid fa-users"></i>
+                    </div>
+                    <div>
+                        <span class="text-muted small text-uppercase fw-semibold">Tổng nhân sự</span>
+                        <h3 class="fw-bold mb-0 text-dark">@countTong</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3 col-sm-6">
+            <div class="card border-0 shadow-sm p-3 h-100">
+                <div class="d-flex align-items-center">
+                    <div class="rounded-3 bg-danger-subtle text-danger p-3 me-3 fs-4">
+                        <i class="fa-solid fa-user-shield"></i>
+                    </div>
+                    <div>
+                        <span class="text-muted small text-uppercase fw-semibold">Quản lý cơ sở</span>
+                        <h3 class="fw-bold mb-0 text-dark">@countQuanLy</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3 col-sm-6">
+            <div class="card border-0 shadow-sm p-3 h-100">
+                <div class="d-flex align-items-center">
+                    <div class="rounded-3 bg-info-subtle text-info p-3 me-3 fs-4">
+                        <i class="fa-solid fa-chalkboard-user"></i>
+                    </div>
+                    <div>
+                        <span class="text-muted small text-uppercase fw-semibold">Giảng viên đứng lớp</span>
+                        <h3 class="fw-bold mb-0 text-dark">@countGiangVien</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3 col-sm-6">
+            <div class="card border-0 shadow-sm p-3 h-100">
+                <div class="d-flex align-items-center">
+                    <div class="rounded-3 bg-success-subtle text-success p-3 me-3 fs-4">
+                        <i class="fa-solid fa-circle-check"></i>
+                    </div>
+                    <div>
+                        <span class="text-muted small text-uppercase fw-semibold">Đang hoạt động</span>
+                        <h3 class="fw-bold mb-0 text-dark">@countHoatDong</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bảng danh sách & Bộ lọc -->
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-white border-bottom p-3">
+            <form method="get" asp-action="DanhSachNhanSu" class="row g-2 align-items-center">
+                <input type="hidden" name="idTrungTam" value="@idTrungTam" />
+
+                <!-- Tìm kiếm theo từ khóa -->
+                <div class="col-md-4">
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text bg-light border-end-0">
+                            <i class="fa-solid fa-magnifying-glass text-muted"></i>
+                        </span>
+                        <input type="text" name="tuKhoa" id="txtFilterRealtime" value="@tuKhoa" class="form-control border-start-0" placeholder="Tìm theo họ tên, username, SĐT..." onkeyup="locNhanSuClient()" />
+                    </div>
+                </div>
+
+                <!-- Lọc theo trạng thái -->
+                <div class="col-md-3 col-sm-6">
+                    <select name="trangThai" class="form-select form-select-sm">
+                        <option value="">-- Tất cả trạng thái --</option>
+                        <option value="true" selected="@(trangThai == true)">Đang hoạt động</option>
+                        <option value="false" selected="@(trangThai == false)">Đã khóa / Tạm dừng</option>
+                    </select>
+                </div>
+
+                <!-- Nút thao tác lọc -->
+                <div class="col-md-3 col-sm-6 d-flex gap-2">
+                    <button type="submit" class="btn btn-sm btn-primary d-flex align-items-center gap-1">
+                        <i class="fa-solid fa-filter"></i> Lọc dữ liệu
+                    </button>
+                    <a asp-action="DanhSachNhanSu" asp-route-idTrungTam="@idTrungTam" class="btn btn-sm btn-outline-secondary">
+                        <i class="fa-solid fa-rotate-left"></i> Đặt lại
+                    </a>
+                </div>
+            </form>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0" id="tableNhanSu">
+                <thead class="table-light text-secondary text-uppercase small">
+                    <tr>
+                        <th style="width: 70px;">#ID</th>
+                        <th>Nhân sự</th>
+                        <th>Tài khoản</th>
+                        <th>Vai trò</th>
+                        <th>Thông tin liên hệ</th>
+                        <th class="text-center" style="width: 130px;">Trạng thái</th>
+                        <th class="text-end" style="width: 120px;">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (listNhanSu.Count > 0)
+                    {
+                        foreach (var item in listNhanSu)
+                        {
+                            bool isQuanLy = !string.IsNullOrEmpty(item.TenVaiTro) &&
+                                            (item.TenVaiTro.ToLower().Contains("quản lý") || item.TenVaiTro.ToLower().Contains("quan ly"));
+                            string badgeClass = isQuanLy ? "bg-danger-subtle text-danger border-danger-subtle" : "bg-primary-subtle text-primary border-primary-subtle";
+                            string avatar = (!string.IsNullOrEmpty(item.AnhDaiDien) && item.AnhDaiDien != "default_avatar.png")
+                                ? item.AnhDaiDien
+                                : $"https://ui-avatars.com/api/?name={Uri.EscapeDataString(item.HoTen ?? item.TenDangNhap)}&background=random";
+
+                            <tr class="row-nhansu-item">
+                                <td class="fw-bold text-muted">#@item.IdTaiKhoan</td>
+                                <td>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <img src="@avatar" class="rounded-circle border object-fit-cover shadow-sm" width="38" height="38" alt="@item.HoTen">
+                                        <div>
+                                            <span class="fw-semibold text-dark d-block ns-name">@item.HoTen</span>
+                                            <small class="text-muted">
+                                                <i class="fa-regular fa-clock me-1"></i>@(item.NgayTao.HasValue ? item.NgayTao.Value.ToString("dd/MM/yyyy") : "--")
+                                            </small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="badge bg-light text-dark border font-monospace ns-username">@item.TenDangNhap</span>
+                                </td>
+                                <td>
+                                    <span class="badge border @badgeClass">
+                                        <i class="@(isQuanLy ? "fa-solid fa-user-shield" : "fa-solid fa-chalkboard-user") me-1"></i>@item.TenVaiTro
+                                    </span>
+                                </td>
+                                <td>
+                                    <div class="small text-muted ns-email"><i class="fa-regular fa-envelope me-1"></i>@(item.Email ?? "--")</div>
+                                    <div class="small text-muted ns-phone"><i class="fa-solid fa-phone me-1"></i>@(item.SoDienThoai ?? "--")</div>
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge @(item.TrangThai ? "bg-success-subtle text-success" : "bg-secondary-subtle text-secondary")">
+                                        @(item.TrangThai ? "Hoạt động" : "Đã khóa")
+                                    </span>
+                                </td>
+                                <td class="text-end">
+                                    <a asp-controller="QuanLyTrungtam" asp-action="ChiTietNhanSu" asp-route-id="@item.IdTaiKhoan"
+                                       class="btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-1 shadow-sm" title="Xem hồ sơ chi tiết">
+                                        <i class="fa-regular fa-eye"></i> Chi tiết
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="7" class="text-center py-5 text-muted">
+                                <i class="fa-regular fa-folder-open fa-2x mb-2 d-block"></i>
+                                Không tìm thấy nhân sự nào phù hợp với bộ lọc hiện tại.
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- ========================================== -->
+<!-- MODAL THÊM TÀI KHOẢN NHÂN SỰ MỚI -->
+<!-- ========================================== -->
+<div class="modal fade" id="modalThemNhanSu" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-light">
+                <h5 class="modal-title fw-bold">
+                    <i class="fa-solid fa-user-plus text-primary me-2"></i>Thêm tài khoản Giảng viên / Quản lý
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="formThemNhanSu" onsubmit="xuLyThemNhanSu(event, @idTrungTam)">
+                <div class="modal-body p-4">
+                    <div class="alert alert-light border small text-muted mb-3">
+                        <i class="fa-solid fa-circle-info text-primary me-1"></i>
+                        Tài khoản tạo mới sẽ tự động thuộc cơ sở hiện tại (Mã trung tâm #@idTrungTam).
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Họ và tên <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="txtHoTenNhanSu" required placeholder="VD: Cô Nguyễn Thu Trang">
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Tên đăng nhập <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control font-monospace" id="txtTenDangNhapNhanSu" required placeholder="VD: gv_thutrang">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Mật khẩu <span class="text-danger">*</span></label>
+                            <input type="password" class="form-control" id="txtMatKhauNhanSu" minlength="6" required placeholder="Tối thiểu 6 ký tự">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Vai trò đảm nhiệm <span class="text-danger">*</span></label>
+                        <select class="form-select" id="selectVaiTroNhanSu" required>
+                            <option value="">-- Đang nạp danh sách vai trò... --</option>
+                        </select>
+                    </div>
+                    <div class="row g-2">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Email</label>
+                            <input type="email" class="form-control" id="txtEmailNhanSu" placeholder="thutrang@gmail.com">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Số điện thoại</label>
+                            <input type="tel" class="form-control" id="txtSdtNhanSu" placeholder="0987654321">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                    <button type="submit" id="btnSubmitNhanSu" class="btn btn-primary px-4">
+                        <i class="fa-solid fa-check me-1"></i> Tạo tài khoản
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <!-- Nhúng file Script phân hệ Quản lý Nhân sự -->
+    <script src="~/js/TrungTam/nhansu-trungtam.js"></script>
+
+    <script>
+        // Lọc trực tiếp danh sách nhân sự trên trang
+        function locNhanSuClient() {
+            const filter = document.getElementById('txtFilterRealtime').value.toLowerCase().trim();
+            const rows = document.querySelectorAll('#tableNhanSu .row-nhansu-item');
+
+            rows.forEach(r => {
+                const name = r.querySelector('.ns-name')?.textContent.toLowerCase() || '';
+                const user = r.querySelector('.ns-username')?.textContent.toLowerCase() || '';
+                const email = r.querySelector('.ns-email')?.textContent.toLowerCase() || '';
+                const phone = r.querySelector('.ns-phone')?.textContent.toLowerCase() || '';
+
+                const match = name.includes(filter) || user.includes(filter) || email.includes(filter) || phone.includes(filter);
+                r.style.display = match ? '' : 'none';
+            });
+        }
+    </script>
+}

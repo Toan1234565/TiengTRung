@@ -1,0 +1,155 @@
+﻿<div class="table-responsive" style="max-height: 70vh; overflow-y: auto;">    
+    <div id="loadingDaThuoc" class="text-center py-5 d-none">
+        <div class="spinner-border text-success" role="status"></div>
+        <p class="mt-2 text-muted fw-bold">Đang mở sổ tay...</p>
+    </div>
+    
+    <table class="table table-hover align-middle border-top d-none" id="tableDaThuoc">
+        <thead class="table-light sticky-top">
+            <tr class="text-secondary small">
+                <th style="width: 50px;">#</th>
+                <th>Chữ Hán</th>
+                <th>Phiên âm</th>
+                <th>Nghĩa Việt</th>
+                <th class="text-center">Nghe</th>
+                <th class="text-end">Hành động</th>
+            </tr>
+        </thead>
+        <tbody id="listTuVungDaThuoc">
+        </tbody>
+    </table>
+
+    <div id="emptyDaThuoc" class="text-center py-5 d-none">
+        <div class="mb-3">
+            <i class="fa-solid fa-layer-group fs-1 text-light"></i>
+        </div>
+        <h5 class="text-muted">Sổ tay còn trống</h5>
+        <p class="small text-secondary">Hãy chăm chỉ học và đánh dấu "Đã thuộc" nhé!</p>
+    </div>
+</div>
+
+<script>
+    // Đảm bảo chỉ gán sự kiện một lần duy nhất
+    (function() {
+        const detailModal = document.getElementById('detailModal');
+        if (detailModal && !detailModal.dataset.listenerSet) {
+            detailModal.addEventListener('show.bs.modal', function () {
+                loadDanhSachDaThuoc();
+            });
+            detailModal.dataset.listenerSet = "true"; // Đánh dấu để không gán trùng
+        }
+    })();
+
+    async function loadDanhSachDaThuoc() {
+        const tbody = document.getElementById('listTuVungDaThuoc');
+        const loading = document.getElementById('loadingDaThuoc');
+        const empty = document.getElementById('emptyDaThuoc');
+        const table = document.getElementById('tableDaThuoc');
+        const badge = document.getElementById('badgeCountDaThuoc');
+
+        // 1. DỌN DẸP: Xóa sạch dữ liệu cũ và ẩn bảng ngay lập tức
+        tbody.innerHTML = '';
+        table.classList.add('d-none');
+        empty.classList.add('d-none');
+
+        // 2. HIỆN LOADING
+        loading.classList.remove('d-none');
+
+        try {
+            // Thêm timestamp để tránh cache trình duyệt làm lặp dữ liệu
+            const response = await fetch(`/api/quanlytuvung/danhsach-dathuoc?page=1&t=${new Date().getTime()}`);
+            if (!response.ok) throw new Error("Lỗi mạng");
+
+            const data = await response.json();
+
+            // 3. ẨN LOADING SAU KHI CÓ DỮ LIỆU
+            loading.classList.add('d-none');
+
+            // Cập nhật Badge ngoài giao diện
+            if (badge) {
+                const count = data.totalItems || 0;
+                badge.innerText = count;
+                badge.classList.toggle('d-none', count === 0);
+            }
+
+            if (data.items && data.items.length > 0) {
+                table.classList.remove('d-none');
+
+                // Dùng một chuỗi tạm để append một lần duy nhất (tối ưu hiệu năng)
+                let htmlRows = '';
+                data.items.forEach((item, index) => {
+                    htmlRows += `
+                        <tr class="animate__animated animate__fadeIn" style="--animate-duration: 0.5s">
+                            <td class="text-muted small">${index + 1}</td>
+                            <td><b class="fs-5 text-dark">${item.chuHan}</b></td>
+                            <td><span class="badge bg-light text-success border border-success-subtle">${item.pinyin}</span></td>
+                            <td class="text-muted">${item.nghiaViet}</td>
+                            <td class="text-center">
+                                <button class="btn btn-sm btn-link text-primary p-0"
+                                        onclick="playAudio('${item.amThanhPath}', this)">
+                                    <i class="fa-solid fa-circle-play fs-4"></i>
+                                </button>
+                            </td>
+                            <td class="text-end">
+                                <button class="btn btn-sm btn-outline-danger border-0"
+                                        onclick="toggleLearnedInModal(${item.idTuVung}, this)">
+                                    <i class="fa-solid fa-eraser"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                });
+                tbody.innerHTML = htmlRows;
+            } else {
+                empty.classList.remove('d-none');
+            }
+        } catch (error) {
+            console.error("Lỗi:", error);
+            loading.classList.add('d-none');
+            tbody.innerHTML = '<tr><td colspan="6" class="text-center text-danger py-4">Không thể tải dữ liệu. Vui lòng thử lại.</td></tr>';
+            table.classList.remove('d-none');
+        }
+    }
+
+    async function toggleLearnedInModal(idTuVung, btn) {
+        if (!confirm("Xóa từ này khỏi sổ tay?")) return;
+
+        const originalContent = btn.innerHTML;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span>';
+        btn.disabled = true;
+
+        try {
+            const response = await fetch('/api/quanlytuvung/danh-dau-tu-vung', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(idTuVung)
+            });
+
+            const data = await response.json();
+            if (data.success) {
+                // Sau khi xóa thành công, gọi lại load để cập nhật toàn bộ
+                await loadDanhSachDaThuoc();
+            } else {
+                alert("Thao tác thất bại.");
+                btn.innerHTML = originalContent;
+                btn.disabled = false;
+            }
+        } catch (error) {
+            btn.innerHTML = originalContent;
+            btn.disabled = false;
+        }
+    }
+
+    function playAudio(audioPath, btn) {
+        if (!audioPath) return;
+        const audio = new Audio(audioPath);
+        const icon = btn.querySelector('i');
+        if (icon) icon.classList.add('fa-spin-pulse', 'text-warning');
+        audio.play().catch(() => {
+            if (icon) icon.classList.remove('fa-spin-pulse', 'text-warning');
+        });
+        audio.onended = () => {
+            if (icon) icon.classList.remove('fa-spin-pulse', 'text-warning');
+        };
+    }
+</script>

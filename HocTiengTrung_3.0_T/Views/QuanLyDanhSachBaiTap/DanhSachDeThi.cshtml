@@ -1,0 +1,247 @@
+﻿@using HocTiengTrung_3._0_T.Models12.BaiTap
+@using Newtonsoft.Json
+@model List<DeThiViewModel>
+
+@{
+    ViewData["Title"] = "Danh sách đề thi";
+    int idCapDo = ViewBag.IdCapDo ?? 0;
+    int idLoai = ViewBag.IdLoai ?? 0;
+    bool isShuffled = ViewBag.IsShuffled ?? false;
+
+    // Đọc trực tiếp tham số 'chuongTrinh' từ trên URL
+    int chuongTrinhFromQuery = 3;
+    if (int.TryParse(Context.Request.Query["chuongTrinh"], out int parsedCt))
+    {
+        chuongTrinhFromQuery = parsedCt;
+    }
+    else if (int.TryParse(Context.Request.Query["idChuongTrinh"], out int parsedCt2))
+    {
+        chuongTrinhFromQuery = parsedCt2;
+    }
+
+    int idChuongTrinh = ViewBag.IdChuongTrinh ?? ViewBag.ChuongTrinh ?? ViewBag.chuongTrinh ?? chuongTrinhFromQuery;
+}
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"]</title>
+
+    <!-- Google Fonts, FontAwesome & Animate.css -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
+    <link rel="stylesheet" href="~/css/dannhsachbaitap/lambaithucte.css" asp-append-version="true" />
+
+    <style>
+            :root {
+                --bg-main: #f8fafc;
+                --text-main: #0f172a;
+                --primary: #2563eb;
+                --primary-hover: #1d4ed8;
+                --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.04);
+                --shadow-card: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
+                --shadow-hover: 0 20px 25px -5px rgba(37, 99, 235, 0.12);
+                --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            }
+
+            body {
+                font-family: 'Plus Jakarta Sans', sans-serif;
+                background-color: var(--bg-main);
+                color: var(--text-main);
+                -webkit-font-smoothing: antialiased;
+            }
+
+            .btn-back-custom {
+                background-color: #ffffff;
+                color: #64748b;
+                border: 1px solid #e2e8f0;
+                font-weight: 600;
+                transition: var(--transition);
+                box-shadow: var(--shadow-sm);
+            }
+
+                .btn-back-custom:hover {
+                    background-color: #f1f5f9;
+                    color: var(--text-main);
+                    border-color: #cbd5e1;
+                    transform: none !important;
+                }
+
+            .card-de-thi {
+                background: #ffffff;
+                border-radius: 24px !important;
+                border: 1px solid #e2e8f0 !important;
+                box-shadow: var(--shadow-card) !important;
+                transition: var(--transition);
+                position: relative;
+                overflow: hidden;
+            }
+
+                .card-de-thi:hover {
+                    box-shadow: var(--shadow-hover) !important;
+                    border-color: #bfdbfe !important;
+                }
+
+            /* Nút Bắt đầu làm ngay cho CHƯƠNG TRÌNH 3 (Màu xanh lam) */
+            .btn-start {
+                background: linear-gradient(135deg, var(--primary), var(--primary-hover)) !important;
+                border: none !important;
+                color: white !important;
+                font-weight: 700 !important;
+                box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25) !important;
+                transition: background 0.25s ease, box-shadow 0.25s ease !important;
+            }
+
+                .btn-start:hover, .btn-start:active, .btn-start:focus {
+                    background: linear-gradient(135deg, var(--primary-hover), #1e40af) !important;
+                    color: white !important;
+                    transform: none !important;
+                    box-shadow: 0 6px 16px rgba(37, 99, 235, 0.35) !important;
+                }
+
+            /* Nút Bắt đầu làm ngay cho CHƯƠNG TRÌNH 2 (Màu cam) */
+            .btn-start-ct2 {
+                background-color: #e65c00 !important;
+                border-color: #e65c00 !important;
+                color: #ffffff !important;
+                font-weight: 700 !important;
+                box-shadow: 0 4px 12px rgba(230, 92, 0, 0.25) !important;
+                transition: background 0.25s ease, box-shadow 0.25s ease !important;
+            }
+
+                .btn-start-ct2:hover, .btn-start-ct2:active, .btn-start-ct2:focus {
+                    background: linear-gradient(135deg, #d35400, #b24700) !important;
+                    color: white !important;
+                    transform: none !important;
+                    box-shadow: 0 6px 16px rgba(230, 92, 0, 0.4) !important;
+                }
+
+            .badge-count {
+                background-color: #f1f5f9;
+                color: #334155;
+                font-weight: 700;
+                font-size: 0.8rem;
+                padding: 6px 14px;
+                border-radius: 100px;
+            }
+
+            .badge-free {
+                background-color: #dcfce7;
+                color: #15803d;
+                font-weight: 700;
+                font-size: 0.8rem;
+                padding: 6px 14px;
+                border-radius: 100px;
+                border: 1px solid #bbf7d0;
+            }
+
+            .text-gradient {
+                background: linear-gradient(135deg, #0f172a, #334155);
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+            }
+
+            @@keyframes fadeInUpCustom {
+                from {
+                    opacity: 0;
+                    transform: translateY(40px);
+                }
+
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+            }
+
+            .list-slide-up {
+                animation: fadeInUpCustom 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            }
+    </style>
+</head>
+<body>
+    <main class="py-5">
+        <div class="container" style="max-width: 1100px;">
+
+            <!-- Header & Action Controls -->
+            <div class="d-flex justify-content-between align-items-center mb-5 flex-wrap gap-3">
+                <a href="@Url.Action("DanhSachLoaiBaiTap", new { capdo = idCapDo, chuongTrinh = idChuongTrinh })" class="btn btn-back-custom rounded-pill px-4 py-2">
+                    <i class="fa-solid fa-arrow-left me-2"></i> Quay lại danh sách loại bài
+                </a>
+            </div>
+
+            <!-- Tiêu đề trang -->
+            <div class="text-center mb-5 animate__animated animate__fadeInDown">
+                <h1 class="fw-extrabold text-gradient mb-3" style="font-size: 2.5rem; letter-spacing: -1px;">Chọn Đề Thi Để Bắt Đầu</h1>
+                <p class="text-muted fs-5">Hệ thống đã chuẩn bị sẵn sàng các bộ đề luyện tập dành riêng cho bạn.</p>
+            </div>
+
+            <!-- Lưới danh sách đề thi -->
+            <div class="row g-4">
+                @if (Model != null && Model.Any())
+                {
+                    int delay = 0;
+                    for (int i = 0; i < Model.Count; i++)
+                    {
+                        var de = Model[i];
+
+                        <div class="col-md-6 col-lg-4 list-slide-up" style="animation-delay: @(delay)ms;">
+                            <div class="card card-de-thi h-100 p-2">
+                                <div class="card-body p-4 d-flex flex-column">
+                                    <div class="d-flex justify-content-between align-items-center mb-4">
+                                        <div class="badge-count">
+                                            <i class="fa-solid fa-list-check me-2 text-primary"></i> @de.SoLuongCauHoi Câu
+                                        </div>
+
+                                        <span class="badge-free"><i class="fa-solid fa-gift me-1"></i> Miễn phí</span>
+                                    </div>
+
+                                    <h4 class="card-title fw-bold mb-3 text-dark">
+                                        @de.TenDe
+                                    </h4>
+
+                                    <p class="text-muted small mb-4 flex-grow-1 lh-base">
+                                        Bài tập tổng hợp rèn luyện kỹ năng toàn diện. Hoàn thành xuất sắc để nâng cao trình độ.
+                                    </p>
+
+                                    <div class="mt-auto">
+                                        <form asp-action="BatDauLamBaiHienThi" method="post">
+                                            <input type="hidden" name="jsonCauHoi" value='@JsonConvert.SerializeObject(de.CauHois)' />
+
+                                            @if (idChuongTrinh == 2)
+                                            {
+                                                <button type="submit" class="btn btn-start-ct2 w-100 rounded-pill py-3 fs-6">
+                                                    Bắt đầu làm ngay <i class="fa-solid fa-arrow-right ms-2"></i>
+                                                </button>
+                                            }
+                                            else
+                                            {
+                                                <button type="submit" class="btn btn-start w-100 rounded-pill py-3 fs-6">
+                                                    Bắt đầu làm ngay <i class="fa-solid fa-arrow-right ms-2"></i>
+                                                </button>
+                                            }
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        delay += 80;
+                    }
+                }
+                else
+                {
+                    <div class="col-12 text-center py-5 animate__animated animate__fadeIn">
+                        <div class="bg-white rounded-4 shadow-sm p-5 border d-inline-block">
+                            <img src="https://cdn-icons-png.flaticon.com/512/7486/7486831.png" alt="Empty" width="120" class="mb-4 opacity-75">
+                            <h4 class="fw-bold text-dark mb-2">Chưa có dữ liệu</h4>
+                            <p class="text-muted mb-0">Hiện chưa có câu hỏi nào cho loại bài tập này.<br>Vui lòng quay lại sau nhé!</p>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </main>
+</body>
+</html>

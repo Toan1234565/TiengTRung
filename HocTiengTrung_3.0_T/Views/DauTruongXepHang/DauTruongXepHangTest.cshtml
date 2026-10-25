@@ -1,0 +1,771 @@
+﻿@{
+    ViewData["Title"] = "Đấu Trường Xếp Hạng HSK 3.0";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+
+    var currentUserName = User.Identity?.IsAuthenticated == true
+        ? (User.FindFirst("FullName")?.Value ?? User.Identity.Name)
+        : "Thí sinh " + new Random().Next(100, 999);
+}
+<!-- Google Fonts & FontAwesome -->
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link href="~/css/demo.css" rel="stylesheet" />
+
+<div class="arena-container">
+    <input type="hidden" id="currentMaPhong" value="" />
+
+    <!-- MÀN HÌNH 0: TRANG CHỦ -->
+    <div id="home-screen" class="screen-section screen-active text-center pt-4">
+        <div class="mb-5">
+            <h2 class="fw-extrabold" style="font-weight: 900; font-size: 2.8rem; background: linear-gradient(to right, var(--primary), var(--secondary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                <i class="fas fa-fire me-2" style="-webkit-text-fill-color: initial; color: var(--warning);"></i>ĐẤU TRƯỜNG HSK 3.0
+            </h2>
+            <p class="text-muted fs-5">Xin chào <strong>@currentUserName</strong>! Sẵn sàng thử thách chưa?</p>
+        </div>
+
+        <div class="smart-card mx-auto" style="max-width: 560px;">
+            <h6 class="fw-bold text-uppercase text-muted mb-4"><i class="fas fa-sign-in-alt me-2"></i>Tham gia bằng mã phòng</h6>
+            <div class="join-room-box mb-4">
+                <input type="text" id="txtMaPhongInput" class="form-control" placeholder="MÃ PHÒNG" maxlength="6">
+                <button class="btn btn-smart-primary px-4" onclick="vaoPhong()">
+                    <i class="fas fa-arrow-right fs-4"></i>
+                </button>
+            </div>
+
+            <div class="position-relative my-5">
+                <hr style="border-color: #cbd5e1; border-width: 2px;">
+                <span class="position-absolute top-50 start-50 translate-middle px-4 text-muted fw-bold" style="background: var(--card-bg); font-size: 0.85rem;">HOẶC TẠO PHÒNG MỚI</span>
+            </div>
+
+            <div class="text-start mb-4">
+                <div class="row g-4">
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold small text-secondary">CẤP ĐỘ HSK</label>
+                        <select id="selectCapDo" class="form-select form-select-lg border-2 shadow-sm rounded-3">
+                            <option value="1">HSK 1</option>
+                            <option value="2">HSK 2</option>
+                            <option value="3" selected>HSK 3 (Tiêu chuẩn)</option>
+                            <option value="4">HSK 4</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold small text-secondary">SỐ CÂU HỎI</label>
+                        <select id="selectSoCau" class="form-select form-select-lg border-2 shadow-sm rounded-3">
+                            <option value="5">5 Câu</option>
+                            <option value="10" selected>10 Câu</option>
+                            <option value="15">15 Câu</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold small text-secondary">THỜI GIAN / CÂU</label>
+                        <select id="selectThoiGian" class="form-select form-select-lg border-2 shadow-sm rounded-3">
+                            <option value="10">10 Giây</option>
+                            <option value="15" selected>15 Giây</option>
+                            <option value="20">20 Giây</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold small text-secondary">LOẠI BÀI</label>
+                        <select id="selectLoai" class="form-select form-select-lg border-2 shadow-sm rounded-3">
+                            <option value="">Trộn ngẫu nhiên</option>
+                            <option value="1005">Từ vựng</option>
+                            <option value="1008">Dịch thuật</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <button class="btn btn-smart-success w-100 py-3 fs-5 mt-2" onclick="taoPhong()">
+                <i class="fas fa-magic me-2"></i>TẠO PHÒNG NGAY
+            </button>
+        </div>
+    </div>
+
+    <!-- MÀN HÌNH 1: SẢNH CHỜ (LOBBY) -->
+    <div id="lobby-screen" class="screen-section">
+        <div class="room-header d-flex justify-content-between align-items-center mb-4">
+            <div class="d-flex align-items-center gap-3">
+                <span class="text-muted fw-bold">MÃ PHÒNG:</span>
+                <div class="room-badge fs-3">
+                    <span id="lblMaPhong">------</span>
+                    <button class="btn-copy" onclick="copyMaPhong()" title="Sao chép mã"><i class="far fa-copy"></i></button>
+                </div>
+            </div>
+            <button class="btn btn-outline-danger fw-bold rounded-pill px-4 py-2 shadow-sm" onclick="roiPhong()">
+                <i class="fas fa-sign-out-alt me-2"></i> Thoát
+            </button>
+        </div>
+
+        <div class="smart-card">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h5 class="fw-extrabold text-dark mb-0">
+                    <i class="fas fa-users text-primary me-2"></i>CHIẾN BINH (<span id="lblPlayerCount">0/15</span>)
+                </h5>
+                <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 fs-6 px-3 py-2 rounded-pill shadow-sm" id="lblRoomInfo">HSK 3 - 10 Câu - 15s</span>
+            </div>
+
+            <div class="row g-4" id="player-list">
+                <!-- Dynamic Player Slots -->
+            </div>
+        </div>
+
+        <div class="text-center mt-5">
+            <button id="btnSanSang" class="btn btn-lg btn-smart-success px-5 py-3 fs-4 w-50" onclick="toggleSanSang()">
+                <i class="fas fa-check-circle me-2"></i>SẴN SÀNG
+            </button>
+            <button id="btnBatDau" class="btn btn-lg btn-smart-primary px-5 py-3 fs-4 w-50 d-none" onclick="batDauTranDau()">
+                <i class="fas fa-play me-2"></i>BẮT ĐẦU CHIẾN THẦN
+            </button>
+        </div>
+    </div>
+
+    <!-- MÀN HÌNH 2: GIAO DIỆN THI ĐẤU -->
+    <div id="game-screen" class="screen-section">
+        <div class="row g-4">
+            <div class="col-lg-8">
+                <div class="question-card text-center">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <span class="badge bg-secondary fs-5 px-4 py-2 rounded-pill shadow-sm" id="lblCauHieuHienTai">Câu 1 / 10</span>
+                        <div class="timer-badge">
+                            <i class="fas fa-stopwatch me-2"></i><span id="lblTimer">15</span>s
+                        </div>
+                    </div>
+
+                    <div class="mb-5 py-4 bg-light rounded-4 border">
+                        <h2 class="fw-extrabold text-dark mb-3" style="font-size: 2.2rem;" id="lblNoiDungCauHoi">Đang tải câu hỏi...</h2>
+                        <p class="text-primary fs-4 mb-0 fw-bold" id="lblPinyinOrMeaning"></p>
+                    </div>
+
+                    <div class="row g-3 text-start" id="options-container">
+                        <div class="col-md-6"><button class="option-btn" data-key="0" onclick="chonDapAn(0, this)"><span class="badge bg-white text-dark border fs-5 shadow-sm">A</span><span class="option-text fs-5">...</span></button></div>
+                        <div class="col-md-6"><button class="option-btn" data-key="1" onclick="chonDapAn(1, this)"><span class="badge bg-white text-dark border fs-5 shadow-sm">B</span><span class="option-text fs-5">...</span></button></div>
+                        <div class="col-md-6"><button class="option-btn" data-key="2" onclick="chonDapAn(2, this)"><span class="badge bg-white text-dark border fs-5 shadow-sm">C</span><span class="option-text fs-5">...</span></button></div>
+                        <div class="col-md-6"><button class="option-btn" data-key="3" onclick="chonDapAn(3, this)"><span class="badge bg-white text-dark border fs-5 shadow-sm">D</span><span class="option-text fs-5">...</span></button></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-4">
+                <div class="smart-card p-4">
+                    <h5 class="fw-extrabold text-primary mb-4 border-bottom pb-3">
+                        <i class="fas fa-trophy text-warning me-2"></i>BẢNG XẾP HẠNG
+                    </h5>
+                    <div id="live-scoreboard" class="d-flex flex-column gap-3">
+                        <!-- Scoreboard Items -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MÀN HÌNH 3: KẾT QUẢ CHUNG CUỘC -->
+    <div id="result-screen" class="screen-section text-center pt-4">
+        <h1 class="fw-extrabold text-warning mb-2" style="font-size: 3.5rem;">
+            <i class="fas fa-crown"></i> VINH DANH
+        </h1>
+        <p class="text-muted fs-4 mb-5">Thử thách HSK 3.0 đã khép lại. Chúc mừng các cao thủ!</p>
+
+        <div class="smart-card mx-auto" style="max-width: 700px;">
+            <div id="final-podium" class="podium-container mb-5">
+                <!-- Render Podium JS -->
+            </div>
+
+            <div id="final-leaderboard" class="text-start mb-5 bg-light rounded-4 p-4 border">
+                <!-- List Leaderboard -->
+            </div>
+
+            <button class="btn btn-smart-primary px-5 py-3 w-100 fs-5" onclick="quayLaiPhong()">
+                <i class="fas fa-redo me-2"></i>QUAY LẠI PHÒNG CHỜ
+            </button>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
+
+<script>
+    const MAX_SLOTS = 15;
+    const realUserName = "@currentUserName";
+
+    const currentUser = {
+        idNguoiChoi: "USER_" + Math.floor(Math.random() * 10000),
+        tenNguoiChoi: realUserName,
+        avatar: "https://api.dicebear.com/7.x/bottts/svg?seed=" + encodeURIComponent(realUserName),
+        isHost: false,
+        trangThai: 0,
+        score: 0
+    };
+
+    let currentRoomId = "";
+    let timerInterval = null;
+    let timeRemaining = 15;
+    let timePerQuestion = 15;
+    let hasAnsweredCurrentQuestion = false;
+
+    window.gameQuestions = [];
+    window.currentQuestionIndex = 0;
+    window.roomPlayers = [];
+
+    // ==========================================
+    // UTILITIES & HELPER FUNCTIONS
+    // ==========================================
+
+    function getProp(obj, prop) {
+        if (!obj) return null;
+        if (obj[prop] !== undefined) return obj[prop];
+        const pascalProp = prop.charAt(0).toUpperCase() + prop.slice(1);
+        return obj[pascalProp] !== undefined ? obj[pascalProp] : null;
+    }
+
+    function setProp(obj, prop, val) {
+        if (!obj) return;
+        if (obj[prop] !== undefined) obj[prop] = val;
+        else obj[prop.charAt(0).toUpperCase() + prop.slice(1)] = val;
+    }
+
+    function chuyenManHinh(screenId) {
+        document.querySelectorAll(".screen-section").forEach(s => s.classList.remove("screen-active"));
+        document.getElementById(screenId).classList.add("screen-active");
+    }
+
+    function veTrangChu() {
+        if (currentRoomId && connection.state === signalR.HubConnectionState.Connected) {
+            connection.invoke("LeaveRoomGroup", currentRoomId).catch(console.error);
+        }
+        currentRoomId = "";
+        chuyenManHinh("home-screen");
+    }
+
+    function copyMaPhong() {
+        if (!currentRoomId) {
+            alert("Chưa có mã phòng!");
+            return;
+        }
+        navigator.clipboard.writeText(currentRoomId).then(() => {
+            alert("Đã sao chép mã phòng: " + currentRoomId);
+        });
+    }
+
+    // ==========================================
+    // 1. KẾT NỐI SIGNALR HUB
+    // ==========================================
+    const connection = new signalR.HubConnectionBuilder()
+        .withUrl("/dautruongTH2Hub")
+        .withAutomaticReconnect()
+        .build();
+
+    async function startSignalR() {
+        try {
+            await connection.start();
+            console.log("%c[SignalR] Kết nối Hub thành công!", "color: green; font-weight: bold;");
+        } catch (err) {
+            console.error("[SignalR] Lỗi kết nối Hub:", err);
+            setTimeout(startSignalR, 5000);
+        }
+    }
+    startSignalR();
+
+    connection.on("RoomUpdated", (roomData) => {
+        const list = roomData?.danhSachNguoiChoi || roomData?.DanhSachNguoiChoi;
+        if (list) {
+            window.roomPlayers = list;
+            const me = window.roomPlayers.find(p => getProp(p, "idNguoiChoi") === currentUser.idNguoiChoi);
+            if (me) {
+                currentUser.isHost = getProp(me, "isHost");
+                currentUser.trangThai = getProp(me, "trangThai");
+            }
+            renderLobby(roomData);
+        }
+    });
+
+    connection.on("PlayerKicked", (kickedId) => {
+        if (currentUser.idNguoiChoi === kickedId) {
+            alert("Bạn đã bị chủ phòng mời ra khỏi phòng!");
+            veTrangChu();
+        }
+    });
+
+    connection.on("GameStarted", (questions) => {
+        if (questions && questions.length > 0) {
+            window.gameQuestions = questions;
+            window.currentQuestionIndex = 0;
+            window.roomPlayers.forEach(p => setProp(p, "score", 0));
+            currentUser.score = 0;
+            chuyenManHinh("game-screen");
+            renderScoreboard();
+            loadCurrentQuestion();
+        }
+    });
+
+    connection.on("LeaderboardUpdated", (leaderboard) => {
+        if (Array.isArray(leaderboard)) {
+            leaderboard.forEach(s => {
+                const sId = getProp(s, "idNguoiChoi");
+                const sScore = getProp(s, "tongDiem") || getProp(s, "score") || 0;
+                const p = window.roomPlayers.find(x => getProp(x, "idNguoiChoi") === sId);
+                if (p) setProp(p, "score", sScore);
+            });
+        }
+        renderScoreboard();
+    });
+
+    connection.on("PlayerSubmitted", (data) => {
+        console.log("Người chơi đã hoàn thành bài thi:", data);
+    });
+
+    connection.on("AllPlayersFinished", async () => {
+        clearInterval(timerInterval);
+        await getBangXepHang();
+    });
+
+    // ==========================================
+    // 2. GỌI API BACKEND
+    // ==========================================
+    async function apiCall(endpoint, method = "POST", data = null) {
+        try {
+            const options = { method, headers: { 'Content-Type': 'application/json' } };
+            if (data) options.body = JSON.stringify(data);
+            const res = await fetch(`/api/DauTruongTH2/${endpoint}`, options);
+
+            const textResult = await res.text();
+            let jsonResult = null;
+
+            try {
+                if (textResult) {
+                    jsonResult = JSON.parse(textResult);
+                }
+            } catch (e) {
+                // Ignore parse error
+            }
+
+            if (!res.ok) {
+                if (jsonResult && jsonResult.message) {
+                    throw new Error(jsonResult.message);
+                }
+                throw new Error(textResult || "Lỗi yêu cầu HTTP");
+            }
+
+            if (jsonResult && jsonResult.success === false) {
+                throw new Error(jsonResult.message || "Thao tác không thành công");
+            }
+
+            return jsonResult !== null ? jsonResult : textResult;
+        } catch (e) {
+            console.error(`API ${endpoint} Error:`, e);
+            alert(e.message || "Đã xảy ra lỗi kết nối API");
+            return null;
+        }
+    }
+
+    async function taoPhong() {
+        try {
+            const capDo = parseInt(document.getElementById("selectCapDo").value);
+            const soCau = parseInt(document.getElementById("selectSoCau").value);
+            const thoiGian = parseInt(document.getElementById("selectThoiGian").value);
+            const loai = document.getElementById("selectLoai").value;
+            timePerQuestion = thoiGian;
+
+            const req = {
+                idChuPhong: currentUser.idNguoiChoi,
+                tenChuPhong: currentUser.tenNguoiChoi,
+                avatar: currentUser.avatar,
+                capDo: capDo,
+                soCauHoi: soCau,
+                thoiGianCau: thoiGian,
+                idLoaiBai: loai ? parseInt(loai) : null
+            };
+
+            const res = await apiCall("tao-phong", "POST", req);
+            if (!res) return;
+
+            currentRoomId = getProp(res, "maPhong") || getProp(res, "maPhongId") || getProp(res, "MaPhong");
+
+            if (!currentRoomId) {
+                currentRoomId = Math.random().toString(36).substring(2, 8).toUpperCase();
+            }
+
+            currentUser.isHost = true;
+            currentUser.trangThai = 1;
+
+            if (connection.state !== signalR.HubConnectionState.Connected) {
+                await connection.start();
+            }
+            await connection.invoke("JoinRoomGroup", currentRoomId);
+
+            const elMaPhong = document.getElementById("currentMaPhong");
+            if (elMaPhong) elMaPhong.value = currentRoomId;
+
+            const elRoomInfo = document.getElementById("lblRoomInfo");
+            if (elRoomInfo) elRoomInfo.innerText = `HSK ${capDo} - ${soCau} Câu - ${thoiGian}s`;
+
+            window.roomPlayers = res.danhSachNguoiChoi || res.DanhSachNguoiChoi || [currentUser];
+            renderLobby(res);
+            chuyenManHinh("lobby-screen");
+
+        } catch (error) {
+            console.error("Lỗi tạo phòng:", error);
+            alert("Có lỗi xảy ra khi tạo phòng: " + error.message);
+        }
+    }
+
+    async function vaoPhong() {
+        const maInput = document.getElementById("txtMaPhongInput").value.trim().toUpperCase();
+        if (!maInput) {
+            alert("Vui lòng nhập mã phòng!");
+            return;
+        }
+
+        const req = {
+            maPhong: maInput,
+            idNguoiChoi: currentUser.idNguoiChoi,
+            tenNguoiChoi: currentUser.tenNguoiChoi,
+            avatar: currentUser.avatar
+        };
+
+        const res = await apiCall("vao-phong", "POST", req);
+
+        if (res && res.success) {
+            currentRoomId = maInput;
+            currentUser.isHost = false;
+            currentUser.trangThai = 0;
+
+            if (connection.state !== signalR.HubConnectionState.Connected) {
+                await connection.start();
+            }
+            await connection.invoke("JoinRoomGroup", currentRoomId);
+
+            const elMaPhong = document.getElementById("currentMaPhong");
+            if (elMaPhong) elMaPhong.value = currentRoomId;
+
+            const roomData = res.data || res; // Dự phòng trường hợp res không bọc trong data
+            window.roomPlayers = roomData.danhSachNguoiChoi || roomData.DanhSachNguoiChoi || [];
+
+            renderLobby(roomData);
+            chuyenManHinh("lobby-screen");
+        } else if (res && !res.success) {
+            alert("Lỗi vào phòng: " + res.message);
+        }
+    }
+
+    async function toggleSanSang() {
+        const req = { maPhong: currentRoomId, idNguoiChoi: currentUser.idNguoiChoi };
+        await apiCall("san-sang", "POST", req);
+    }
+
+    async function kickNguoiChoi(idPlayer) {
+        if (!confirm("Bạn có chắc chắn muốn mời người chơi này ra khỏi phòng?")) return;
+        const req = { maPhong: currentRoomId, idChuPhong: currentUser.idNguoiChoi, idNguoiBiKick: idPlayer };
+        await apiCall("kick", "POST", req);
+    }
+
+    async function roiPhong() {
+        if (confirm("Bạn có chắc chắn muốn thoát phòng?")) {
+            const req = { maPhong: currentRoomId, idNguoiChoi: currentUser.idNguoiChoi };
+            await apiCall("roi-phong", "POST", req);
+            veTrangChu();
+        }
+    }
+
+    async function batDauTranDau() {
+        if (!currentRoomId) {
+            alert("Lỗi: Không tìm thấy mã phòng để bắt đầu!");
+            return;
+        }
+        const req = { maPhong: currentRoomId, idChuPhong: currentUser.idNguoiChoi };
+        await apiCall("bat-dau", "POST", req);
+    }
+
+    async function chonDapAn(index, btnElem) {
+        if (hasAnsweredCurrentQuestion) return;
+        hasAnsweredCurrentQuestion = true;
+
+        document.querySelectorAll(".option-btn").forEach(b => b.disabled = true);
+
+        const currentQ = window.gameQuestions[window.currentQuestionIndex];
+        const dapAnDungIdx = getProp(currentQ, "dapAnDungIndex");
+
+        if (index === dapAnDungIdx) {
+            btnElem.classList.add("correct");
+        } else {
+            btnElem.classList.add("wrong");
+            const btnCorrect = document.querySelector(`.option-btn[data-key="${dapAnDungIdx}"]`);
+            if (btnCorrect) btnCorrect.classList.add("correct");
+        }
+
+        const req = {
+            maPhong: currentRoomId,
+            idNguoiChoi: currentUser.idNguoiChoi,
+            idCauHoi: getProp(currentQ, "idCauHoi") || getProp(currentQ, "id"),
+            dapAnChon: index,
+            thoiGianConLai: timeRemaining
+        };
+
+        await apiCall("tra-loi", "POST", req);
+        setTimeout(chuyenCauTiepTheo, 1500);
+    }
+
+    async function nopBaiToanBo() {
+        const req = { maPhong: currentRoomId, idNguoiChoi: currentUser.idNguoiChoi };
+        await apiCall("nop-bai", "POST", req);
+        await getBangXepHang();
+    }
+
+    async function getBangXepHang() {
+        const res = await apiCall(`bang-xep-hang/${currentRoomId}`, "GET");
+        if (res) {
+            renderFinalResult(res.data || res);
+            chuyenManHinh("result-screen");
+        }
+    }
+
+    async function quayLaiPhong() {
+        const req = { maPhong: currentRoomId, idNguoiChoi: currentUser.idNguoiChoi };
+        const res = await apiCall("quay-lai-phong", "POST", req);
+        if (res) chuyenManHinh("lobby-screen");
+    }
+
+    // ==========================================
+    // 3. LOGIC GAMEPLAY & RENDER UI
+    // ==========================================
+
+    function renderLobby(roomData) {
+        const roomId = currentRoomId || getProp(roomData, "maPhong") || getProp(roomData, "MaPhong") || "------";
+        const lblMaPhong = document.getElementById("lblMaPhong");
+        if (lblMaPhong) {
+            lblMaPhong.innerText = roomId;
+        }
+
+        const players = window.roomPlayers || [];
+        const lblPlayerCount = document.getElementById("lblPlayerCount");
+        if (lblPlayerCount) {
+            lblPlayerCount.innerText = `${players.length}/${MAX_SLOTS}`;
+        }
+
+        const container = document.getElementById("player-list");
+        if (!container) return;
+        container.innerHTML = "";
+
+        for (let i = 0; i < MAX_SLOTS; i++) {
+            const p = players[i];
+            const col = document.createElement("div");
+            col.className = "col-6 col-md-4 col-lg-2-4";
+
+            if (p) {
+                const isHost = getProp(p, "isHost");
+                const isReady = getProp(p, "trangThai") === 1;
+                const pId = getProp(p, "idNguoiChoi");
+                const pName = getProp(p, "tenNguoiChoi");
+                const pAvatar = getProp(p, "avatar");
+
+                col.innerHTML = `
+                            <div class="player-card occupied ${isReady ? 'is-ready' : ''}">
+                                ${isHost ? '<div class="host-crown"><i class="fas fa-crown"></i></div>' : ''}
+                                ${currentUser.isHost && pId !== currentUser.idNguoiChoi ? `<button class="btn-kick" onclick="kickNguoiChoi('${pId}')" title="Kick"><i class="fas fa-times"></i></button>` : ''}
+                                <img src="${pAvatar}" class="avatar" alt="avatar"/>
+                                <span class="fw-bold text-truncate w-100">${pName}</span>
+                                <span class="badge ${isReady ? 'bg-success' : 'bg-secondary'} mt-2">${isReady ? 'SẴN SÀNG' : 'CHỜ...'}</span>
+                            </div>
+                        `;
+            } else {
+                col.innerHTML = `
+                            <div class="player-card">
+                                <i class="fas fa-user-plus fs-2 text-muted mb-2"></i>
+                                <span class="text-muted fw-bold small">ĐANG CHỜ...</span>
+                            </div>
+                        `;
+            }
+            container.appendChild(col);
+        }
+
+        const btnSanSang = document.getElementById("btnSanSang");
+        const btnBatDau = document.getElementById("btnBatDau");
+
+        if (btnSanSang && btnBatDau) {
+            if (currentUser.isHost) {
+                btnSanSang.classList.add("d-none");
+                btnBatDau.classList.remove("d-none");
+            } else {
+                btnSanSang.classList.remove("d-none");
+                btnBatDau.classList.add("d-none");
+
+                if (currentUser.trangThai === 1) {
+                    btnSanSang.className = "btn btn-lg btn-smart-warning px-5 py-3 fs-4 w-50";
+                    btnSanSang.innerHTML = '<i class="fas fa-times-circle me-2"></i>HỦY SẴN SÀNG';
+                } else {
+                    btnSanSang.className = "btn btn-lg btn-smart-success px-5 py-3 fs-4 w-50";
+                    btnSanSang.innerHTML = '<i class="fas fa-check-circle me-2"></i>SẴN SÀNG';
+                }
+            }
+        }
+    }
+
+    function loadCurrentQuestion() {
+        hasAnsweredCurrentQuestion = false;
+
+        const q = window.gameQuestions[window.currentQuestionIndex];
+        if (!q) {
+            nopBaiToanBo();
+            return;
+        }
+
+        document.getElementById("lblCauHieuHienTai").innerText = `Câu ${window.currentQuestionIndex + 1} / ${window.gameQuestions.length}`;
+        document.getElementById("lblNoiDungCauHoi").innerText = getProp(q, "noiDung") || getProp(q, "noiDungCauHoi") || "Nội dung câu hỏi";
+        document.getElementById("lblPinyinOrMeaning").innerText = getProp(q, "phienAm") || getProp(q, "pinyin") || "";
+
+        const optionsArr = getProp(q, "danhSachDapAn") || getProp(q, "dapAn") || [];
+        const btns = document.querySelectorAll(".option-btn");
+
+        btns.forEach((btn, idx) => {
+            btn.disabled = false;
+            btn.classList.remove("correct", "wrong");
+            const txt = btn.querySelector(".option-text");
+            if (optionsArr[idx] !== undefined) {
+                txt.innerText = optionsArr[idx];
+                btn.parentElement.style.display = "block";
+            } else {
+                btn.parentElement.style.display = "none";
+            }
+        });
+
+        startTimer();
+    }
+
+    function startTimer() {
+        clearInterval(timerInterval);
+        timeRemaining = timePerQuestion;
+
+        const elTimer = document.getElementById("lblTimer");
+        if (elTimer) elTimer.innerText = timeRemaining;
+
+        timerInterval = setInterval(() => {
+            timeRemaining--;
+            if (elTimer) elTimer.innerText = timeRemaining;
+
+            if (timeRemaining <= 0) {
+                clearInterval(timerInterval);
+                if (!hasAnsweredCurrentQuestion) {
+                    hasAnsweredCurrentQuestion = true;
+                    document.querySelectorAll(".option-btn").forEach(b => b.disabled = true);
+                    const currentQ = window.gameQuestions[window.currentQuestionIndex];
+                    const dapAnDungIdx = getProp(currentQ, "dapAnDungIndex");
+                    const btnCorrect = document.querySelector(`.option-btn[data-key="${dapAnDungIdx}"]`);
+                    if (btnCorrect) btnCorrect.classList.add("correct");
+
+                    setTimeout(chuyenCauTiepTheo, 1500);
+                }
+            }
+        }, 1000);
+    }
+
+    function chuyenCauTiepTheo() {
+        window.currentQuestionIndex++;
+        if (window.currentQuestionIndex < window.gameQuestions.length) {
+            loadCurrentQuestion();
+        } else {
+            nopBaiToanBo();
+        }
+    }
+
+    function renderScoreboard() {
+        const board = document.getElementById("live-scoreboard");
+        if (!board) return;
+        board.innerHTML = "";
+
+        const sorted = [...window.roomPlayers].sort((a, b) => (getProp(b, "score") || 0) - (getProp(a, "score") || 0));
+
+        sorted.forEach((p, idx) => {
+            const pName = getProp(p, "tenNguoiChoi");
+            const pAvatar = getProp(p, "avatar");
+            const pScore = getProp(p, "score") || 0;
+
+            const item = document.createElement("div");
+            item.className = "d-flex align-items-center justify-content-between p-2 rounded-3 bg-light border";
+            item.innerHTML = `
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="fw-bold text-muted" style="width: 20px;">#${idx + 1}</span>
+                            <img src="${pAvatar}" style="width: 35px; height: 35px; border-radius: 50%; object-fit: cover;" alt="avatar" />
+                            <span class="fw-bold text-dark text-truncate" style="max-width: 110px;">${pName}</span>
+                        </div>
+                        <span class="badge bg-primary fs-6 px-3 py-2 rounded-pill">${pScore} đ</span>
+                    `;
+            board.appendChild(item);
+        });
+    }
+
+    function renderFinalResult(listData) {
+        const podiumContainer = document.getElementById("final-podium");
+        const leaderboardContainer = document.getElementById("final-leaderboard");
+        if (!podiumContainer || !leaderboardContainer) return;
+
+        podiumContainer.innerHTML = "";
+        leaderboardContainer.innerHTML = "";
+
+        const sorted = [...listData].sort((a, b) => (getProp(b, "tongDiem") || getProp(b, "score") || 0) - (getProp(a, "tongDiem") || getProp(a, "score") || 0));
+
+        const p1 = sorted[0];
+        const p2 = sorted[1];
+        const p3 = sorted[2];
+
+        let podiumHtml = "";
+
+        if (p2) {
+            podiumHtml += `
+                        <div class="podium-place place-2">
+                            <img src="${getProp(p2, 'avatar')}" class="avatar" />
+                            <div class="podium-block">
+                                <span>2</span>
+                                <small class="fs-6 fw-normal text-truncate px-1">${getProp(p2, 'tenNguoiChoi')}</small>
+                                <small class="fs-6">${getProp(p2, 'tongDiem') || getProp(p2, 'score') || 0}đ</small>
+                            </div>
+                        </div>
+                    `;
+        }
+
+        if (p1) {
+            podiumHtml += `
+                        <div class="podium-place place-1">
+                            <img src="${getProp(p1, 'avatar')}" class="avatar" />
+                            <div class="podium-block">
+                                <span>1</span>
+                                <small class="fs-6 fw-normal text-truncate px-1">${getProp(p1, 'tenNguoiChoi')}</small>
+                                <small class="fs-6">${getProp(p1, 'tongDiem') || getProp(p1, 'score') || 0}đ</small>
+                            </div>
+                        </div>
+                    `;
+        }
+
+        if (p3) {
+            podiumHtml += `
+                        <div class="podium-place place-3">
+                            <img src="${getProp(p3, 'avatar')}" class="avatar" />
+                            <div class="podium-block">
+                                <span>3</span>
+                                <small class="fs-6 fw-normal text-truncate px-1">${getProp(p3, 'tenNguoiChoi')}</small>
+                                <small class="fs-6">${getProp(p3, 'tongDiem') || getProp(p3, 'score') || 0}đ</small>
+                            </div>
+                        </div>
+                    `;
+        }
+
+        podiumContainer.innerHTML = podiumHtml;
+
+        // Render các người chơi còn lại (Từ hạng 4 trở đi)
+        if (sorted.length > 3) {
+            let listHtml = '<h5 class="fw-bold mb-3 text-secondary border-bottom pb-2">CÁC CHIẾN BINH KHÁC</h5>';
+            for (let i = 3; i < sorted.length; i++) {
+                const p = sorted[i];
+                listHtml += `
+                        <div class="d-flex align-items-center justify-content-between p-3 mb-2 bg-white rounded-3 shadow-sm border-start border-4 border-secondary">
+                            <div class="d-flex align-items-center gap-3">
+                                <span class="fw-bold text-muted fs-5" style="width: 30px;">#${i + 1}</span>
+                                <img src="${getProp(p, 'avatar')}" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover;" alt="avatar" />
+                                <span class="fw-bold fs-5">${getProp(p, 'tenNguoiChoi')}</span>
+                            </div>
+                            <span class="badge bg-secondary fs-5 px-3 py-2 rounded-pill">${getProp(p, 'tongDiem') || getProp(p, 'score') || 0} đ</span>
+                        </div>
+                    `;
+            }
+            leaderboardContainer.innerHTML = listHtml;
+        }
+    }
+</script>

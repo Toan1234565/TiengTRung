@@ -1,0 +1,519 @@
+﻿@model dynamic
+@{
+    ViewData["Title"] = "Quản Lý Bộ Thủ";
+    Layout = "~/Views/Shared/_Layout.cshtml"; // Thay đổi nếu bạn dùng Layout khác
+
+    // Lấy trạng thái phân trang và tìm kiếm từ ViewBag & Model
+    int currentPage = ViewBag.CurrentPage ?? 1;
+    int pageSize = ViewBag.PageSize ?? 30;
+    string search = ViewBag.Search as string;
+    bool? trangThai = ViewBag.TrangThai as bool?;
+
+    int totalItems = 0;
+    if (Model != null && Model.success == true && Model.totalItems != null)
+    {
+        totalItems = (int)Model.totalItems;
+    }
+    int totalPages = (int)Math.Ceiling((double)totalItems / pageSize);
+
+    var session = Context.Session;
+    string maNguoiDung = session?.GetString("MaNguoiDung");
+    bool hasPermission = maNguoiDung == "3" || maNguoiDung == "5470";
+}
+
+<style>
+    .admin-card {
+        border: none;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    }
+
+    .table th {
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 0.85rem;
+        letter-spacing: 0.5px;
+        color: #495057;
+    }
+
+    .char-main {
+        font-family: 'KaiTi', 'Kaiti SC', 'STKaiti', serif;
+        font-size: 1.8rem;
+    }
+
+    .btn-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+        border-radius: 8px;
+        transition: all 0.2s;
+    }
+
+        .btn-icon:hover {
+            transform: translateY(-2px);
+        }
+
+    .badge-soft-success {
+        background-color: #d1e7dd;
+        color: #0f5132;
+        padding: 0.4em 0.8em;
+    }
+
+    .badge-soft-secondary {
+        background-color: #e2e3e5;
+        color: #41464a;
+        padding: 0.4em 0.8em;
+    }
+
+    /* Loading overlay */
+    #loadingOverlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(255, 255, 255, 0.7);
+        z-index: 9999;
+        display: none;
+        align-items: center;
+        justify-content: center;
+    }
+</style>
+
+<!-- Loading Spinner -->
+<div id="loadingOverlay">
+    <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+        <span class="visually-hidden">Loading...</span>
+    </div>
+</div>
+
+<div class="container-fluid px-4 mt-4 mb-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="h3 mb-0 text-gray-800 fw-bold">
+            <i class="bi bi-journals text-primary me-2"></i>Danh Sách Bộ Thủ
+        </h2>
+        @if (hasPermission)
+        {
+            <div class="d-flex gap-2">
+                <button class="btn btn-outline-danger px-3 rounded-pill shadow-sm" onclick="confirmDeleteAll()">
+                    <i class="bi bi-trash3-fill me-1"></i> Xóa Tất Cả
+                </button>
+                <button class="btn btn-primary px-4 rounded-pill shadow-sm" onclick="openModal('add')">
+                    <i class="bi bi-plus-lg me-1"></i> Thêm Mới
+                </button>
+            </div>
+        }
+    </div>
+
+    <!-- Filter Form -->
+    <div class="card admin-card mb-4">
+        <div class="card-body p-4">
+            <form method="get" asp-action="DanhSachBoThu" class="row g-3 align-items-end">
+                <div class="col-md-5">
+                    <label class="form-label text-muted fw-semibold small mb-1">TỪ KHÓA TÌM KIẾM</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-white border-end-0 text-muted">
+                            <i class="bi bi-search"></i>
+                        </span>
+                        <input type="text" name="search" class="form-control border-start-0 ps-0" placeholder="Nhập tên bộ, hán việt, pinyin, ý nghĩa..." value="@search">
+                    </div>
+                </div>
+
+                <div class="col-md-4 d-flex gap-2">
+                    <button type="submit" class="btn btn-dark px-4">Lọc dữ liệu</button>
+                    <a asp-action="DanhSachBoThu" class="btn btn-light border px-4">
+                        <i class="bi bi-arrow-counterclockwise"></i> Làm mới
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Data Table -->
+    <div class="card admin-card">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="text-center" width="5%">STT</th>
+                            <th class="text-center" width="10%">Bộ Thủ</th>
+                            <th class="text-center" width="10%">Biến Thể</th>
+                            <th width="15%">Hán Việt</th>
+                            <th width="15%">Pinyin</th>
+                            <th>Ý Nghĩa</th>
+                            <th class="text-center" width="8%">Số Nét</th>
+                            @if (hasPermission)
+                            {
+                                <th class="text-center" width="12%">Trạng Thái</th>
+                                <th class="text-center" width="10%">Thao tác</th>
+                            }
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model != null && Model.success == true && Model.data != null && Model.data.Count > 0)
+                        {
+                            foreach (var item in Model.data)
+                            {
+                                <tr>
+                                    <td class="text-center text-muted fw-semibold">@item.stt</td>
+                                    <td class="text-center char-main text-danger fw-bold">@item.boThu1</td>
+                                    <td class="text-center fs-4 text-secondary">@(string.IsNullOrEmpty((string)item.bienThe) ? "-" : item.bienThe)</td>
+                                    <td class="fw-bold text-dark">@item.hanViet</td>
+                                    <td class="text-muted">@item.pinyin</td>
+                                    <td class="text-muted">@item.ynghia</td>
+                                    <td class="text-center fw-semibold">@item.soNet</td>
+
+                                    @if (hasPermission)
+                                    {
+                                        <td class="text-center">
+                                            @if (item.trangThai == true)
+                                            {
+                                                <span class="badge rounded-pill badge-soft-success border border-success border-opacity-25">Hoạt động</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge rounded-pill badge-soft-secondary border border-secondary border-opacity-25">Đã ẩn</span>
+                                            }
+                                        </td>
+                                        <td class="text-center">
+                                            <div class="d-flex justify-content-center gap-1">
+                                                <button class="btn btn-light border btn-icon text-primary" data-bs-toggle="tooltip" title="Chỉnh sửa" onclick="openModal('edit', @item.idBoThu)">
+                                                    <i class="bi bi-pencil-square"></i>
+                                                </button>
+                                                <button class="btn btn-light border btn-icon text-danger" data-bs-toggle="tooltip" title="Xóa bỏ" onclick="confirmDelete(@item.idBoThu)">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            </div>
+                                        </td>
+                                    }
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="9" class="text-center py-5 text-muted">
+                                    <div class="mb-3"><i class="bi bi-folder-x display-4 text-secondary opacity-50"></i></div>
+                                    <h5>Không tìm thấy dữ liệu</h5>
+                                    <p class="small">Vui lòng thử lại với từ khóa hoặc bộ lọc khác.</p>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        @if (totalPages > 0)
+        {
+            <div class="card-footer bg-white border-top p-3 d-flex flex-column flex-md-row justify-content-between align-items-center">
+                <div class="text-muted small mb-3 mb-md-0">
+                    Hiển thị trang <span class="fw-bold text-dark">@currentPage</span> trên tổng <span class="fw-bold text-dark">@totalPages</span> trang
+                </div>
+                <nav aria-label="Page navigation">
+                    <ul class="pagination pagination-sm mb-0">
+                        <li class="page-item @(currentPage == 1 ? "disabled" : "")">
+                            <a class="page-link" href="@Url.Action("DanhSachBoThu", new { page = currentPage - 1, search = search, trangThai = trangThai })">
+                                <i class="bi bi-chevron-left"></i>
+                            </a>
+                        </li>
+                        @for (int i = 1; i <= totalPages; i++)
+                        {
+                            <li class="page-item @(currentPage == i ? "active" : "")">
+                                <a class="page-link" href="@Url.Action("DanhSachBoThu", new { page = i, search = search, trangThai = trangThai })">@i</a>
+                            </li>
+                        }
+                        <li class="page-item @(currentPage == totalPages ? "disabled" : "")">
+                            <a class="page-link" href="@Url.Action("DanhSachBoThu", new { page = currentPage + 1, search = search, trangThai = trangThai })">
+                                <i class="bi bi-chevron-right"></i>
+                            </a>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- ================= MODAL THÊM / SỬA ================= -->
+<div class="modal fade" id="boThuModal" tabindex="-1" aria-labelledby="boThuModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-light">
+                <h5 class="modal-title fw-bold" id="boThuModalLabel">Thêm Bộ Thủ Mới</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="frmBoThu" onsubmit="saveBoThu(event)">
+                <div class="modal-body">
+                    <input type="hidden" id="idBoThu" value="0">
+
+                    <div class="row g-3">
+                        <div class="col-md-2">
+                            <label class="form-label fw-semibold">STT <span class="text-danger">*</span></label>
+                            <input type="number" class="form-control" id="stt" required min="1">
+                        </div>
+                        <div class="col-md-5">
+                            <label class="form-label fw-semibold">Bộ Thủ <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="boThu1" required placeholder="Vd: 一">
+                        </div>
+                        <div class="col-md-5">
+                            <label class="form-label fw-semibold">Biến Thể</label>
+                            <input type="text" class="form-control" id="bienThe" placeholder="Vd: ⺅">
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Hán Việt</label>
+                            <input type="text" class="form-control" id="hanViet" placeholder="Vd: Nhất">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Pinyin</label>
+                            <input type="text" class="form-control" id="pinyin" placeholder="Vd: yī">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Số Nét <span class="text-danger">*</span></label>
+                            <input type="number" class="form-control" id="soNet" required min="1">
+                        </div>
+
+                        <div class="col-md-12">
+                            <label class="form-label fw-semibold">Ý Nghĩa</label>
+                            <input type="text" class="form-control" id="ynghia" placeholder="Nhập ý nghĩa...">
+                        </div>
+
+                        <div class="col-md-12 mt-3">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="trangThai" checked>
+                                <label class="form-check-label fw-semibold" for="trangThai">Trạng thái hoạt động</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Đóng</button>
+                    <button type="submit" class="btn btn-primary px-4"><i class="bi bi-save me-1"></i> Lưu thông tin</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ================= MODAL XÁC NHẬN XÓA 1 MỤC ================= -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-sm modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-body text-center p-4">
+                <i class="bi bi-exclamation-triangle text-warning display-4"></i>
+                <h5 class="mt-3 fw-bold">Xác nhận xóa?</h5>
+                <p class="text-muted small">Dữ liệu sau khi xóa sẽ chuyển sang trạng thái ẩn.</p>
+                <input type="hidden" id="deleteId">
+                <div class="d-flex justify-content-center gap-2 mt-4">
+                    <button type="button" class="btn btn-light border" data-bs-dismiss="modal">Hủy</button>
+                    <button type="button" class="btn btn-danger px-4" onclick="executeDelete()">Xóa</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ================= MODAL XÁC NHẬN XÓA TẤT CẢ ================= -->
+<div class="modal fade" id="deleteAllModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-body text-center p-4">
+                <i class="bi bi-exclamation-octagon text-danger display-3"></i>
+                <h4 class="mt-3 fw-bold text-danger">Xóa Toàn Bộ Bộ Thủ?</h4>
+                <p class="text-muted">Hành động này sẽ thực hiện thao tác xóa trên toàn bộ danh sách bộ thủ hiện có trong cơ sở dữ liệu.</p>
+
+                <div class="form-check form-switch d-inline-block text-start mb-3 bg-light p-3 rounded border">
+                    <input class="form-check-input" type="checkbox" id="softDeleteAll" checked>
+                    <label class="form-check-label fw-semibold text-dark" for="softDeleteAll">
+                        Chỉ ẩn dữ liệu (Xóa mềm - TrangThai = false)
+                    </label>
+                    <div class="form-text small text-muted">Bỏ tích chọn nếu bạn muốn <strong>xóa vĩnh viễn khỏi Database</strong>.</div>
+                </div>
+
+                <div class="d-flex justify-content-center gap-2 mt-3">
+                    <button type="button" class="btn btn-light border px-4" data-bs-dismiss="modal">Hủy bỏ</button>
+                    <button type="button" class="btn btn-danger px-4 fw-bold" onclick="executeDeleteAll()">Xác nhận Xóa Tất Cả</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ================= JAVASCRIPT XỬ LÝ API ================= -->
+<script>
+    const API_BASE_URL = '/api/phan-tich-tu-vung';
+    let modalInstance = null;
+    let deleteModalInstance = null;
+    let deleteAllModalInstance = null;
+
+    document.addEventListener("DOMContentLoaded", function() {
+        // Init Tooltips
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        tooltipTriggerList.map(function(tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
+        });
+
+        // Init Modals
+        modalInstance = new bootstrap.Modal(document.getElementById('boThuModal'));
+        deleteModalInstance = new bootstrap.Modal(document.getElementById('deleteModal'));
+        deleteAllModalInstance = new bootstrap.Modal(document.getElementById('deleteAllModal'));
+    });
+
+    function showLoading() {
+        document.getElementById('loadingOverlay').style.display = 'flex';
+    }
+
+    function hideLoading() {
+        document.getElementById('loadingOverlay').style.display = 'none';
+    }
+
+    // Mở modal Thêm/Sửa
+    async function openModal(mode, id = 0) {
+        document.getElementById('frmBoThu').reset();
+        document.getElementById('idBoThu').value = id;
+
+        if (mode === 'add') {
+            document.getElementById('boThuModalLabel').innerText = 'Thêm Bộ Thủ Mới';
+            document.getElementById('trangThai').checked = true;
+            modalInstance.show();
+        } else {
+            document.getElementById('boThuModalLabel').innerText = 'Cập Nhật Bộ Thủ';
+            showLoading();
+            try {
+                const response = await fetch(`${API_BASE_URL}/chi-tiet/${id}`);
+                const resData = await response.json();
+
+                if (resData.success) {
+                    const data = resData.data;
+                    document.getElementById('stt').value = data.stt;
+                    document.getElementById('boThu1').value = data.boThu1;
+                    document.getElementById('bienThe').value = data.bienThe || '';
+                    document.getElementById('hanViet').value = data.hanViet || '';
+                    document.getElementById('pinyin').value = data.pinyin || '';
+                    document.getElementById('ynghia').value = data.ynghia || '';
+                    document.getElementById('soNet').value = data.soNet;
+                    document.getElementById('trangThai').checked = data.trangThai;
+
+                    modalInstance.show();
+                } else {
+                    alert(resData.message || "Lỗi khi lấy dữ liệu.");
+                }
+            } catch (error) {
+                alert("Lỗi kết nối máy chủ.");
+                console.error(error);
+            } finally {
+                hideLoading();
+            }
+        }
+    }
+
+    // Lưu dữ liệu (POST / PUT)
+    async function saveBoThu(event) {
+        event.preventDefault();
+        const id = document.getElementById('idBoThu').value;
+        const isUpdate = id != "0";
+
+        const payload = {
+            stt: parseInt(document.getElementById('stt').value),
+            boThu1: document.getElementById('boThu1').value,
+            bienThe: document.getElementById('bienThe').value,
+            hanViet: document.getElementById('hanViet').value,
+            pinyin: document.getElementById('pinyin').value,
+            ynghia: document.getElementById('ynghia').value,
+            soNet: parseInt(document.getElementById('soNet').value),
+            trangThai: document.getElementById('trangThai').checked
+        };
+
+        const url = isUpdate ? `${API_BASE_URL}/cap-nhat/${id}` : `${API_BASE_URL}/them-moi`;
+        const method = isUpdate ? 'PUT' : 'POST';
+
+        showLoading();
+        try {
+            const response = await fetch(url, {
+                method: method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            const resData = await response.json();
+
+            if (resData.success) {
+                modalInstance.hide();
+                location.reload();
+            } else {
+                alert(resData.message || "Có lỗi xảy ra, vui lòng thử lại.");
+            }
+        } catch (error) {
+            alert("Lỗi kết nối máy chủ.");
+            console.error(error);
+        } finally {
+            hideLoading();
+        }
+    }
+
+    // Xác nhận xóa đơn lẻ (DELETE)
+    function confirmDelete(id) {
+        document.getElementById('deleteId').value = id;
+        deleteModalInstance.show();
+    }
+
+    async function executeDelete() {
+        const id = document.getElementById('deleteId').value;
+        showLoading();
+        try {
+            const response = await fetch(`${API_BASE_URL}/xoa/${id}?softDelete=true`, {
+                method: 'DELETE'
+            });
+
+            const resData = await response.json();
+
+            if (resData.success) {
+                deleteModalInstance.hide();
+                location.reload();
+            } else {
+                alert(resData.message || "Lỗi khi xóa dữ liệu.");
+            }
+        } catch (error) {
+            alert("Lỗi kết nối máy chủ.");
+            console.error(error);
+        } finally {
+            hideLoading();
+        }
+    }
+
+    // Xác nhận XÓA TẤT CẢ
+    function confirmDeleteAll() {
+        deleteAllModalInstance.show();
+    }
+
+    // Thực thi XÓA TẤT CẢ
+    async function executeDeleteAll() {
+        const isSoftDelete = document.getElementById('softDeleteAll').checked;
+        showLoading();
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/xoa-tat-ca?softDelete=${isSoftDelete}`, {
+                method: 'DELETE'
+            });
+
+            const resData = await response.json();
+
+            if (resData.success) {
+                deleteAllModalInstance.hide();
+                alert(resData.message);
+                location.reload();
+            } else {
+                alert(resData.message || "Lỗi khi xóa tất cả dữ liệu.");
+            }
+        } catch (error) {
+            alert("Lỗi kết nối máy chủ.");
+            console.error(error);
+        } finally {
+            hideLoading();
+        }
+    }
+</script>

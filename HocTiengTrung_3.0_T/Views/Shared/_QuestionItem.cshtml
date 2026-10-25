@@ -1,0 +1,609 @@
+﻿@using Newtonsoft.Json
+@using Newtonsoft.Json.Linq
+@model HocTiengTrung_3._0_T.Models12.QuanLyDeThi.ChiTietDeThiModels
+
+@{
+    JObject content;
+    try { content = JObject.Parse(Model.NoiDungJson ?? "{}"); }
+    catch { content = new JObject(); }
+
+    int stt = Model.ThuTu ?? 0;
+    int idLoai = Model.IdLoai ?? 0;
+    bool isSubmitted = false; // Có thể truyền từ Model nếu có logic chấm điểm
+
+    // Logic kiểm tra để gom nhóm các câu hỏi cùng loại
+    int? lastIdStored = Context.Items["GlobalLastIdLoai"] as int?;
+    bool isShowHeader = (lastIdStored == null || lastIdStored != idLoai);
+    Context.Items["GlobalLastIdLoai"] = idLoai;
+}
+
+<style>
+    /* --- 1. Container & Global --- */
+    .group-container {
+        background: #ffffff;
+        border-radius: 16px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.04);
+        margin-bottom: 25px;
+        border-left: 6px solid #dee2e6;
+        transition: all 0.3s ease;
+    }
+
+        .group-container:hover {
+            box-shadow: 0 15px 35px rgba(0,0,0,0.07);
+        }
+
+        /* Color Coding by Skill */
+        .group-container[data-skill="1"] {
+            border-left-color: #0d6efd;
+        }
+        /* Nghe */
+        .group-container[data-skill="2"] {
+            border-left-color: #198754;
+        }
+        /* Đọc */
+        .group-container[data-skill="3"] {
+            border-left-color: #fd7e14;
+        }
+    /* Viết */
+
+    .is-repeated-question {
+        margin-top: -25px;
+        border-top-left-radius: 0;
+        border-top-right-radius: 0;
+        box-shadow: none;
+        border-top: 1px dashed #eee;
+    }
+
+    .question-body {
+        padding: 25px;
+    }
+
+    .example-box {
+        background-color: #f8f9fa;
+        border-left: 4px solid #6c757d;
+        padding: 15px 20px;
+        margin: 10px 25px;
+        border-radius: 8px;
+        font-style: italic;
+    }
+
+    /* --- 2. Chinese Typography --- */
+    .Chinese-text {
+        font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+        line-height: 1.8;
+        font-size: 1.25rem;
+        color: #1a1a1a;
+    }
+
+    /* --- 3. Interactive Buttons (A, B, C...) --- */
+    .opt-btn-square {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 45px;
+        height: 45px;
+        border: 2px solid #edf2f7;
+        border-radius: 12px;
+        background: #fff;
+        font-weight: 700;
+        color: #4a5568;
+        cursor: pointer;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .opt-list-item {
+        display: flex;
+        align-items: center;
+        padding: 15px 20px;
+        border: 2px solid #edf2f7;
+        border-radius: 14px;
+        background: #fff;
+        cursor: pointer;
+        margin-bottom: 12px;
+        transition: all 0.2s;
+    }
+
+    .opt-circle {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background: #f7fafc;
+        border: 2px solid #e2e8f0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 800;
+        margin-right: 15px;
+    }
+
+    /* States: Active / Selected */
+    .opt-btn-square.active,
+    .opt-list-item.active {
+        background-color: #ebf8ff !important;
+        color: #3182ce !important;
+        border-color: #3182ce !important;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(49, 130, 206, 0.15);
+    }
+
+        .opt-list-item.active .opt-circle {
+            background: #3182ce;
+            color: #fff;
+            border-color: #3182ce;
+        }
+
+    /* --- 4. Special Inputs --- */
+    .input-group input.input-filled {
+        background-color: #ebf8ff !important;
+        color: #2b6cb0 !important;
+    }
+
+    .is-invalid-duplicate {
+        border-color: #e53e3e !important;
+        background-color: #fff5f5 !important;
+        animation: shake 0.4s ease-in-out;
+    }
+
+    @@keyframes shake {
+        0%, 100%
+
+    {
+        transform: translateX(0);
+    }
+
+    25% {
+        transform: translateX(-6px);
+    }
+
+    75% {
+        transform: translateX(6px);
+    }
+
+    }
+
+    /* --- 5. Audio Player Visuals --- */
+    .audio-playing {
+        background-color: #e53e3e !important;
+        border-color: #e53e3e !important;
+        color: white !important;
+        animation: pulse-red 1.5s infinite;
+    }
+
+    @@keyframes pulse-red {
+        0%
+
+    {
+        box-shadow: 0 0 0 0 rgba(229, 62, 62, 0.4);
+    }
+
+    70% {
+        box-shadow: 0 0 0 10px rgba(229, 62, 62, 0);
+    }
+
+    100% {
+        box-shadow: 0 0 0 0 rgba(229, 62, 62, 0);
+    }
+
+    }
+
+    /* --- 6. True/False Buttons --- */
+    .btn-tf {
+        flex: 1;
+        max-width: 160px;
+        padding: 12px;
+        border: 2px solid #edf2f7;
+        background: #fff;
+        border-radius: 12px;
+        font-weight: 700;
+        color: #718096;
+        transition: all 0.2s ease;
+    }
+
+        /* Cập nhật CSS cho khớp với DATA-VAL viết hoa */
+        .btn-tf[data-val="TRUE"].active {
+            background: #f0fff4 !important;
+            border-color: #38a169 !important;
+            color: #2f855a !important;
+        }
+
+        .btn-tf[data-val="FALSE"].active {
+            background: #fff5f5 !important;
+            border-color: #e53e3e !important;
+            color: #c53030 !important;
+        }
+    
+</style>
+
+<div class="group-container @(isShowHeader ? "" : "is-repeated-question")">
+
+    @if (isShowHeader)
+    {
+        @* 1. TIÊU ĐỀ LOẠI CÂU HỎI *@
+        <div class="d-flex justify-content-between align-items-center p-3 pb-0 mt-2">
+            <h5 class="fw-bold mb-0 @(Model.KyNang == 1 ? "text-primary" : "text-success")">
+                <i class="fas fa-layer-group me-2"></i>
+                @switch (idLoai)
+                {
+                    case 1:
+                        <span>PHẦN NGHE - CHỌN TRANH</span>
+                        break;
+                    case 2:
+
+                        <span>PHẦN NGHE - ĐÚNG/SAI</span>
+                        break;
+                    case 3:
+                        <span>PHẦN NGHE - TRẮC NGHIỆM</span>
+                        break;
+                    case 4:
+
+                        <span>PHẦN ĐỌC - GHÉP CÂU</span>
+                        break;
+                    case 5:
+                        <span>PHẦN ĐỌC - ĐIỀN TỪ</span>
+                        break;
+                    case 6:
+
+                        <span>PHẦN ĐỌC -  TRẮC NGHIỆM VĂN BẢN</span>
+                        break;
+                    
+                    
+                    case 7:
+
+                        <span>PHẦN VIẾT - SẮP XẾP CÂU</span>
+                        break;
+                    case 8:
+
+                        <span>PHẦN VIẾT - ĐIỀN CHỮ HÁN</span>
+                        break;
+                    case 9:
+
+                        <span>PHẦN ĐỌC - SẮP XẾP CÂU</span>
+                        break;
+                    case 10:
+                        <span>PHẦN VIẾT - NHÌN TRANH ĐẶT CÂU</span>
+                        break;
+                    case 11:
+                        <span>PHẦN ĐỌC - CHỌN TỪ ĐIỀN ĐOẠN VĂN</span>
+                        break;
+                    case 12:
+
+                        <span>PHẦN VIẾT - VIẾT ĐOẠN VĂN</span>
+                        break;
+                    case 13:
+                        <span>PHẦN ĐỌC - TÌM CÂU SAI</span>
+                        break;
+                    case 14:
+
+                        <span>PHẦN VIẾT - TÓM TẮT VĂN BẢN</span>
+                        break;                    
+                    default:
+
+                        <span>@Model.TenLoai?.ToUpper()</span>
+                        break;
+                }
+            </h5>
+
+            
+        </div>
+
+        @if (content["ViDu"] != null && !string.IsNullOrEmpty(content["ViDu"].ToString()))
+        {
+            <div class="example-box">
+                <small class="fw-bold text-uppercase text-muted d-block mb-1">Ví dụ mẫu:</small>
+                @* Thêm style white-space ở đây *@
+                <div class="fs-5 text-dark" style="white-space: pre-wrap;">@content["ViDu"]</div>
+            </div>
+        }
+    }
+
+    @* 3. CHI TIẾT CÂU HỎI *@
+    <div class="question-body">
+        @switch (idLoai)
+        {
+            case 1: @* --- CHỌN TRANH (NGHE) --- *@
+                {
+                    // Logic: Cứ 5 câu thì reset nhóm 1 lần (Câu 1-5 chung nhóm 1, 6-10 chung nhóm 2...)
+                    int groupIndexCase1 = (stt > 0) ? (int)Math.Ceiling(stt / 5.0) : 0;
+                    string groupKeyCase1 = "group_type_" + idLoai + "_" + groupIndexCase1;
+
+                    <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+                        <div class="d-flex align-items-center gap-3">
+                            <span class="fw-bold fs-5 text-dark">@stt.</span>
+                        </div>
+                        <div class="d-flex gap-2">
+                            @foreach (var label in new[] { "A", "B", "C", "D", "E", "F" })
+                            {
+                                // Kiểm tra nếu Option tồn tại trong JSON
+                                if (content["Options"] != null && Array.IndexOf(new[] { "A", "B", "C", "D", "E", "F" }, label) < content["Options"].Count())
+                                {
+                                    <div class="opt-btn-square selection-item-@stt"
+                                         data-val="@label"
+                                         data-group="@groupKeyCase1"
+                                         onclick="handleSelection(@stt, '@label', '@groupKeyCase1')">
+                                        @label
+                                    </div>
+                                }
+                            }
+                        </div>
+                    </div>
+                }
+                break;
+
+            case 2:
+                @* --- ĐÚNG / SAI --- *@
+                <div class="d-flex flex-column gap-3">
+                    <div class="d-flex align-items-start gap-3">
+                        <span class="badge bg-primary rounded-pill">Câu @stt</span>
+
+                        <div class="fs-5 fw-bold text-dark" style="white-space: pre-line;">@content["CauHoi"]</div>
+                    </div>
+                    @* --- ĐÚNG / SAI (Sửa lại phần này trong Case 2) --- *@
+                    <div class="d-flex gap-3 ps-5">
+                        @* Lưu ý: data-val nên để là 'TRUE'/'FALSE' viết hoa để khớp với logic val.toUpperCase() trong JS *@
+                        <button class="btn-tf opt-item-@stt" data-val="TRUE" onclick="handleSelection(@stt, 'TRUE')">
+                            <i class="fas fa-check me-1"></i> Đúng
+                        </button>
+                        <button class="btn-tf opt-item-@stt" data-val="FALSE" onclick="handleSelection(@stt, 'FALSE')">
+                            <i class="fas fa-times me-1"></i> Sai
+                        </button>
+                    </div>
+                </div>
+                break;
+
+            case 4:
+            case 5:
+                {
+                    // Xác định logic nhóm câu hỏi (5 câu 1 nhóm)
+                    int groupIndex = (stt > 0) ? (int)Math.Ceiling(stt / 5.0) : 0;
+                    string groupKey = "group_" + idLoai + "_" + groupIndex;
+                    bool isFirstInGroup = (stt % 5 == 1);
+                    var options = content["Options"] as JObject;
+
+                    <div class="test-group-container mb-4">
+                        @* --- 1. BẢNG TRA CỨU CHUNG (Chỉ hiển thị ở câu đầu nhóm: 41, 46, 51...) --- *@
+                        @if (isFirstInGroup && options != null)
+                        {
+                            <div class="bg-light p-3 rounded-3 border mb-3 shadow-sm">
+                                <h6 class="fw-bold text-primary border-bottom pb-2 mb-2">
+                                    <i class="fas fa-list-ul me-2"></i>Lựa chọn (A-F):
+                                </h6>
+                                <div class="row g-2 Chinese-text">
+                                    @foreach (var opt in options.Children<JProperty>())
+                                    {
+                                        var cleanText = opt.Value.ToString().Trim();
+                                        // Loại bỏ ký tự label lặp lại nếu có (ví dụ "A 太好了" -> "太好了")
+                                        if (cleanText.StartsWith(opt.Name))
+                                        {
+                                            cleanText = cleanText.Substring(opt.Name.Length).Trim();
+                                        }
+
+                                        <div class="col-md-6 col-12 small d-flex">
+                                            <span class="fw-bold text-danger me-2">@opt.Name.</span>
+                                            <span>@cleanText</span>
+                                        </div>
+                                    }
+                                </div>
+
+                                @if (content["ViDu"] != null && !string.IsNullOrEmpty(content["ViDu"].ToString()))
+                                {
+                                    <div class="mt-2 small text-muted border-top pt-2 italic">
+                                        <span class="badge bg-secondary me-1">Ví dụ:</span> @content["ViDu"]
+                                    </div>
+                                }
+                            </div>
+                        }
+
+                        @* --- 2. NỘI DUNG CÂU HỎI VÀ Ô NHẬP ĐÁP ÁN --- *@
+                        <div class="d-flex align-items-center flex-wrap gap-2 py-2 border-bottom border-light">
+                            <span class="fw-bold fs-5 text-dark" style="min-width: 35px;">@stt.</span>
+                            <div class="fs-5 flex-grow-1 Chinese-text">@content["CauHoi"]</div>
+
+                            @* Ô nhập đáp án dạng ( ? ) *@
+                            <div class="input-group" style="width: 100px;">
+                                <span class="input-group-text bg-white border-primary text-primary fw-bold px-2"
+                                      style="border-top-left-radius: 20px; border-bottom-left-radius: 20px;">(</span>
+                                <input type="text"
+                                       class="form-control border-primary text-center fw-bold text-uppercase p-0"
+                                       maxlength="1"
+                                       placeholder="?"
+                                       style="border-left:none; border-right:none; height: 38px; font-size: 1.2rem; background: transparent;"
+                                       onblur="handleSelection(@stt, this.value.toUpperCase(), '@groupKey')">
+                                <span class="input-group-text bg-white border-primary text-primary fw-bold px-2"
+                                      style="border-top-right-radius: 20px; border-bottom-right-radius: 20px;">)</span>
+                            </div>
+                        </div>
+
+                        @* --- 3. HIỂN THỊ TỪ GỢI Ý (Dành cho các dạng bài điền từ rời) --- *@
+                        @if (content["Words"] != null)
+                        {
+                            <div class="d-flex flex-wrap gap-2 mt-2 ps-4">
+                                @foreach (var word in content["Words"])
+                                {
+                                    <div class="px-3 py-1 bg-white border rounded-pill shadow-sm small text-secondary">
+                                        @word
+                                    </div>
+                                }
+                            </div>
+                        }
+                    </div>
+                }
+                break;
+            case 7:
+         @* --- SẮP XẾP CÂU --- *@
+                <div class="fw-bold mb-2 text-muted">Câu @stt:</div>
+                <div class="d-flex flex-wrap gap-2 mb-3 p-3 bg-light rounded-3 border-dashed">
+                    @if (content["Words"] != null)
+                    {
+                        foreach (var word in content["Words"])
+                        {
+                            <div class="px-3 py-2 bg-white border rounded shadow-sm">@word</div>
+                        }
+                    }
+                </div>
+                <input type="text"
+                       data-thutu="@stt"
+                       class="form-control form-control-lg border-primary shadow-sm"
+                       placeholder="Nhập câu trả lời của bạn..."
+                       onblur="handleSelection(@stt, this.value)" />
+        
+                break;
+
+            case 8:
+         @* --- VIẾT CHỮ HÁN THEO PINYIN (HSK 1-3) --- *@
+                {
+                    string cauHoiRaw = content["Context"]?.ToString() ?? "";
+                    // Logic: Thay thế ( pinyin ) bằng một ô input nhỏ để điền chữ Hán
+                    // Nếu câu hỏi có dạng "坐( chū )租车", pinyin sẽ nằm trong ngoặc.
+                    <div class="d-flex flex-column gap-2">
+                        <div class="fs-5 Chinese-text lh-lg">
+                            <span class="fw-bold me-2">@stt.</span>
+                            @if (cauHoiRaw.Contains("(") && cauHoiRaw.Contains(")"))
+                            {
+                                @* Phân tách câu để chèn ô input vào giữa *@
+                                var parts = cauHoiRaw.Split(new[] { '(', ')' }, StringSplitOptions.None);
+                                <span>@parts[0]</span>
+                                <span class="d-inline-block position-relative px-1" style="min-width: 100px;">
+                                    <input type="text"
+                                           data-thutu="@stt"
+                                           class="form-control form-control-sm text-center border-0 border-bottom border-primary rounded-0 p-0 fw-bold text-primary"
+                                           style="display: inline-block; width: 60px; background: transparent; font-size: 1.2rem;"
+                                           placeholder="@content["Pinyin"]"
+                                           onblur="handleSelection(@stt, this.value)" /> @* Đổi saveAns thành handleSelection *@
+                                </span>
+                                <span>@parts[parts.Length - 1]</span>
+                            }
+                            else
+                            {
+                                @cauHoiRaw
+                                <input type="text" class="form-control border-primary d-inline-block ms-2" style="width: 100px;" onblur="saveAns(@stt, this.value)" />
+                            }
+                        </div>
+                    </div>
+                }
+                break;
+
+            case 9:
+         @* --- PHẦN ĐỌC - SẮP XẾP CÂU (NHẬP CHUỖI) --- *@
+                <div class="mb-3">
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="badge bg-info text-dark">Câu @stt</span>
+                        <span class="fw-bold text-muted" style="font-size: 0.85rem; letter-spacing: 1px;">SẮP XẾP THÀNH ĐOẠN VĂN HỢP LÝ</span>
+                    </div>
+                </div>
+
+                <div class="bg-light p-3 rounded-3 border mb-3 shadow-sm">
+                    @if (content["Options"] != null)
+                    {
+                        foreach (var opt in content["Options"].Children<JProperty>())
+                        {
+                            var val = opt.Value?.ToString();
+                            if (!string.IsNullOrWhiteSpace(val))
+                            {
+                                <div class="d-flex align-items-start mb-2 bg-white p-2 rounded border-start border-primary border-3 shadow-sm">
+                                    <span class="fw-bold me-2 text-primary" style="min-width: 20px;">@opt.Name.</span>
+                                    <div class="fs-5 Chinese-text">@val</div>
+                                </div>
+                            }
+                        }
+                    }
+                </div>
+
+                <div class="row align-items-center">
+                    <div class="col-md-5">
+                        <div class="input-group shadow-sm">
+                            <span class="input-group-text bg-primary text-white fw-bold border-primary">
+                                <i class="fas fa-edit me-2"></i> Đáp án
+                            </span>
+                            <input type="text"
+                                   class="form-control form-control-lg border-primary text-uppercase fw-bold text-center"
+                                   placeholder="Ví dụ: BCA"
+                                   maxlength="5"
+                                   data-thutu="@stt"
+                                   oninput="this.value = this.value.toUpperCase()"
+                                   onblur="handleSelection(@stt, this.value)"
+                                   style="letter-spacing: 5px; color: #0d6efd;" />
+                        </div>
+                        <div class="form-text mt-1 ms-1 text-muted">
+                            <i class="fas fa-info-circle me-1"></i> Nhập các ký tự A, B, C... theo thứ tự đúng.
+                        </div>
+                    </div>
+                </div>
+                break;
+            case 12:
+                @* --- PHẦN VIẾT (WRITING) - HSK 4-5 --- *@
+                <div class="writing-section p-3 bg-white rounded shadow-sm border mb-4">
+                    <div class="d-flex align-items-center gap-2 mb-3">
+                        <span class="badge bg-danger">Câu @stt</span>
+                        <span class="fw-bold text-secondary">PHẦN VIẾT - 写短文</span>
+                    </div>
+
+                    @* Hiển thị yêu cầu đề bài (Ví dụ: 99. 请结合下列词语... hoặc 100. 请结合这张图片...) *@
+                   
+                    <span class ="fs-5 Chinese-text mb-3 fw-bold"
+                        style="white-space: pre-line;">@content["CauHoi"]</span>
+
+                    @* 1. Nếu là dạng bài theo từ khóa (Câu 99) *@
+                    @if (content["Words"] != null)
+                    {
+                        <div class="d-flex flex-wrap gap-3 mb-4 p-3 bg-light rounded border border-primary border-opacity-25">
+                            @foreach (var word in content["Words"])
+                            {
+                                <div class="px-4 py-2 bg-white border border-primary rounded shadow-sm fw-bold text-primary Chinese-text">
+                                    @word
+                                </div>
+                            }
+                        </div>
+                    }
+
+                    @* 2. Nếu là dạng bài theo hình ảnh (Câu 100) *@
+                    @if (content["HinhAnh"] != null && !string.IsNullOrEmpty(content["HinhAnh"].ToString()))
+                    {
+                        <div class="text-center mb-4">
+                            <img src="@content["HinhAnh"]" class="img-fluid rounded border shadow-sm" style="max-height: 300px; object-fit: contain;" alt="HSK Writing Image" />
+                        </div>
+                    }                   
+                </div>
+
+                <script>
+                    @* Script bổ sung để đếm ký tự thực tế khi người dùng gõ *@
+                    document.querySelector('textarea[onblur*="@stt"]').addEventListener('input', function() {
+                        document.getElementById('char-count-@stt').innerText = this.value.length;
+                    });
+                </script>
+                break;
+            default:
+                <div class="mb-3">
+                    <span class="fw-bold fs-5 me-2">@stt.</span>
+                    <span class="fs-5" style="white-space: pre-line;">@content["CauHoi"]</span>
+                </div>
+                <div class="row g-2">
+                    @if (content["Options"] != null)
+                    {
+                        foreach (var opt in content["Options"].Children<JProperty>())
+                        {
+                            var val = opt.Value?.ToString();
+                            if (!string.IsNullOrWhiteSpace(val))
+                            {
+                                <div class="col-12 col-md-6">
+                                    <div class="opt-list-item opt-item-@stt" data-val="@opt.Name" onclick="handleSelection(@stt, '@opt.Name')">
+                                        <div class="opt-circle">@opt.Name</div>
+                                        <div class="opt-text">@val</div>
+                                    </div>
+                                </div>
+                            }
+                        }
+                    }
+                </div>
+                break;
+        }
+
+        @* GIẢI THÍCH *@
+        @if (isSubmitted && content["GiaiThich"] != null)
+        {
+            <div class="mt-4 p-3 rounded-3" style="background-color: #e7f3ff; border-left: 4px solid #007bff;">
+                <div class="fw-bold text-primary mb-1"><i class="fas fa-lightbulb me-2"></i>Giải thích:</div>
+                <div class="text-dark small">@content["GiaiThich"]</div>
+            </div>
+        }
+    </div>
+</div>

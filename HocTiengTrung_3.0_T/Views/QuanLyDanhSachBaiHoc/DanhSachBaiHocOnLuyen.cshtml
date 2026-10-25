@@ -1,0 +1,436 @@
+﻿@model dynamic
+@{
+    ViewData["Title"] = "Danh Sách Bài Học Ôn Luyện";
+    int currentCapDo = ViewBag.IdCapDo ?? 1;
+    int currentIdGiaoTrinh = ViewBag.IdGiaoTrinh ?? 1;
+    string currentProgram = ViewBag.ChuongTrinh?.ToString() ?? "3"; // Mặc định là 3.0 nếu null
+    // Quy tắc: idGiaoTrinh = 2 là bản 2.0, còn lại đều thuộc hệ sinh thái 3.0
+    bool isV2 = (currentIdGiaoTrinh == 2);
+
+    // Khai báo tên chương trình chuẩn để dùng chung cho giao diện
+    string tenChuongTrinh = "Chương Trình 3.0";
+    if (isV2) tenChuongTrinh = "Bản Cũ 2.0";
+    else if (currentIdGiaoTrinh == 4) tenChuongTrinh = "Giáo Trình Boya 3.0";
+    else if (currentIdGiaoTrinh == 5) tenChuongTrinh = "Giáo Trình HSK 3.0";
+
+    // Kiểm tra trạng thái VIP của User
+    bool isUserVip = ViewBag.IsUserVip ?? false;
+
+    // Danh sách cấp độ Boya chuẩn (1 - 6)
+    var boyaLevels = new List<string> { "Sơ cấp 1", "Sơ cấp 2", "Trung cấp 1", "Trung cấp 2", "Cao cấp 1", "Cao cấp 2" };
+
+    // Lấy tên cấp độ hiện tại để hiển thị
+    string tenCapDoHienTai = (currentIdGiaoTrinh == 4)
+        ? boyaLevels[Math.Min(Math.Max(currentCapDo - 1, 0), 5)]
+        : "HSK " + currentCapDo;
+}
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+
+<style>
+    :root {
+        /* Màu cho 3.0 (Xanh dương hiện đại) */
+        --prog3-main: #3b82f6;
+        --prog3-light: #60a5fa;
+        --prog3-bg: #eff6ff;
+        /* Màu cho 2.0 (Xanh lá trầm) */
+        --boya-main: #3e6538; /* Màu xanh rêu chủ đạo của bìa sách */
+        --boya-light: #5c8a53; /* Màu xanh nhạt hơn để làm gradient & hover */
+        --boya-bg: #edf4ec; /* Màu nền nhạt dịu mắt chuẩn tone Boya */
+       
+       
+       
+        /* Màu cho Boya/HSK 3.0 (Xanh ngọc/Teal) */
+        --boya-main: #0d9488;
+        --boya-light: #14b8a6;
+        /* Màu VIP (Vàng Gold) */
+        --vip-main: #f59e0b;
+        --vip-light: #fbbf24;
+    }
+
+    body {
+        background-color: #f4f7f9;
+        font-family: 'Nunito', 'Segoe UI', Tahoma, sans-serif;
+    }
+
+    /* Vùng bộ lọc (Filter) */
+    .filter-wrapper {
+        background: #ffffff;
+        border-radius: 20px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.04);
+        border: 1px solid #f1f5f9;
+    }
+
+  
+    /* --- NÚT BỘ LỌC CHƯƠNG TRÌNH --- */
+    .filter-btn {
+        border-radius: 12px;
+        font-weight: 600;
+        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        padding: 9px 18px;
+        font-size: 0.95rem;
+    }
+
+        .filter-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .filter-btn:active {
+            transform: translateY(0) scale(0.97);
+        }
+
+    /* --- SCROLLBAR VÀ PILL BẢNG CẤP ĐỘ HSK --- */
+    .level-scroll-container {
+        display: flex;
+        gap: 8px;
+        overflow-x: auto;
+        padding: 4px 4px 12px 4px;
+        scrollbar-width: thin;
+        scrollbar-color: #cbd5e1 transparent;
+    }
+
+        .level-scroll-container::-webkit-scrollbar {
+            height: 5px;
+        }
+
+        .level-scroll-container::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 10px;
+        }
+
+        .level-scroll-container::-webkit-scrollbar-thumb {
+            background-color: #cbd5e1;
+            border-radius: 10px;
+        }
+
+            .level-scroll-container::-webkit-scrollbar-thumb:hover {
+                background-color: #94a3b8;
+            }
+
+
+    /* Nút cấp độ */
+    .level-pill {
+        border-radius: 50px;
+        padding: 8px 24px;
+        font-weight: 700;
+        white-space: nowrap;
+        transition: all 0.3s ease;
+        border: 2px solid transparent;
+    }
+
+    /* Card Bài Học */
+    .lesson-card {
+        border-radius: 20px !important;
+        background: #ffffff;
+        transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        border: 1px solid #f1f5f9;
+        overflow: hidden;
+    }
+
+        .lesson-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.08) !important;
+            border-color: #e2e8f0;
+        }
+
+    /* Badge Số Thứ Tự */
+    .lesson-number-badge {
+        width: 55px;
+        height: 55px;
+        font-size: 20px;
+        font-weight: 800;
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+    }
+
+    /* Badge Màu sắc theo phiên bản */
+    .theme-3-0 .lesson-number-badge {
+        background: linear-gradient(135deg, var(--prog3-main), var(--prog3-light));
+        box-shadow: 0 8px 16px rgba(59, 130, 246, 0.25);
+    }
+
+    .theme-2-0 .lesson-number-badge {
+        background: linear-gradient(135deg, var(--prog2-main), var(--prog2-light));
+        box-shadow: 0 8px 16px rgba(56, 123, 83, 0.25);
+    }
+
+    .theme-boya .lesson-number-badge {
+        background: linear-gradient(135deg, var(--boya-main), var(--boya-light));
+        box-shadow: 0 8px 16px rgba(13, 148, 136, 0.25);
+    }
+
+    /* Buttons action trong Card */
+    .btn-action-lesson {
+        border-radius: 12px;
+        font-weight: 700;
+        padding: 12px;
+        transition: all 0.3s;
+    }
+
+        .btn-action-lesson:hover {
+            opacity: 0.9;
+            transform: translateY(-2px);
+        }
+
+    .btn-vip-upgrade {
+        background: linear-gradient(to right, var(--vip-main), var(--vip-light));
+        color: #fff;
+        border: none;
+        box-shadow: 0 4px 15px rgba(245, 158, 11, 0.3);
+    }
+    /* Nút Xem bài học màu trắng + khoảng cách với nút trên */
+    .btn-view-lesson-white {
+        margin-top: 0.65rem; /* Tạo khoảng cách với nút "Bắt đầu học" phía trên */
+        background-color: #ffffff !important;
+        color: var(--boya-main, #3e6538) !important; /* Lấy màu chữ theo theme (mặc định Boya) */
+        border: 1.5px solid var(--boya-main, #3e6538) !important;
+        transition: all 0.25s ease-in-out;
+    }
+
+        /* Hiệu ứng khi Hover */
+        .btn-view-lesson-white:hover {
+            background-color: var(--boya-main, #3e6538) !important;
+            color: #ffffff !important;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+        }
+</style>
+
+<div class="container py-5">
+    <!-- TIÊU ĐỀ TRANG -->
+    <div class="text-center mb-5">
+        <span class="badge bg-primary-subtle text-primary px-4 py-2 rounded-pill fw-bold mb-3 fs-6">
+            <i class="fas fa-rocket me-2"></i>HỆ THỐNG HỌC TẬP
+        </span>
+        <h2 class="fw-black display-5 text-dark mb-3" style="font-weight: 800;">Danh Sách Bài Học Ôn Luyện</h2>
+        <p class="text-secondary fs-5 mx-auto" style="max-width: 650px; line-height: 1.6;">
+            Theo dõi lộ trình học tập, tra cứu tài liệu và hoàn thành các bài học chuẩn hóa theo từng giáo trình của bạn.
+        </p>
+    </div>
+
+    <!-- BẢNG ĐIỀU KHIỂN BỘ LỌC -->
+    <div class="filter-wrapper p-4 p-md-5 mb-5">
+        <div class="row align-items-center g-4">
+            <!-- 1. CHỌN CHƯƠNG TRÌNH -->
+            <div class="col-xl-5 border-end-xl text-center text-xl-start">
+                <label class="form-label fw-bold text-muted small text-uppercase tracking-wider mb-3 d-block">
+                    <i class="fas fa-layer-group me-2" style="color: var(--prog3-main);"></i>1. Chọn Chương Trình
+                </label>
+
+                <div class="d-flex flex-wrap justify-content-center justify-content-xl-start gap-2">
+                    <!-- Chương trình 3.0 -->
+                    <a href="@Url.Action("DanhSachLoaiBaiTap", "QuanLyDanhSachBaiTap", new { capdo = 1, chuongTrinh = 3 })"
+                       class="btn filter-btn @(currentIdGiaoTrinh == 1 ? "btn-primary shadow-sm" : "btn-outline-secondary")">
+                        <i class="fas fa-star me-1"></i> C.Trình 3.0
+                    </a>
+
+                    <!-- Bản Cũ 2.0 -->
+                    <a href="@Url.Action("DanhSachLoaiBaiTap", "QuanLyDanhSachBaiTap", new { capdo = 1, chuongTrinh = 2 })"
+                       class="btn filter-btn @(currentIdGiaoTrinh == 2 ? "text-white shadow-sm" : "btn-outline-secondary")"
+                       style="@(currentIdGiaoTrinh == 2 ? "background-color: var(--prog2-main); border-color: var(--prog2-main);" : "")">
+                        <i class="fas fa-leaf me-1"></i> Bản Cũ 2.0
+                    </a>
+
+                    <!-- Boya 3.0 -->
+                    <a href="@Url.Action("DanhSachBaiHocOnLuyen", "QuanLyDanhSachBaiHoc", new { capdo = 1, idGiaoTrinh = 4, page = 1 })"
+                       class="btn filter-btn @(currentIdGiaoTrinh == 4 ? "text-white shadow-sm" : "btn-outline-secondary")"
+                       style="@(currentIdGiaoTrinh == 4 ? "background-color: var(--boya-main); border-color: var(--boya-main);" : "")">
+                        <i class="fas fa-book-open me-1"></i> Boya 3.0
+                    </a>
+
+                    <!-- HSK 3.0 -->
+                    <a href="@Url.Action("DanhSachBaiHocOnLuyen", "QuanLyDanhSachBaiHoc", new { capdo = 1, idGiaoTrinh = 5, page = 1 })"
+                       class="btn filter-btn @(currentIdGiaoTrinh == 5 ? "btn-info text-white shadow-sm" : "btn-outline-secondary")">
+                        <i class="fas fa-certificate me-1"></i> HSK 3.0
+                    </a>
+                </div>
+            </div>
+
+            <!-- 2. CHỌN CẤP ĐỘ -->
+            <div class="col-xl-7">
+                
+                <label class="form-label fw-bold text-secondary small text-uppercase tracking-wider mb-2 d-block text-center text-lg-start">
+                    <i class="fas fa-award me-2 text-primary"></i>2. Chọn Cấp Độ (Hiện tại: (@tenCapDoHienTai))
+                </label>
+                <div class="level-scroll-container justify-content-xl-start">
+                    @if (currentIdGiaoTrinh == 4)
+                    {
+                        <!-- Cấp độ Giáo trình Boya -->
+                        @for (int i = 1; i <= boyaLevels.Count; i++)
+                        {
+                            bool isActive = (currentCapDo == i);
+                            <a href="@Url.Action("DanhSachBaiHocOnLuyen", "QuanLyDanhSachBaiHoc", new { capdo = i, idGiaoTrinh = 4, page = 1 })"
+                               class="level-pill @(isActive ? "text-white shadow" : "text-secondary")"
+                               style="@(isActive ? "background: var(--boya-main);" : "background: #f8fafc; border-color: #e2e8f0;")">
+                                @boyaLevels[i - 1]
+                            </a>
+                        }
+                    }
+                    else
+                    {
+                        <!-- Cấp độ HSK (1 - 6 hoặc 1 - 9 tùy chương trình) -->
+                        int maxLevel = currentIdGiaoTrinh == 1 ? 9 : 6;
+                        @for (int i = 1; i <= maxLevel; i++)
+                        {
+                            bool isActive = (currentCapDo == i);
+                            string activeStyle = "";
+                            if (isActive)
+                            {
+                                activeStyle = isV2 ? "background: var(--prog2-main); color: white;" : "background: var(--prog3-main); color: white;";
+                            }
+                            else
+                            {
+                                activeStyle = "background: #f8fafc; color: #64748b; border-color: #e2e8f0;";
+                            }
+
+                            <a href="@Url.Action("DanhSachBaiHocOnLuyen", "QuanLyDanhSachBaiHoc", new { capdo = i, idGiaoTrinh = currentIdGiaoTrinh, page = 1 })"
+                               class="level-pill @(isActive ? "shadow" : "")"
+                               style="@activeStyle">
+                                HSK @i
+                            </a>
+                        }
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    
+    <div class="d-flex align-items-center justify-content-between mb-4 px-2">
+        <div class="text-secondary small">
+            Đang hiển thị kết quả cho:
+            <span class="badge px-3 py-2 ms-2 @(isV2 ? "bg-success" : "bg-primary")">
+                @tenChuongTrinh
+            </span>
+            <span class="badge bg-dark px-3 py-2 ms-1">
+                <i class="fas fa-layer-group me-1"></i> @tenCapDoHienTai
+            </span>
+        </div>
+        <div class="text-muted small">
+            Tổng số dạng bài: <strong>@(Model?.Count ?? 0)</strong>
+        </div>
+    </div>
+
+    <!-- DANH SÁCH BÀI HỌC DẠNG CARD -->
+    @if (Model != null && Model.data != null && Model.data.Count > 0)
+    {
+        <div class="row g-4 mb-5">
+            @foreach (var item in Model.data)
+            {
+                // Xác định Theme màu sắc dựa theo Hệ 2.0 hoặc 3.0
+                string themeClass = isV2 ? "theme-2-0" : (currentIdGiaoTrinh == 4 ? "theme-boya" : "theme-3-0");
+                string btnColorClass = isV2 ? "btn-success" : (currentIdGiaoTrinh == 4 ? "btn-info text-white" : "btn-primary");
+
+                bool isFreeLesson = (item.soThuTuBai == 1);
+                bool canAccess = isFreeLesson || isUserVip;
+
+                <div class="col-md-6 col-lg-4">
+                    <div class="card h-100 shadow-sm lesson-card @themeClass">
+                        <div class="card-body p-4 d-flex flex-column justify-content-between">
+
+                            <div>
+                                <div class="d-flex align-items-center justify-content-between mb-4">
+                                    <!-- Cục Badge số bài -->
+                                    <div class="lesson-number-badge">
+                                        @item.soThuTuBai
+                                    </div>
+
+                                    <!-- HIỂN THỊ BADGE MIỄN PHÍ HOẶC VIP -->
+                                    @if (isFreeLesson)
+                                    {
+                                        <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-3 py-2 small fw-bold">
+                                            <i class="fas fa-unlock-alt me-1"></i> Học thử
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-warning bg-opacity-10 text-warning rounded-pill px-3 py-2 small fw-bold">
+                                            <i class="fas fa-crown me-1"></i> VIP
+                                        </span>
+                                    }
+                                </div>
+
+                                <h4 class="card-title fw-bold text-dark mb-3" style="line-height: 1.4;">@item.tenBaiHoc</h4>
+                                <p class="card-text text-secondary mb-4" style="font-size: 0.95rem;">
+                                    @(item.moTa ?? "Bài học bao gồm hệ thống từ vựng, ngữ pháp và bài tập thực hành theo chủ đề.")
+                                </p>
+                            </div>
+
+                            <!-- NÚT BẤM VÀO BÀI -->
+                            <div class="pt-3 mt-auto border-top border-light">
+                                @if (canAccess)
+                                {
+                                    <a href="/QuanLyDanhSachBaiHoc/ChiTietBaiHoc/@item.idBaiHoc"
+                                       class="btn @btnColorClass w-100 btn-action-lesson shadow-sm">
+                                        <i class="fas fa-play-circle me-2"></i> Luyện tập dạng này
+                                    </a>
+
+                                    <a href="@Url.Action("DanhSachBaiHoc", "QuanLyDanhSachBaiHoc", new { capdo = currentCapDo, idGiaoTrinh = (currentProgram == "3" ? 3 : 1) })"
+                                       class="btn btn-view-lesson-white w-100 py-2 rounded-pill fw-semibold shadow-sm">
+                                        <i class="fas fa-book-open me-2"></i>Xem Bài Học
+                                    </a>
+                                }
+                                else
+                                {
+                                    <a href="/NapVip"
+                                       class="btn w-100 btn-action-lesson btn-vip-upgrade">
+                                        <i class="fas fa-gem me-2"></i> Mở Khóa VIP
+                                    </a>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <!-- PHÂN TRANG -->
+        @if (Model.totalPages > 1)
+        {
+            <nav class="mt-5 mb-5 d-flex justify-content-center">
+                <ul class="pagination pagination-lg shadow-sm rounded-pill overflow-hidden bg-white">
+                    <li class="page-item @(Model.currentPage == 1 ? "disabled" : "")">
+                        <a class="page-link border-0 text-dark fw-bold px-4"
+                           href="@Url.Action("DanhSachBaiHocOnLuyen", "QuanLyDanhSachBaiHoc", new { capdo = currentCapDo, idGiaoTrinh = currentIdGiaoTrinh, page = (int)Model.currentPage - 1 })">
+                            <i class="fas fa-arrow-left"></i>
+                        </a>
+                    </li>
+
+                    @for (int i = 1; i <= (int)Model.totalPages; i++)
+                    {
+                        <li class="page-item @(i == (int)Model.currentPage ? "active" : "")">
+                            <a class="page-link border-0 fw-bold px-4 @(i == (int)Model.currentPage ? "bg-primary text-white" : "text-dark")"
+                               href="@Url.Action("DanhSachBaiHocOnLuyen", "QuanLyDanhSachBaiHoc", new { capdo = currentCapDo, idGiaoTrinh = currentIdGiaoTrinh, page = i })">@i</a>
+                        </li>
+                    }
+
+                    <li class="page-item @(Model.currentPage == Model.totalPages ? "disabled" : "")">
+                        <a class="page-link border-0 text-dark fw-bold px-4"
+                           href="@Url.Action("DanhSachBaiHocOnLuyen", "QuanLyDanhSachBaiHoc", new { capdo = currentCapDo, idGiaoTrinh = currentIdGiaoTrinh, page = (int)Model.currentPage + 1 })">
+                            <i class="fas fa-arrow-right"></i>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        }
+    }
+    else
+    {
+        <!-- TRẠNG THÁI KHÔNG CÓ DỮ LIỆU (EMPTY STATE MỚI) -->
+        <div class="text-center py-5 my-5">
+            <div class="bg-white rounded-5 shadow-sm p-5 mx-auto border" style="max-width: 600px;">
+                <div class="mb-4">
+                    <img src="https://cdn-icons-png.flaticon.com/512/7486/7486747.png" alt="No data" style="width: 120px; opacity: 0.8;" />
+                </div>
+                <h4 class="fw-bold text-dark mb-3">Chưa có bài học nào!</h4>
+                <p class="text-muted fs-5 mb-0">
+                    Hiện chưa có dữ liệu bài học thuộc chương trình
+                    <strong class="text-primary">@tenChuongTrinh</strong> - <strong class="text-primary">@tenCapDoHienTai</strong>.
+                    <br />Vui lòng chọn lại cấp độ hoặc hệ chương trình khác nhé.
+                </p>
+            </div>
+        </div>
+    }
+</div>

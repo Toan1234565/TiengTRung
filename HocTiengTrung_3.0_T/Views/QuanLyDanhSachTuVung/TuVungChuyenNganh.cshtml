@@ -1,0 +1,366 @@
+﻿@using HocTiengTrung_3._0_T.Models12.TuVung
+@model List<HocTiengTrung_3._0_T.Models12.TuVung.TuVungModes>
+
+@{
+    ViewData["Title"] = "Từ Vựng Chuyên Ngành";
+    int currentCapDo = ViewBag.CurrentCapDo ?? 1;
+    string searchTerm = ViewBag.SearchTerm ?? "";
+    string trangThai = ViewBag.TrangThai as string ?? "all";
+    string loaiTu = ViewBag.LoaiTu as string ?? "";
+    var danhSachCapDo = ViewBag.DanhSachCapDo as List<CapDoModels> ?? new List<CapDoModels>();
+
+    // Tìm tên cấp độ hiện tại để hiển thị lên tiêu đề
+    string tenCapDoHienTai = danhSachCapDo.FirstOrDefault(c => c.IdCapDo == currentCapDo)?.TenCapDo ?? "Chuyên ngành";
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <link href="~/css/danhsachtuvung/danhsachtuvung.css" rel="stylesheet" asp-append-version="true" />
+</head>
+<body>
+    <main>
+        <div class="container mt-5 pb-5">
+            <div class="hsk-header mb-5 animate__animated animate__fadeIn">
+                <div class="d-flex flex-column flex-xl-row justify-content-between align-items-xl-center mb-4 gap-3">
+
+                    <div class="d-flex align-items-center">
+                        <div class="bg-success text-white rounded-3 shadow-sm d-flex align-items-center justify-content-center me-3"
+                             style="width: 55px; height: 55px;">
+                            <i class="fas fa-graduation-cap fa-lg"></i>
+                        </div>
+                        <div>
+                            <h2 class="fw-bold mb-0 text-dark">@tenCapDoHienTai</h2>
+                            <span class="text-muted small fw-medium">Tổng: @ViewBag.TotalItems từ vựng chuyên ngành</span>
+                        </div>
+                    </div>
+
+                    <div class="d-flex flex-wrap gap-2">
+                        <a href="@Url.Action("OnLuyenNgauNhien", new { idCapDo = currentCapDo, loaiOnLuyen = 2, soLuong = 20 })"
+                           class="btn text-white shadow-sm fw-bold d-inline-flex align-items-center px-3 py-2"
+                           style="border-radius: 10px; background: linear-gradient(45deg, #4e73df, #224abe); border: none; transition: all 0.3s;">
+                            <i class="fa-solid fa-pen-to-square me-2"></i>
+                            <span>Thách thức Hán tự</span>
+                        </a>
+
+                        <button type="button" onclick="openDaThuocModal()"
+                                class="btn btn-outline-success shadow-sm fw-bold d-inline-flex align-items-center position-relative px-3 py-2"
+                                style="border-radius: 10px; border-style: dashed; transition: all 0.3s;"
+                                data-bs-toggle="modal" data-bs-target="#detailModal">
+                            <i class="fa-solid fa-clock-rotate-left me-2"></i>
+                            <span>Sổ tay</span>
+                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger shadow border border-white"
+                                  id="badgeCountDaThuoc" style="font-size: 0.7rem; min-width: 20px;">
+                                @ViewBag.LearnedCount
+                            </span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="bg-white p-3 rounded-4 shadow-sm border border-light mb-4">
+                    <form asp-action="TuVungChuyenNganh" method="get" class="row g-3 align-items-end">
+
+                        <div class="col-xl-3 col-md-3">
+                            <label class="small fw-bold text-muted mb-1 d-block">
+                                <i class="fas fa-layer-group me-1"></i>Chuyên ngành
+                            </label>
+
+                            <select name="capdo" class="form-select border-0 bg-light" style="border-radius: 8px; height: 42px;" onchange="this.form.submit()">
+                                @if (danhSachCapDo.Any())
+                                {
+                                    foreach (var cd in danhSachCapDo)
+                                    {
+                                        // Thay thế cd.IdCapDo vào thuộc tính value và so sánh với currentCapDo để giữ trạng thái select
+                                        <option value="@cd.IdCapDo" selected="@(currentCapDo == cd.IdCapDo)">
+                                            @cd.TenCapDo
+                                        </option>
+                                    }
+                                }
+                                else
+                                {
+                                    <option value="">Không có dữ liệu chuyên ngành</option>
+                                }
+                            </select>
+                        </div>
+
+                        <div class="col-xl-2 col-md-3">
+                            <label class="small fw-bold text-muted mb-1 d-block"><i class="fas fa-filter me-1"></i>Trạng thái</label>
+                            <select name="trangThai" class="form-select border-0 bg-light" style="border-radius: 8px; height: 42px;" onchange="this.form.submit()">
+                                <option value="all" selected="@(trangThai == "all")">🌟 Tất cả</option>
+                                <option value="learned" selected="@(trangThai == "learned")">✅ Đã thuộc</option>
+                                <option value="not_learned" selected="@(trangThai == "not_learned")">⏳ Đang học</option>
+                            </select>
+                        </div>
+
+                        <div class="col-xl-3 col-md-6">
+                            <label class="small fw-bold text-muted mb-1 d-block"><i class="fas fa-tags me-1"></i>Loại từ</label>
+                            <select name="loaiTu" class="form-select border-0 bg-light" style="border-radius: 8px; height: 42px;" onchange="this.form.submit()">
+                                <option value="" selected="@(string.IsNullOrEmpty(loaiTu))">🏷️ Tất cả loại từ</option>
+                                <option value="Danh từ" selected='@(loaiTu == "Danh từ")'>Danh từ (名词)</option>
+                                <option value="Động từ" selected='@(loaiTu == "Động từ")'>Động từ (动词)</option>
+                                <option value="Tính từ" selected='@(loaiTu == "Tính từ")'>Tính từ (形容词)</option>
+                                <option value="Số từ" selected='@(loaiTu == "Số từ")'>Số từ (数词)</option>
+                                <option value="Lượng từ" selected='@(loaiTu == "Lượng từ")'>Lượng từ (量词)</option>
+                                <option value="Đại từ" selected='@(loaiTu == "Đại từ")'>Đại từ (代词)</option>
+                                <option value="Trạng từ" selected='@(loaiTu == "Trạng từ")'>Phó từ (副词)</option>
+                                <option value="Giới từ" selected='@(loaiTu == "Giới từ")'>Giới từ (介词)</option>
+                                <option value="Liên từ" selected='@(loaiTu == "Liên từ")'>Liên từ (连词)</option>
+                                <option value="Trợ từ" selected='@(loaiTu == "Trợ từ")'>Trợ từ (助词)</option>
+                            </select>
+                        </div>
+
+                        <div class="col-xl-4 col-md-12 mt-3 mt-xl-0">
+                            <label class="small fw-bold text-muted mb-1 d-block"><i class="fas fa-search me-1"></i>Tìm kiếm nhanh</label>
+                            <div class="input-group" style="border-radius: 8px; overflow: hidden;">
+                                <input type="text" name="searchTerm" class="form-control border-0 bg-light" style="height: 42px;"
+                                       placeholder="Nhập từ vựng, pinyin hoặc nghĩa..." value="@searchTerm">
+                                <button class="btn btn-dark px-4" type="submit">
+                                    <i class="fas fa-search"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                    </form>
+                </div>
+            </div>
+
+            <div class="row g-4" id="wordContainer">
+                @if (Model != null && Model.Any())
+                {
+                    foreach (var item in Model)
+                    {
+                        <div class="col-xl-3 col-lg-4 col-md-6 word-item-wrapper animate__animated animate__fadeInUp">
+                            <div class="card word-card h-100 p-4">
+                                <button class="btn-mark @(item.IsLearned ? "text-learned" : "text-not-learned")"
+                                        onclick="toggleLearned(@item.IdTuVung, this)"
+                                        title="@(item.IsLearned ? "Bỏ đánh dấu" : "Đánh dấu đã thuộc")">
+                                    <i class="fas fa-check-circle fa-lg"></i>
+                                </button>
+
+                                <div class="text-center pt-3">
+                                    <div class="chu-han mb-2">@item.ChuHan</div>
+                                    <div class="text-danger fw-bold fs-4 mb-1">@item.Pinyin</div>
+                                    <div class="text-muted small fw-medium"><span class="text-dark">@item.AmHan</span></div>
+                                </div>
+
+                                <div class="d-flex align-items-center justify-content-between mt-4 mb-2">
+                                    <span class="badge-type">@item.LoaiTu</span>
+                                    <div class="d-flex gap-2">
+                                        @if (!string.IsNullOrEmpty(item.AmThanhPath))
+                                        {
+                                            <button class="btn btn-sm btn-light rounded-circle p-2 audio-btn"
+                                                    onclick="playAudio('@item.AmThanhPath', this)">
+                                                <i class="fas fa-volume-up text-success transition-all"></i>
+                                            </button>
+                                        }
+                                        @if (Context.Session.GetString("MaNguoiDung") == "3")
+                                        {
+                                            <button class="btn btn-sm btn-outline-primary rounded-circle p-2"
+                                                    onclick="openEditModal(@item.IdTuVung)" title="Sửa">
+                                                <i class="fas fa-pen"></i>
+                                            </button>
+                                            <button class="btn btn-sm btn-outline-danger rounded-circle p-2"
+                                                    onclick="deleteWord(@item.IdTuVung)" title="Xóa">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        }
+                                    </div>
+                                </div>
+
+                                <h4 class="fw-bold mb-3">@item.NghiaViet</h4>
+
+                                @if (item.CauViDus != null && item.CauViDus.Any())
+                                {
+                                    <button class="btn btn-sm btn-outline-secondary w-100 rounded-3 mt-auto shadow-sm"
+                                            type="button"
+                                            data-bs-toggle="collapse"
+                                            data-bs-target="#ex-@item.IdTuVung"
+                                            aria-expanded="false">
+                                        <i class="fas fa-lightbulb me-1"></i>
+                                        <span class="btn-text">Xem ví dụ</span>
+                                    </button>
+
+                                    <div class="collapse" id="ex-@item.IdTuVung">
+                                        <div class="example-section">
+                                            @foreach (var vd in item.CauViDus)
+                                            {
+                                                <!-- Thêm d-flex và justify-content-between để đẩy loa về bên phải -->
+                                                <div class="d-flex justify-content-between align-items-start mb-3 border-bottom border-white pb-2 last-child-border-0">
+
+                                                    <!-- Khối chứa nội dung chữ -->
+                                                    <div class="flex-grow-1 me-2">
+                                                        <div class="text-dark fw-bold mb-1" style="font-size: 1.1rem;">@vd.NoiDungHan</div>
+                                                        <div class="text-primary small mb-1">@vd.NoiDungPinyin</div>
+                                                        <div class="text-muted small italic">@vd.NoiDungViet</div>
+                                                    </div>
+
+                                                    <!-- Khối chứa nút loa (nằm ngang hàng bên phải) -->
+                                                    <div class="ms-auto">
+                                                        <button class="btn btn-sm btn-light rounded-circle p-2 audio-btn"
+                                                                onclick="playAudio('@vd.AmThanh', this)">
+                                                            <i class="fas fa-volume-up text-success transition-all"></i>
+                                                        </button>
+                                                    </div>
+
+                                                </div>
+                                            }
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <div class="col-12 text-center py-5">
+                        <div class="bg-white rounded-circle d-inline-flex p-5 shadow-sm mb-4">
+                            <i class="fas fa-ghost fa-4x text-light"></i>
+                        </div>
+                        <h3 class="fw-bold">Hơi trống trải nhỉ?</h3>
+                        <p class="text-muted">Không tìm thấy từ vựng chuyên ngành nào phù hợp với yêu cầu của bạn.</p>
+                        <a href="@Url.Action("TuVungChuyenNganh", new { capdo = currentCapDo })" class="btn btn-success rounded-pill px-4">Làm mới bộ lọc</a>
+                    </div>
+                }
+            </div>
+
+            @if (ViewBag.TotalPages > 1)
+            {
+                var currentPage = (int)ViewBag.CurrentPage;
+                var totalPages = (int)ViewBag.TotalPages;
+                var delta = 2;
+
+                <div class="pagination-container animate__animated animate__fadeIn">
+                    <nav aria-label="Page navigation">
+                        <ul class="pagination justify-content-center align-items-center mb-0">
+
+                            @* Trang đầu *@
+                            <li class="page-item @(currentPage == 1 ? "disabled" : "")">
+                                <a class="page-link" href="@Url.Action("TuVungChuyenNganh", new { capdo = currentCapDo, page = 1, searchTerm = searchTerm, trangThai = trangThai, loaiTu = loaiTu })">
+                                    <i class="fas fa-angle-double-left"></i>
+                                </a>
+                            </li>
+
+                            @* Trước *@
+                            <li class="page-item @(currentPage == 1 ? "disabled" : "")">
+                                <a class="page-link" href="@Url.Action("TuVungChuyenNganh", new { capdo = currentCapDo, page = currentPage - 1, searchTerm = searchTerm, trangThai = trangThai, loaiTu = loaiTu })">
+                                    <i class="fas fa-angle-left me-1"></i> Trước
+                                </a>
+                            </li>
+
+                            @for (int p = 1; p <= totalPages; p++)
+                            {
+                                if (p == 1 || p == totalPages || (p >= currentPage - delta && p <= currentPage + delta))
+                                {
+                                    <li class="page-item @(currentPage == p ? "active" : "")">
+                                        <a class="page-link" href="@Url.Action("TuVungChuyenNganh", new { capdo = currentCapDo, page = p, searchTerm = searchTerm, trangThai = trangThai, loaiTu = loaiTu })">@p</a>
+                                    </li>
+                                }
+                                else if (p == currentPage - delta - 1 || p == currentPage + delta + 1)
+                                {
+                                    <li class="page-item disabled"><span class="page-link">...</span></li>
+                                }
+                            }
+
+                            @* Sau *@
+                            <li class="page-item @(currentPage == totalPages ? "disabled" : "")">
+                                <a class="page-link" href="@Url.Action("TuVungChuyenNganh", new { capdo = currentCapDo, page = currentPage + 1, searchTerm = searchTerm, trangThai = trangThai, loaiTu = loaiTu })">
+                                    Sau <i class="fas fa-angle-right ms-1"></i>
+                                </a>
+                            </li>
+
+                            @* Trang cuối *@
+                            <li class="page-item @(currentPage == totalPages ? "disabled" : "")">
+                                <a class="page-link" href="@Url.Action("TuVungChuyenNganh", new { capdo = currentCapDo, page = totalPages, searchTerm = searchTerm, trangThai = trangThai, loaiTu = loaiTu })">
+                                    <i class="fas fa-angle-double-right"></i>
+                                </a>
+                            </li>
+                        </ul>
+                    </nav>
+                    <div class="text-center mt-3 small text-muted">
+                        Trang <b>@currentPage</b> trên tổng số <b>@totalPages</b>
+                    </div>
+                </div>
+            }
+        </div>
+
+        @* Toàn bộ Modal (Sổ tay, Chỉnh sửa) giữ nguyên cấu trúc của bạn *@
+        <div class="modal fade" id="detailModal" data-bs-backdrop="static">
+            <div class="modal-dialog modal-xl">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Nhật ký hệ thống</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body" id="modalBodyNhatKy">
+                        @await Html.PartialAsync("_DanhSachTuVungDaThuoc")
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal fade" id="editWordModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-lg modal-dialog-centered">
+                <div class="modal-content border-0 shadow-lg" style="border-radius: 20px;">
+                    <div class="modal-header bg-primary text-white border-0" style="border-radius: 20px 20px 0 0;">
+                        <h5 class="modal-title fw-bold"><i class="fas fa-edit me-2"></i>Chỉnh sửa từ vựng chuyên ngành</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body p-4">
+                        <form id="editWordForm">
+                            <input type="hidden" id="editIdTuVung" name="IdTuVung">
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <label class="form-label small fw-bold">Chữ Hán</label>
+                                    <input type="text" class="form-control" id="editChuHan" required>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label small fw-bold">Pinyin</label>
+                                    <input type="text" class="form-control" id="editPinyin">
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label small fw-bold">Âm Hán</label>
+                                    <input type="text" class="form-control" id="editAmHan">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label small fw-bold">Nghĩa Việt</label>
+                                    <input type="text" class="form-control" id="editNghiaViet">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label small fw-bold">Phát âm</label>
+                                    <input type="text" class="form-control" id="editAmThanh">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label small fw-bold">Loại từ</label>
+                                    <input type="text" class="form-control" id="editLoaiTu">
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label small fw-bold">ID Cấp độ</label>
+                                    <input type="number" class="form-control" id="editIdCapDo">
+                                </div>
+                            </div>
+                            <hr class="my-4">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h6 class="fw-bold mb-0 text-primary"><i class="fas fa-list me-2"></i>Câu ví dụ</h6>
+                                <button type="button" class="btn btn-sm btn-outline-primary" onclick="addNewExampleRow()">
+                                    <i class="fas fa-plus me-1"></i> Thêm ví dụ
+                                </button>
+                            </div>
+                            <div id="exampleContainer" class="overflow-auto" style="max-height: 300px;"></div>
+                        </form>
+                    </div>
+                    <div class="modal-footer border-0 p-4 pt-0">
+                        <button type="button" class="btn btn-light fw-bold px-4" data-bs-dismiss="modal">Hủy</button>
+                        <button type="button" onclick="saveWordChanges()" class="btn btn-primary fw-bold px-4 shadow-sm">
+                            Lưu thay đổi <i class="fas fa-save ms-1"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    <partial name="_DanhSachGhiChu" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="~/js/quanlytuvung/danhsachtuvung.js" asp-append-version="true"></script>
+</body>
+</html>

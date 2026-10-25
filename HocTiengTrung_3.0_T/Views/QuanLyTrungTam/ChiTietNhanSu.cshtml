@@ -1,0 +1,577 @@
+﻿@model HocTiengTrung_3._0_T.Models12.QuanLyTrungTam.ChiTietGiangVienDto
+@{
+    ViewData["Title"] = "Chi tiết giảng viên - " + (Model?.HoTen ?? "Hồ sơ");
+
+    string currentVaiTro = User.FindFirst("TenVaiTro")?.Value
+                           ?? Context.Session.GetString("TenVaiTro")
+                           ?? "";
+
+    string currentIdTaiKhoanStr = User.FindFirst("IdTaiKhoan")?.Value
+                                  ?? Context.Session.GetString("IdTaiKhoan")
+                                  ?? "0";
+    int.TryParse(currentIdTaiKhoanStr, out int currentIdTaiKhoan);
+
+    string vaiTroClean = currentVaiTro.Trim().ToLower();
+
+    bool isAdmin = vaiTroClean.Contains("quản trị viên") || vaiTroClean.Contains("admin");
+    bool isQuanLyTrungTam = vaiTroClean.Contains("quản lý") || vaiTroClean.Contains("manager") || isAdmin;
+
+    bool isSelfAccount = (Model != null && Model.IdTaiKhoan == currentIdTaiKhoan);
+    bool isAccountActive = Model?.TrangThaiTaiKhoan ?? true;
+
+    var listLopDay = Model?.DanhSachLopDay ?? new List<HocTiengTrung_3._0_T.Models12.QuanLyTrungTam.LopDayCuaGiangVienDto>();
+}
+
+<div class="d-none">@Html.AntiForgeryToken()</div>
+
+<style>
+    .card-custom {
+        border: none;
+        border-radius: 16px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+        background-color: #fff;
+    }
+
+    .profile-avatar {
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 4px solid #fff;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .badge-status {
+        border-radius: 20px;
+        padding: 6px 14px;
+        font-size: 0.8rem;
+        font-weight: 600;
+    }
+
+    .info-label {
+        color: #6c757d;
+        font-size: 0.8rem;
+        font-weight: 500;
+        margin-bottom: 2px;
+        display: block;
+    }
+
+    .info-value {
+        font-weight: 600;
+        color: #212529;
+        font-size: 0.95rem;
+    }
+</style>
+
+<div class="container-fluid mt-4 mb-5">
+    <!-- Nút điều hướng quay lại -->
+    <div class="mb-3 d-flex justify-content-between align-items-center">
+        <button type="button" onclick="history.back()" class="btn btn-outline-secondary d-flex align-items-center gap-2">
+            <i class="fa-solid fa-arrow-left"></i> Quay lại
+        </button>
+        <span class="badge bg-light text-dark border">
+            Mã định danh tài khoản: <strong>#@(Model?.IdTaiKhoan ?? 0)</strong>
+        </span>
+    </div>
+
+    @if (Model == null)
+    {
+        <div class="alert alert-warning border-0 shadow-sm" role="alert">
+            <i class="fa-solid fa-triangle-exclamation me-2"></i> Không tìm thấy dữ liệu hồ sơ giảng viên này!
+        </div>
+    }
+    else
+    {
+        <div class="row g-4">
+            <!-- Cột trái: Thẻ đại diện & Hành động quản trị -->
+            <div class="col-lg-4">
+                <div class="card card-custom text-center p-4 mb-4">
+                    <div class="position-relative d-inline-block mx-auto mb-3">
+                        <img src="@(string.IsNullOrEmpty(Model.AnhDaiDien) || Model.AnhDaiDien == "default_avatar.png"
+                                                             ? "https://ui-avatars.com/api/?name=" + Uri.EscapeDataString(Model.HoTen) + "&background=random"
+                                                             : Model.AnhDaiDien)"
+                             alt="Avatar" class="profile-avatar" id="imgAvatarHienThi" />
+                        <span class="position-absolute bottom-0 end-0 p-2 bg-@(isAccountActive ? "success" : "danger") border border-white rounded-circle"
+                              title="@(isAccountActive ? "Đang hoạt động" : "Đã khóa")"></span>
+                    </div>
+
+                    <h5 class="fw-bold mb-1 text-dark" id="lblHeaderHoTen">@Model.HoTen</h5>
+                    <p class="text-muted small mb-2 font-monospace">@@@Model.TenDangNhap</p>
+
+                    <div class="d-flex justify-content-center gap-2 mb-3">
+                        <span class="badge bg-primary-subtle text-primary border badge-status">
+                            <i class="fa-solid fa-user-shield me-1"></i>@(string.IsNullOrWhiteSpace(Model.TenVaiTro) ? "Giảng viên" : Model.TenVaiTro)
+                        </span>
+                        <span id="badgeTrangThai" class="badge @(isAccountActive ? "bg-success-subtle text-success" : "bg-danger-subtle text-danger") border badge-status">
+                            @(isAccountActive ? "Hoạt động" : "Đã khóa")
+                        </span>
+                    </div>
+
+                    <hr class="text-muted opacity-25" />
+
+                    <!-- Thao tác tài khoản -->
+                    <div class="text-start">
+                        <label class="info-label text-uppercase mb-2">Thao tác tài khoản</label>
+
+                        @if (isSelfAccount)
+                        {
+                            <div class="d-flex flex-column gap-2">
+                                <button type="button" class="btn btn-primary w-100 fw-bold d-flex align-items-center justify-content-center gap-2 shadow-sm"
+                                        id="btnMoModalCapNhatThongTin"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#modalCapNhatThongTin">
+                                    <i class="fa-regular fa-pen-to-square"></i> Cập nhật thông tin cá nhân
+                                </button>
+
+                                <button type="button" class="btn btn-outline-warning w-100 fw-bold d-flex align-items-center justify-content-center gap-2 shadow-sm"
+                                        id="btnMoModalDoiMatKhauSelf"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#modalDoiMatKhauSelf">
+                                    <i class="fa-solid fa-lock"></i> Đổi mật khẩu của tôi
+                                </button>
+                            </div>
+                        }
+                        else if (isQuanLyTrungTam)
+                        {
+                            <div class="d-flex flex-column gap-2">
+                                <!-- NÚT CẤP LẠI MẬT KHẨU -->
+                                <button type="button" class="btn btn-outline-warning w-100 fw-bold d-flex align-items-center justify-content-center gap-2 shadow-sm"
+                                        id="btnMoModalCapLaiMatKhau"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#modalCapLaiMatKhau"
+                                        data-id="@Model.IdTaiKhoan"
+                                        data-username="@Model.TenDangNhap">
+                                    <i class="fa-solid fa-key"></i> Cấp lại mật khẩu
+                                </button>
+
+                                <!-- NÚT KHÓA / MỞ KHÓA TÀI KHOẢN -->
+                                <button type="button"
+                                        class="btn @(isAccountActive ? "btn-outline-danger" : "btn-outline-success") w-100 fw-bold d-flex align-items-center justify-content-center gap-2 shadow-sm"
+                                        id="btnToggleKhoa"
+                                        onclick="xuLyToggleKhoaTaiKhoan(@Model.IdTaiKhoan, '@Model.TenDangNhap', @(isAccountActive ? "true" : "false"))">
+                                    <i class="fa-solid @(isAccountActive ? "fa-user-slash" : "fa-user-check")"></i>
+                                    @(isAccountActive ? "Khóa tài khoản" : "Mở khóa tài khoản")
+                                </button>
+
+                                <!-- NÚT GÁN VAI TRÒ HỆ THỐNG -->
+                                <button type="button"
+                                        class="btn btn-outline-primary w-100 fw-bold d-flex align-items-center justify-content-center gap-2 shadow-sm"
+                                        id="btnMoModalGanVaiTro"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#modalGanVaiTro"
+                                        data-id="@Model.IdTaiKhoan"
+                                        data-idvaitro="@Model.IdVaiTro"
+                                        data-tenvaitro="@Model.TenVaiTro"
+                                        data-hoten="@Model.HoTen">
+                                    <i class="fa-solid fa-user-gear"></i> Gán vai trò hệ thống
+                                </button>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="alert alert-light border small text-muted mb-0 d-flex align-items-center gap-2">
+                                <i class="fa-solid fa-lock text-secondary"></i>
+                                <span>Bạn không có quyền quản trị tài khoản này.</span>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <!-- Cột phải: Thông tin chi tiết & Danh sách lớp học phụ trách -->
+            <div class="col-lg-8">
+                <!-- Thẻ 1: Thông tin hồ sơ nhân sự -->
+                <div class="card card-custom p-4 mb-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
+                        <h5 class="fw-bold text-primary mb-0">
+                            <i class="fas fa-id-card me-2"></i>Thông tin hồ sơ nhân sự
+                        </h5>
+                        @if (isSelfAccount)
+                        {
+                            <button type="button" class="btn btn-sm btn-outline-primary fw-semibold" onclick="$('#btnMoModalCapNhatThongTin').click()">
+                                <i class="fa-solid fa-user-pen me-1"></i>Chỉnh sửa
+                            </button>
+                        }
+                    </div>
+
+                    <div class="row g-4">
+                        <div class="col-md-6">
+                            <span class="info-label">Tên đăng nhập</span>
+                            <span class="info-value text-primary font-monospace">@Model.TenDangNhap</span>
+                        </div>
+
+                        <div class="col-md-6">
+                            <span class="info-label">Họ và tên đầy đủ</span>
+                            <span class="info-value" id="lblHoTenVal">@Model.HoTen</span>
+                        </div>
+
+                        <div class="col-md-6">
+                            <span class="info-label">Địa chỉ Email</span>
+                            <span class="info-value">
+                                @if (!string.IsNullOrEmpty(Model.Email))
+                                {
+                                    <a href="mailto:@Model.Email" class="text-decoration-none" id="lblEmailVal">@Model.Email</a>
+                                }
+                                else
+                                {
+                                    <span class="text-muted" id="lblEmailVal">Chưa cập nhật</span>
+                                }
+                            </span>
+                        </div>
+
+                        <div class="col-md-6">
+                            <span class="info-label">Số điện thoại</span>
+                            <span class="info-value">
+                                @if (!string.IsNullOrEmpty(Model.SoDienThoai))
+                                {
+                                    <a href="tel:@Model.SoDienThoai" class="text-decoration-none" id="lblSdtVal">@Model.SoDienThoai</a>
+                                }
+                                else
+                                {
+                                    <span class="text-muted" id="lblSdtVal">Chưa cập nhật</span>
+                                }
+                            </span>
+                        </div>
+
+                        <div class="col-md-6">
+                            <span class="info-label">Cơ sở / Trung tâm đào tạo</span>
+                            <span class="info-value text-dark fw-bold">
+                                @(string.IsNullOrWhiteSpace(Model.TenTrungTam) ? "Hệ thống Tiếng Trung" : Model.TenTrungTam)
+                                @if (!string.IsNullOrEmpty(Model.MaTrungTam))
+                                {
+                                    <small class="text-muted font-monospace">(@Model.MaTrungTam)</small>
+                                }
+                            </span>
+                        </div>
+
+                        <div class="col-md-6">
+                            <span class="info-label">Vai trò hệ thống</span>
+                            <span class="info-value text-success">
+                                @(string.IsNullOrWhiteSpace(Model.TenVaiTro) ? "Giảng viên" : Model.TenVaiTro)
+                            </span>
+                        </div>
+
+                        <div class="col-md-6">
+                            <span class="info-label">Ngày khởi tạo tài khoản</span>
+                            <span class="info-value text-muted font-monospace">
+                                @(Model.NgayTaoTaiKhoan?.ToString("dd/MM/yyyy HH:mm") ?? "---")
+                            </span>
+                        </div>
+
+                        <div class="col-md-6">
+                            <span class="info-label">Ngày sinh</span>
+                            <span class="info-value" id="lblNgaySinhVal">
+                                @(Model.NgaySinh?.ToString("dd/MM/yyyy") ?? "---")
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Thẻ 2: DANH SÁCH LỚP HỌC ĐƯỢC PHÂN CÔNG GIẢNG DẠY -->
+                <div class="card card-custom p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom flex-wrap gap-2">
+                        <div>
+                            <h5 class="fw-bold text-dark mb-0">
+                                <i class="fa-solid fa-chalkboard-user text-primary me-2"></i>Các lớp học phụ trách
+                            </h5>
+                            <small class="text-muted">Tổng cộng @Model.TongSoLopPhuTrach lớp được phân công</small>
+                        </div>
+                        <span class="badge bg-primary rounded-pill px-3 py-2">@listLopDay.Count lớp</span>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light text-secondary text-uppercase small">
+                                <tr>
+                                    <th style="width: 60px;">Mã</th>
+                                    <th>Tên lớp học</th>
+                                    <th>Vai trò đứng lớp</th>
+                                    <th>Khai giảng</th>
+                                    <th>Học viên</th>
+                                    <th>Trạng thái</th>
+                                    <th class="text-end">Chi tiết</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if (listLopDay.Any())
+                                {
+                                    foreach (var lop in listLopDay)
+                                    {
+                                        <tr>
+                                            <td>
+                                                <span class="badge bg-light text-secondary border font-monospace">
+                                                    @(string.IsNullOrEmpty(lop.MaLopHoc) ? $"#{lop.IdLopHoc}" : lop.MaLopHoc)
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <div class="fw-bold text-dark">@lop.TenLopHoc</div>
+                                                @if (!string.IsNullOrWhiteSpace(lop.MoTa))
+                                                {
+                                                    <small class="text-muted text-truncate d-block" style="max-width: 200px;">@lop.MoTa</small>
+                                                }
+                                            </td>
+                                            <td>
+                                                <span class="badge @(lop.VaiTroDay == "Trợ giảng" ? "bg-info-subtle text-info border" : "bg-success-subtle text-success border")">
+                                                    @(string.IsNullOrWhiteSpace(lop.VaiTroDay) ? "Giảng viên chính" : lop.VaiTroDay)
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <span class="small text-muted">
+                                                    @(lop.NgayKhaiGiang.HasValue ? lop.NgayKhaiGiang.Value.ToString("dd/MM/yyyy") : "--")
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-light text-dark border">
+                                                    <i class="fa-solid fa-users me-1 text-primary"></i>@lop.TongSoHocVien
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <span class="badge @(lop.TrangThaiLop ? "bg-success-subtle text-success" : "bg-secondary-subtle text-secondary")">
+                                                    @(lop.TrangThaiLop ? "Đang mở" : "Đã đóng")
+                                                </span>
+                                            </td>
+                                            <td class="text-end">
+                                                <a asp-controller="QuanLyLopHoc" asp-action="ChiTietLopHoc" asp-route-id="@lop.IdLopHoc"
+                                                   class="btn btn-sm btn-outline-primary" title="Xem chi tiết lớp">
+                                                    <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    }
+                                }
+                                else
+                                {
+                                    <tr>
+                                        <td colspan="7" class="text-center py-4 text-muted">
+                                            <i class="fa-solid fa-folder-open fs-3 d-block mb-2 text-secondary"></i>
+                                            Giảng viên này hiện chưa được phân công lớp học nào.
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@* ========================================================================= *@
+@* MODAL DÀNH RIÊNG CHO CHÍNH MÌNH (CẬP NHẬT THÔNG TIN & ĐỔI MẬT KHẨU)      *@
+@* ========================================================================= *@
+@if (isSelfAccount)
+{
+    <!-- 1. MODAL CẬP NHẬT THÔNG TIN CÁ NHÂN -->
+    <div class="modal fade" id="modalCapNhatThongTin" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title fw-bold">
+                        <i class="fa-regular fa-pen-to-square me-2"></i>Cập nhật thông tin cá nhân
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form id="formCapNhatThongTin" onsubmit="xuLyCapNhatThongTin(event)">
+                    <div class="modal-body p-4">
+                        <div class="mb-3">
+                            <label class="form-label small fw-semibold">Họ và tên <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="txtEditHoTen" required value="@Model?.HoTen">
+                        </div>
+
+                        <div class="row g-2 mb-3">
+                            <div class="col-md-6">
+                                <label class="form-label small fw-semibold">Địa chỉ Email</label>
+                                <input type="email" class="form-control" id="txtEditEmail" value="@Model?.Email">
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label small fw-semibold">Số điện thoại</label>
+                                <input type="tel" class="form-control" id="txtEditSdt" value="@Model?.SoDienThoai">
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label small fw-semibold">Ngày sinh</label>
+                            <input type="date" class="form-control" id="txtEditNgaySinh" value="@(Model?.NgaySinh?.ToString("yyyy-MM-dd") ?? "")">
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label small fw-semibold">Ảnh đại diện</label>
+                            <div class="d-flex align-items-center gap-3 mb-2">
+                                <img id="imgPreviewAvatar"
+                                     src="@(string.IsNullOrEmpty(Model?.AnhDaiDien) || Model.AnhDaiDien == "default_avatar.png"
+                                                                            ? "https://ui-avatars.com/api/?name=" + Uri.EscapeDataString(Model?.HoTen ?? "User") + "&background=random"
+                                                                            : Model.AnhDaiDien)"
+                                     alt="Preview Avatar"
+                                     class="rounded-circle border object-fit-cover shadow-sm"
+                                     style="width: 70px; height: 70px;" />
+
+                                <div class="flex-grow-1">
+                                    <input type="file" class="form-control" id="fileAvatarInput" accept="image/*" onchange="previewImageAvatar(event)">
+                                    <small class="text-muted d-block mt-1">Định dạng: JPG, PNG, WEBP (Tối đa 5MB).</small>
+                                </div>
+                            </div>
+                            <input type="hidden" id="txtEditAnhDaiDien" value="@(Model?.AnhDaiDien ?? "")">
+                        </div>
+                    </div>
+                    <div class="modal-footer bg-light">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                        <button type="submit" id="btnSubmitCapNhatThongTin" class="btn btn-primary fw-bold px-4">
+                            <i class="fa-solid fa-floppy-disk me-1"></i> Lưu thay đổi
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. MODAL TỰ ĐỔI MẬT KHẨU CỦA TÔI -->
+    <div class="modal fade" id="modalDoiMatKhauSelf" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header bg-warning-subtle text-warning-emphasis">
+                    <h5 class="modal-title fw-bold">
+                        <i class="fa-solid fa-lock me-2"></i>Đổi mật khẩu tài khoản
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form id="formDoiMatKhauSelf" onsubmit="xuLyDoiMatKhauSelf(event)">
+                    <div class="modal-body p-4">
+                        <div class="mb-3">
+                            <label class="form-label small fw-semibold">Mật khẩu hiện tại <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <input type="password" class="form-control" id="txtSelfMatKhauCu" required placeholder="Nhập mật khẩu đang dùng">
+                                <button class="btn btn-outline-secondary" type="button" onclick="togglePasswordVisibility('txtSelfMatKhauCu', this)">
+                                    <i class="fa-regular fa-eye"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label small fw-semibold">Mật khẩu mới <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <input type="password" class="form-control" id="txtSelfMatKhauMoi" required minlength="6" placeholder="Tối thiểu 6 ký tự">
+                                <button class="btn btn-outline-secondary" type="button" onclick="togglePasswordVisibility('txtSelfMatKhauMoi', this)">
+                                    <i class="fa-regular fa-eye"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label small fw-semibold">Nhập lại mật khẩu mới <span class="text-danger">*</span></label>
+                            <input type="password" class="form-control" id="txtSelfXacNhanMatKhau" required minlength="6" placeholder="Xác nhận mật khẩu mới">
+                            <div class="invalid-feedback" id="feedbackSelfPassMatch">Mật khẩu xác nhận không khớp!</div>
+                        </div>
+                    </div>
+                    <div class="modal-footer bg-light">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                        <button type="submit" id="btnSubmitDoiMatKhauSelf" class="btn btn-warning fw-bold px-4">
+                            <i class="fa-solid fa-check me-1"></i> Đổi mật khẩu
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+}
+
+@* ========================================================================= *@
+@* MODAL DÀNH CHO QUẢN TRỊ VIÊN / QUẢN LÝ CƠ SỞ                               *@
+@* ========================================================================= *@
+@if (isQuanLyTrungTam && !isSelfAccount)
+{
+    <!-- MODAL CẤP LẠI MẬT KHẨU NHANH (ADMIN) -->
+    <div class="modal fade" id="modalCapLaiMatKhau" tabindex="-1" aria-labelledby="modalCapLaiMatKhauTitle" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header bg-warning-subtle text-warning-emphasis">
+                    <h5 class="modal-title fw-bold" id="modalCapLaiMatKhauTitle">
+                        <i class="fa-solid fa-key me-2"></i>Cấp lại mật khẩu tài khoản
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form id="formCapLaiMatKhau" onsubmit="xuLyCapLaiMatKhau(event)">
+                    <div class="modal-body p-4">
+                        <input type="hidden" id="resetIdTaiKhoan" value="@(Model?.IdTaiKhoan ?? 0)" />
+
+                        <div class="alert alert-light border small text-muted mb-3">
+                            Đang thực hiện đổi mật khẩu cho tài khoản:
+                            <strong class="text-dark font-monospace" id="txtResetTenDangNhap">@(Model?.TenDangNhap ?? "")</strong>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label small fw-semibold">Mật khẩu mới <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <input type="password" class="form-control" id="txtMatKhauMoi" required minlength="6" placeholder="Nhập mật khẩu mới (tối thiểu 6 ký tự)">
+                                <button class="btn btn-outline-secondary" type="button" onclick="togglePasswordVisibility('txtMatKhauMoi', this)">
+                                    <i class="fa-regular fa-eye"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label small fw-semibold">Xác nhận mật khẩu mới <span class="text-danger">*</span></label>
+                            <input type="password" class="form-control" id="txtXacNhanMatKhauMoi" required minlength="6" placeholder="Nhập lại mật khẩu mới">
+                            <div class="invalid-feedback" id="feedbackPasswordMatch">Mật khẩu xác nhận không trùng khớp!</div>
+                        </div>
+                    </div>
+                    <div class="modal-footer bg-light">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                        <button type="submit" id="btnSubmitResetPassword" class="btn btn-warning fw-bold px-4">
+                            <i class="fa-solid fa-check me-1"></i> Xác nhận cấp lại
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL GÁN VAI TRÒ -->
+    <div class="modal fade" id="modalGanVaiTro" tabindex="-1" aria-labelledby="modalGanVaiTroTitle" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header bg-primary-subtle text-primary-emphasis">
+                    <h5 class="modal-title fw-bold" id="modalGanVaiTroTitle">
+                        <i class="fa-solid fa-user-gear me-2"></i>Gán vai trò cho tài khoản
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form id="formGanVaiTro" onsubmit="xuLyGanVaiTro(event)">
+                    <div class="modal-body p-4">
+                        <input type="hidden" id="assignIdTaiKhoan" value="@(Model?.IdTaiKhoan ?? 0)" />
+
+                        <div class="alert alert-light border small text-muted mb-3">
+                            Thao tác phân quyền cho người dùng:
+                            <strong class="text-dark" id="txtAssignHoTen">@(Model?.HoTen ?? Model?.TenDangNhap)</strong>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label small fw-semibold">Vai trò hiện tại</label>
+                            <input type="text" class="form-control bg-light" id="txtVaiTroHienTai" readonly value="@Model?.TenVaiTro" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label small fw-semibold">Chọn vai trò mới <span class="text-danger">*</span></label>
+                            <select class="form-select" id="selectVaiTroMoi" required>
+                                <option value="">-- Đang nạp danh sách vai trò... --</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="modal-footer bg-light">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                        <button type="submit" id="btnSubmitGanVaiTro" class="btn btn-primary fw-bold px-4">
+                            <i class="fa-solid fa-check me-1"></i> Lưu thay đổi
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+}
+
+@section Scripts {
+    <!-- BẮT BUỘC: jQuery phải được nhúng trước -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="~/js/TrungTam/chitietnhansu.js"></script>
+}

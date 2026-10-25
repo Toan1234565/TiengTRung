@@ -1,0 +1,546 @@
+﻿@model HocTiengTrung_3._0_T.Models12.QuanLyTrungTam.ChiTietLopHocViewModel
+@{
+    ViewData["Title"] = "Chi tiết Lớp học - " + (Model?.TenLopHoc ?? "Hệ thống");
+    var listHocVien = Model?.DanhSachHocVien ?? new List<HocTiengTrung_3._0_T.Models12.QuanLyTrungTam.ChiTietHocVienViewModel>();
+    var listGiangVien = Model?.DanhSachGiangVien ?? new List<HocTiengTrung_3._0_T.Models12.QuanLyTrungTam.ChiTietGiangVienViewModel>();
+    string currentVaiTro = User.FindFirst("TenVaiTro")?.Value
+                        ?? Context.Session.GetString("TenVaiTro")
+                        ?? "";
+}
+
+<div class="container-fluid py-4">
+    <!-- Breadcrumb & Header Navigation -->
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+        <div>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-1">
+                    <li class="breadcrumb-item"><a asp-controller="QuanLyTrungTam" asp-action="DanhSachTrungTam" class="text-decoration-none">Quản lý trung tâm</a></li>
+                    @if (Model != null && Model.IdTrungTam > 0)
+                    {
+                        <li class="breadcrumb-item">
+                            <a asp-controller="QuanLyTrungTam" asp-action="ChiTietTrungTam" asp-route-id="@Model.IdTrungTam" class="text-decoration-none">
+                                @(Model.TenTrungTam ?? "Cơ sở")
+                            </a>
+                        </li>
+                    }
+                    <li class="breadcrumb-item active" aria-current="page">Chi tiết lớp học</li>
+                </ol>
+            </nav>
+            <h3 class="fw-bold text-dark mb-0" id="headerTenLopHoc">@(Model?.TenLopHoc ?? "Thông tin lớp học")</h3>
+        </div>
+
+        <div class="d-flex align-items-center gap-2">
+            @if (Model != null)
+            {
+                <button type="button" onclick="history.back()" class="btn btn-outline-secondary d-flex align-items-center gap-2">
+                    <i class="fa-solid fa-arrow-left"></i> Quay lại
+                </button>
+                @if (currentVaiTro.Equals("Quản lý trung tâm", StringComparison.OrdinalIgnoreCase))
+                {
+                    <button type="button" class="btn btn-warning text-dark d-flex align-items-center gap-1 shadow-sm fw-semibold"
+                            title="Sửa lớp học"
+                            onclick="moModalSuaLopHoc(@Model.IdLopHoc, '@Html.Raw(Model.TenLopHoc.Replace("'", "\\'"))', '@Html.Raw((Model.MoTa ?? "").Replace("'", "\\'"))', '@(Model.NgayKhaiGiang?.ToString("yyyy-MM-dd") ?? "")', '@(Model.NgayKetThuc?.ToString("yyyy-MM-dd") ?? "")', @(Model.TrangThai ? "true" : "false"))">
+                        <i class="fa-regular fa-pen-to-square"></i> Chỉnh sửa & Gán GV
+                    </button>
+
+                    <button type="button" class="btn btn-outline-danger d-flex align-items-center gap-1 shadow-sm"
+                            title="Xóa lớp học"
+                            onclick="xoaLopHocHienTai(@Model.IdLopHoc, '@Html.Raw(Model.TenLopHoc.Replace("'", "\\'"))')">
+                        <i class="fa-regular fa-trash-can"></i> Xóa lớp
+                    </button>
+                    <button type="button"
+                            id="btnChuongThongBao"
+                            class="btn btn-light rounded-circle shadow-sm btn-nhat-ky d-flex align-items-center justify-content-center"
+                            style="width: 42px; height: 42px; border: 1px solid #dee2e6;"
+                            data-bs-toggle="modal"
+                            data-bs-target="#detailModal"
+                            title="Xem nhật ký hoạt động hệ thống">
+                        <i class="fa-solid fa-bell text-primary fs-5"></i>
+                        <span id="badgeSoThongBao"
+                              class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger border border-light d-none"
+                              style="font-size: 0.65rem;">
+                            0
+                        </span>
+                    </button>
+                }
+                
+            }
+           
+        </div>
+    </div>
+
+    @if (Model == null)
+    {
+        <div class="alert alert-warning border-0 shadow-sm" role="alert">
+            <i class="fa-solid fa-triangle-exclamation me-2"></i> Không tìm thấy dữ liệu lớp học này!
+        </div>
+    }
+    else
+    {
+        <!-- KPI Cards -->
+        <div class="row g-3 mb-4">
+            <div class="col-md-3 col-sm-6">
+                <div class="card border-0 shadow-sm p-3 h-100">
+                    <div class="d-flex align-items-center">
+                        <div class="rounded-3 bg-primary-subtle text-primary p-3 me-3 fs-4">
+                            <i class="fa-solid fa-users"></i>
+                        </div>
+                        <div>
+                            <span class="text-muted small text-uppercase fw-semibold">Tổng học viên</span>
+                            <h3 class="fw-bold mb-0 text-dark" id="kpiTongSoHocVien">@listHocVien.Count</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-3 col-sm-6">
+                <div class="card border-0 shadow-sm p-3 h-100">
+                    <div class="d-flex align-items-center">
+                        <div class="rounded-3 bg-info-subtle text-info p-3 me-3 fs-4">
+                            <i class="fa-solid fa-calendar-check"></i>
+                        </div>
+                        <div>
+                            <span class="text-muted small text-uppercase fw-semibold">Khai giảng</span>
+                            <h6 class="fw-bold mb-0 text-dark" id="kpiNgayKhaiGiang">
+                                @(Model.NgayKhaiGiang.HasValue ? Model.NgayKhaiGiang.Value.ToString("dd/MM/yyyy") : "Chưa xác định")
+                            </h6>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-3 col-sm-6">
+                <div class="card border-0 shadow-sm p-3 h-100">
+                    <div class="d-flex align-items-center">
+                        <div class="rounded-3 bg-warning-subtle text-warning-emphasis p-3 me-3 fs-4">
+                            <i class="fa-solid fa-calendar-xmark"></i>
+                        </div>
+                        <div>
+                            <span class="text-muted small text-uppercase fw-semibold">Bế giảng</span>
+                            <h6 class="fw-bold mb-0 text-dark" id="kpiNgayKetThuc">
+                                @(Model.NgayKetThuc.HasValue ? Model.NgayKetThuc.Value.ToString("dd/MM/yyyy") : "Chưa xác định")
+                            </h6>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-3 col-sm-6">
+                <div class="card border-0 shadow-sm p-3 h-100">
+                    <div class="d-flex align-items-center">
+                        <div id="kpiStatusIcon" class="rounded-3 @(Model.TrangThai ? "bg-success-subtle text-success" : "bg-secondary-subtle text-secondary") p-3 me-3 fs-4">
+                            <i class="fa-solid @(Model.TrangThai ? "fa-circle-check" : "fa-circle-pause")"></i>
+                        </div>
+                        <div>
+                            <span class="text-muted small text-uppercase fw-semibold">Trạng thái</span>
+                            <h6 class="fw-bold mb-0 @(Model.TrangThai ? "text-success" : "text-muted")" id="kpiStatusText">
+                                @(Model.TrangThai ? "Đang mở" : "Đã đóng")
+                            </h6>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-4">
+            <!-- Cột trái: Thông tin lớp học & Danh sách Giảng viên phụ trách -->
+            <div class="col-lg-4">
+                <!-- Card 1: Thông tin lớp -->
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-body p-4">
+                        <h5 class="fw-bold mb-3 text-dark border-bottom pb-2">
+                            <i class="fa-solid fa-circle-info text-primary me-2"></i>Thông tin lớp học
+                        </h5>
+
+                        <ul class="list-group list-group-flush small">
+                            <li class="list-group-item d-flex justify-content-between px-0 py-2">
+                                <span class="text-muted">Tên lớp học:</span>
+                                <span class="fw-bold text-dark text-end" id="lblTenLopHoc">@Model.TenLopHoc</span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between px-0 py-2">
+                                <span class="text-muted">Trung tâm trực thuộc:</span>
+                                <span class="fw-semibold text-primary text-end">@(Model.TenTrungTam ?? "Chưa gán")</span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between px-0 py-2">
+                                <span class="text-muted">Mã ID lớp:</span>
+                                <span class="badge bg-light text-secondary border font-monospace">#@Model.IdLopHoc</span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between px-0 py-2">
+                                <span class="text-muted">Khai giảng:</span>
+                                <span class="fw-semibold text-dark" id="lblNgayKhaiGiang">
+                                    @(Model.NgayKhaiGiang.HasValue ? Model.NgayKhaiGiang.Value.ToString("dd/MM/yyyy") : "--")
+                                </span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between px-0 py-2">
+                                <span class="text-muted">Bế giảng:</span>
+                                <span class="fw-semibold text-dark" id="lblNgayKetThuc">
+                                    @(Model.NgayKetThuc.HasValue ? Model.NgayKetThuc.Value.ToString("dd/MM/yyyy") : "--")
+                                </span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between px-0 py-2">
+                                <span class="text-muted">Trạng thái:</span>
+                                <span id="lblTrangThaiBadge" class="badge bg-@(Model.TrangThai ? "success-subtle text-success" : "secondary-subtle text-secondary")">
+                                    @(Model.TrangThai ? "Đang hoạt động" : "Đã đóng")
+                                </span>
+                            </li>
+                            <li class="list-group-item px-0 py-2">
+                                <span class="text-muted d-block mb-1">Mô tả / Ghi chú:</span>
+                                <div class="p-2 bg-light rounded text-secondary" id="lblMoTa">
+                                    @(string.IsNullOrWhiteSpace(Model.MoTa) ? "Không có mô tả nào." : Model.MoTa)
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Card 2: DANH SÁCH GIẢNG VIÊN ĐƯỢC PHÂN CÔNG -->
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+                        <h6 class="fw-bold mb-0 text-dark">
+                            <i class="fa-solid fa-chalkboard-user text-primary me-2"></i>Giảng viên phụ trách
+                        </h6>
+                        <span class="badge bg-primary-subtle text-primary rounded-pill">@listGiangVien.Count GV</span>
+                    </div>
+                    <div class="card-body p-3">
+                        @if (listGiangVien.Any())
+                        {
+                            <div class="d-flex flex-column gap-3">
+                                @foreach (var gv in listGiangVien)
+                                {
+                                    <div class="d-flex align-items-center p-2 rounded-3 border bg-light-subtle">
+                                        @if (!string.IsNullOrEmpty(gv.AnhDaiDien) && gv.AnhDaiDien != "default_avatar.png")
+                                        {
+                                            <img src="@gv.AnhDaiDien" alt="@gv.HoTen" class="rounded-circle me-3 object-fit-cover border" width="46" height="46" />
+                                        }
+                                        else
+                                        {
+                                            <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center me-3 fw-bold shadow-sm" style="width: 46px; height: 46px;">
+                                                <i class="fa-solid fa-user-tie"></i>
+                                            </div>
+                                        }
+                                        <div class="flex-grow-1 overflow-hidden me-2">
+                                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                                <h6 class="fw-bold text-dark mb-0 text-truncate">@gv.HoTen</h6>
+                                                <span class="badge @(gv.VaiTroDay == "Trợ giảng" ? "bg-info-subtle text-info" : "bg-success-subtle text-success")">
+                                                    @(string.IsNullOrWhiteSpace(gv.VaiTroDay) ? "Giảng viên chính" : gv.VaiTroDay)
+                                                </span>
+                                            </div>
+                                            <div class="small text-muted text-truncate"><i class="fa-regular fa-envelope me-1"></i>@(gv.Email ?? gv.TenDangNhap)</div>
+                                            <div class="small text-muted"><i class="fa-solid fa-phone me-1"></i>@(gv.SoDienThoai ?? "--")</div>
+                                        </div>
+
+                                        <!-- Nút xem chi tiết hồ sơ nhân sự / giảng viên -->
+                                        <div class="flex-shrink-0">
+                                            <a asp-controller="QuanLyTrungTam"
+                                               asp-action="ChiTietNhanSu"
+                                               asp-route-id="@gv.IdTaiKhoan"
+                                               class="btn btn-sm btn-outline-primary rounded-circle d-flex align-items-center justify-content-center shadow-sm"
+                                               style="width: 34px; height: 34px;"
+                                               title="Xem chi tiết hồ sơ">
+                                                <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                                            </a>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="text-center py-4 text-muted">
+                                <i class="fa-solid fa-person-chalkboard fs-3 d-block mb-2 text-secondary"></i>
+                                Chưa có giảng viên nào được phân công.
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <!-- Cột phải: Danh sách Học viên -->
+            <div class="col-lg-8">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center flex-wrap gap-2">
+                        <div>
+                            <h5 class="fw-bold mb-0 text-dark">
+                                <i class="fa-solid fa-user-graduate text-primary me-2"></i>Danh sách học viên
+                            </h5>
+                            <small class="text-muted" id="lblSubTotalHocVien">Tổng cộng @listHocVien.Count học viên đã ghi danh</small>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <div class="input-group input-group-sm" style="max-width: 220px;">
+                                <span class="input-group-text bg-light border-end-0"><i class="fa-solid fa-magnifying-glass text-muted"></i></span>
+                                <input type="text" id="filterHocVienInput" class="form-control border-start-0" placeholder="Tìm tên, SĐT..." onkeyup="locDanhSachHocVien()">
+                            </div>
+                            <button type="button" class="btn btn-sm btn-primary d-flex align-items-center gap-1 shadow-sm" onclick="moModalThemHocVien()">
+                                <i class="fa-solid fa-user-plus"></i> Thêm học viên
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0" id="tableHocVien">
+                            <thead class="table-light text-secondary text-uppercase small">
+                                <tr>
+                                    <th style="width: 50px;">#ID</th>
+                                    <th>Họ và tên</th>
+                                    <th>Liên hệ</th>
+                                    <th>Ngày sinh</th>
+                                    <th>Ngày tham gia</th>
+                                    <th class="text-end" style="width: 170px;">Thao tác</th>
+                                </tr>
+                            </thead>
+                            <tbody id="bodyHocVien">
+                                @if (listHocVien.Count > 0)
+                                {
+                                    foreach (var hv in listHocVien)
+                                    {
+                                        <tr id="row-hv-@hv.IdUser">
+                                            <td class="fw-bold text-muted">@hv.IdUser</td>
+                                            <td>
+                                                <div class="d-flex align-items-center">
+                                                    @if (!string.IsNullOrEmpty(hv.AnhDaiDien) && hv.AnhDaiDien != "default_avatar.png")
+                                                    {
+                                                        <img src="@hv.AnhDaiDien" alt="@hv.HoTen" class="rounded-circle me-2 object-fit-cover border" width="36" height="36" />
+                                                    }
+                                                    else
+                                                    {
+                                                        <div class="rounded-circle bg-light border d-flex align-items-center justify-content-center text-secondary me-2 fw-bold" style="width: 36px; height: 36px;">
+                                                            <i class="fa-regular fa-user"></i>
+                                                        </div>
+                                                    }
+                                                    <span class="fw-semibold text-dark hv-name">@(string.IsNullOrWhiteSpace(hv.HoTen) ? $"Học viên #{hv.IdUser}" : hv.HoTen)</span>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div class="small hv-contact"><i class="fa-solid fa-phone text-muted me-1"></i>@(hv.SoDienThoai ?? "--")</div>
+                                                <div class="small text-muted hv-contact"><i class="fa-regular fa-envelope text-muted me-1"></i>@(hv.Email ?? "--")</div>
+                                            </td>
+                                            <td>
+                                                <span class="small text-muted">
+                                                    @(hv.NgaySinh.HasValue ? hv.NgaySinh.Value.ToString("dd/MM/yyyy") : "--")
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <span class="small text-muted">
+                                                    @(hv.NgayThamGia.HasValue ? hv.NgayThamGia.Value.ToString("dd/MM/yyyy HH:mm") : "--")
+                                                </span>
+                                            </td>
+                                            <td class="text-end">
+                                                <div class="btn-group btn-group-sm">
+                                                    <a href="@Url.Action("LichSuLuyenTap", "QuanLyDanhSachBaiTap", new { idHocVien = hv.IdTaiKhoan })"
+                                                       class="btn btn-outline-success"
+                                                       title="Xem lịch sử bài tập">
+                                                        <i class="fa-solid fa-graduation-cap"></i>
+                                                    </a>
+                                                    <td class="text-end">
+                                                        <a asp-controller="QuanLyTaiKhoan"
+                                                           asp-action="ChiTiet"
+                                                           asp-route-id="@hv.IdTaiKhoan"
+                                                           class="btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-1">
+                                                            <i class="fa-regular fa-eye"></i> Chi tiết
+                                                        </a>
+                                                    </td>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    }
+                                }
+                                else
+                                {
+                                    <tr id="emptyRowHocVien">
+                                        <td colspan="6" class="text-center py-5 text-muted">
+                                            <i class="fa-regular fa-face-frown fa-2x mb-2 d-block"></i>
+                                            Lớp học này hiện chưa có học viên nào.
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+<!-- ========================================== -->
+<!-- MODAL SỬA LỚP HỌC & GẮN PHÂN CÔNG GIẢNG VIÊN -->
+<!-- ========================================== -->
+<div class="modal fade" id="modalSuaLopHoc" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-warning-subtle text-warning-emphasis">
+                <h5 class="modal-title fw-bold">
+                    <i class="fa-regular fa-pen-to-square me-2"></i>Chỉnh sửa lớp & Gán giảng viên
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="formSuaLopHoc" onsubmit="xuLyCapNhatLopHoc(event)">
+                <div class="modal-body p-4">
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-12">
+                            <label class="form-label small fw-semibold">Tên lớp học <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="editTenLopHoc" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Ngày khai giảng</label>
+                            <input type="date" class="form-control" id="editNgayKhaiGiang">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Ngày bế giảng</label>
+                            <input type="date" class="form-control" id="editNgayKetThuc">
+                        </div>
+                        <div class="col-md-12">
+                            <label class="form-label small fw-semibold">Mô tả / Ghi chú</label>
+                            <textarea class="form-control" id="editMoTa" rows="2"></textarea>
+                        </div>
+                        <div class="col-md-12">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" role="switch" id="editTrangThai">
+                                <label class="form-check-label small fw-semibold" for="editTrangThai">Đang mở giảng dạy</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- PHẦN GẮN GIẢNG VIÊN VÀO LỚP -->
+                    <div class="border rounded-3 p-3 bg-light mt-4">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h6 class="fw-bold text-dark mb-0">
+                                <i class="fa-solid fa-user-tie text-primary me-2"></i>Phân công Giảng viên
+                            </h6>
+                            <button type="button" class="btn btn-sm btn-outline-primary" onclick="themDongGiangVien()">
+                                <i class="fa-solid fa-plus me-1"></i> Thêm giảng viên
+                            </button>
+                        </div>
+                        <small class="text-muted d-block mb-3">Chỉ định các giảng viên và vai trò dạy cho lớp học này.</small>
+
+                        <div id="containerGiangVien" class="d-flex flex-column gap-2">
+                            <!-- Danh sách dòng giảng viên sẽ được nạp bằng JS -->
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                    <button type="submit" id="btnSubmitSuaLop" class="btn btn-warning fw-bold px-4">
+                        <i class="fa-solid fa-floppy-disk me-1"></i> Lưu thay đổi
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ========================================== -->
+<!-- MODAL THÊM HỌC VIÊN VÀO LỚP                -->
+<!-- ========================================== -->
+<div class="modal fade" id="modalThemHocVien" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-primary-subtle text-primary-emphasis">
+                <h5 class="modal-title fw-bold">
+                    <i class="fa-solid fa-user-plus me-2"></i>Thêm học viên vào lớp
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="formThemHocVien" onsubmit="xuLyThemHocVien(event)">
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Họ và tên học viên <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="txtTenHocVienMoi" required placeholder="VD: Nguyễn Văn A">
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Email</label>
+                            <input type="email" class="form-control" id="txtEmailHocVienMoi" placeholder="hocvien@gmail.com">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Số điện thoại</label>
+                            <input type="tel" class="form-control" id="txtSdtHocVienMoi" placeholder="0987654321">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Ngày sinh</label>
+                        <input type="date" class="form-control" id="txtNgaySinhHocVienMoi">
+                    </div>
+                    <div class="alert alert-light border small text-muted mb-0">
+                        <i class="fa-solid fa-circle-info text-primary me-1"></i>
+                        Hệ thống sẽ tự động cấp tài khoản đăng nhập (mật khẩu mặc định trùng với username).
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" id="btnSubmitThemHocVien" class="btn btn-primary px-4">
+                        <i class="fa-solid fa-check me-1"></i> Thêm vào lớp
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ========================================== -->
+<!-- MODAL NHẬT KÝ HỆ THỐNG / LỊCH SỬ THAY ĐỔI  -->
+<!-- ========================================== -->
+<div class="modal fade" id="detailModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-light">
+                <h5 class="modal-title fw-bold text-dark mb-0">
+                    <i class="fa-solid fa-clock-rotate-left text-primary me-2"></i>Nhật ký hệ thống & Lịch sử truy vết
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-0" id="modalBodyNhatKy">
+                @await Html.PartialAsync("_LichSuThayDoi")
+            </div>
+            <div class="modal-footer bg-light py-2">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Đóng</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <!-- 1. JS Dùng chung: Chuông thông báo & Nhật ký hệ thống -->
+    <script src="~/js/ThongBao-NhatKy/thongbao-nhatky.js"></script>
+
+    <!-- 2. JS Phân hệ Lớp học: Chi tiết lớp học, học viên & phân công giảng viên -->
+    <script src="~/js/LopHoc/chitiet-lophoc.js"></script>
+
+    <script>
+        const ID_LOP_HOC = @(Model?.IdLopHoc ?? 0);
+        const ID_TRUNG_TAM = @(Model?.IdTrungTam ?? 0);
+
+        // Danh sách giảng viên hiện tại của lớp được truyền từ Server
+        const dsGiangVienHienTai = @Html.Raw(Json.Serialize(listGiangVien.Select(g => new { g.IdTaiKhoan, g.VaiTroDay })));
+        let dsAllGiangVienCache = [];
+
+        document.addEventListener('DOMContentLoaded', function () {
+            // Tải số lượng thông báo chuông
+            if (ID_TRUNG_TAM > 0) {
+                capNhatBadgeSoLuongThongBao(ID_TRUNG_TAM);
+            }
+
+            // Tải trước danh sách giáo viên của cơ sở để phục vụ modal sửa & phân công
+            taiDanhSachGiangVienTrungTam(ID_TRUNG_TAM, function (listGv) {
+                dsAllGiangVienCache = listGv;
+            });
+        });
+
+        // Hàm mở Modal chỉnh sửa lớp học kết nối danh sách giảng viên đã tải
+        function moModalSuaLopHocView() {
+            moModalSuaLopHoc(
+                ID_LOP_HOC,
+                '@Html.Raw((Model?.TenLopHoc ?? "").Replace("'", "\\'"))',
+                '@Html.Raw((Model?.MoTa ?? "").Replace("'", "\\'"))',
+                '@(Model?.NgayKhaiGiang?.ToString("yyyy-MM-dd") ?? "")',
+                '@(Model?.NgayKetThuc?.ToString("yyyy-MM-dd") ?? "")',
+                        @(Model?.TrangThai == true ? "true" : "false"),
+                dsGiangVienHienTai,
+                dsAllGiangVienCache
+            );
+        }
+    </script>
+}

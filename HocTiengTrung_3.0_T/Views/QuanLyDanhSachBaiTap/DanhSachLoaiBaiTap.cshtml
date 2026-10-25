@@ -1,0 +1,361 @@
+﻿@model List<HocTiengTrung_3._0_T.Models12.BaiTap.LoaiCauHoiModels>
+
+@{
+    ViewData["Title"] = "Phân Loại Bài Tập HSK";
+
+    // Lấy thông tin từ ViewBag để phục vụ bộ lọc và điều hướng
+    int idCapDo = ViewBag.IdCapDo ?? 1; // Mặc định cấp độ 1 nếu chưa chọn
+    string currentProgram = ViewBag.ChuongTrinh?.ToString() ?? "3"; // Mặc định là 3.0 nếu null
+    int currentIdGiaoTrinh = ViewBag.IdGiaoTrinh ?? 1;
+}
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+
+<style>
+    :root {
+        /* Màu chủ đạo Chương trình 3.0 (Xanh dương hiện đại) */
+        --prog3-main: #3b82f6;
+        --prog3-light: #60a5fa;
+        --prog3-dark: #1d4ed8;
+        --prog3-bg: #eff6ff;
+        /* Màu chủ đạo Chương trình 2.0 (Cam năng động) */
+        --prog2-main: #ff6a00;
+        --prog2-light: #ffb74d;
+        --prog2-dark: #e65100;
+        --prog2-bg: #fff7ed;
+        /* Màu Giáo trình Boya (Xanh lá) */
+        --boya-main: #28a745;
+        --boya-light: #28a745;
+        /* Màu HSK 3.0 (Tím / Hồng) */
+        --hsk-main: #8b5cf6;
+        --hsk-light: #a78bfa;
+    }
+
+    body {
+        background-color: #f8fafc;
+        font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    }
+
+    /* --- VÙNG BỘ LỌC (FILTER CONTAINER) --- */
+    .filter-wrapper {
+        background: #ffffff;
+        border-radius: 20px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.04);
+        border: 1px solid #f1f5f9;
+    }
+
+    .tracking-wider {
+        letter-spacing: 0.06em;
+    }
+
+    /* Responsive Border Divider */
+    @@media (min-width: 992px) {
+        .border-end-lg {
+            border-right: 1px solid #e2e8f0 !important;
+        }
+    }
+
+    /* --- NÚT BỘ LỌC CHƯƠNG TRÌNH --- */
+    .filter-btn {
+        border-radius: 12px;
+        font-weight: 600;
+        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        padding: 9px 18px;
+        font-size: 0.95rem;
+    }
+
+        .filter-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .filter-btn:active {
+            transform: translateY(0) scale(0.97);
+        }
+
+    /* --- SCROLLBAR VÀ PILL BẢNG CẤP ĐỘ HSK --- */
+    .level-scroll-container {
+        display: flex;
+        gap: 8px;
+        overflow-x: auto;
+        padding: 4px 4px 12px 4px;
+        scrollbar-width: thin;
+        scrollbar-color: #cbd5e1 transparent;
+    }
+
+        .level-scroll-container::-webkit-scrollbar {
+            height: 5px;
+        }
+
+        .level-scroll-container::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 10px;
+        }
+
+        .level-scroll-container::-webkit-scrollbar-thumb {
+            background-color: #cbd5e1;
+            border-radius: 10px;
+        }
+
+            .level-scroll-container::-webkit-scrollbar-thumb:hover {
+                background-color: #94a3b8;
+            }
+
+    /* --- THEME CHƯƠNG TRÌNH 2.0 (BUTTON & BADGE & BORDER) --- */
+    .bg-prog2 {
+        background-color: var(--prog2-main) !important;
+    }
+
+    .border-prog2 {
+        border-color: var(--prog2-main) !important;
+    }
+
+    .btn-prog2 {
+        background-color: var(--prog2-main);
+        color: #ffffff;
+        border: 1px solid var(--prog2-main);
+        transition: all 0.25s ease;
+    }
+
+        .btn-prog2:hover {
+            background-color: var(--prog2-dark);
+            border-color: var(--prog2-dark);
+            color: #ffffff;
+            box-shadow: 0 4px 12px rgba(255, 106, 0, 0.3);
+        }
+
+    .btn-outline-prog2 {
+        background-color: transparent;
+        color: var(--prog2-main);
+        border: 2px solid var(--prog2-main);
+        transition: all 0.25s ease;
+    }
+
+        .btn-outline-prog2:hover {
+            background-color: var(--prog2-main);
+            color: #ffffff;
+            box-shadow: 0 4px 12px rgba(255, 106, 0, 0.25);
+        }
+
+    /* --- CARD LOẠI BÀI TẬP & HOVER EFFECT --- */
+    .hsk-hover-card {
+        border-radius: 18px;
+        transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        background: #ffffff;
+    }
+
+        .hsk-hover-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 35px rgba(15, 23, 42, 0.08) !important;
+        }
+
+    /* --- BADGE TRÒN HIỂN THỊ ID LOẠI BÀI TẬP --- */
+    .type-badge {
+        width: 60px;
+        height: 60px;
+        font-size: 1.25rem;
+        font-weight: 700;
+        background: linear-gradient(135deg, var(--prog3-main), var(--prog3-light));
+        box-shadow: 0 8px 18px rgba(59, 130, 246, 0.3);
+        transition: transform 0.3s ease;
+    }
+
+    .hsk-hover-card:hover .type-badge {
+        transform: scale(1.1) rotate(5deg);
+    }
+
+    .badge-old-program {
+        background: linear-gradient(135deg, var(--prog2-main), var(--prog2-light)) !important;
+        box-shadow: 0 8px 18px rgba(255, 106, 0, 0.3) !important;
+    }
+</style>
+
+<div class="container py-5">
+    <!-- TIÊU ĐỀ TRANG -->
+    <div class="text-center mb-5">
+        <span class="badge bg-primary-subtle text-primary px-4 py-2 rounded-pill fw-bold mb-3 fs-6">
+            <i class="fas fa-rocket me-2"></i>HỆ THỐNG HỌC TẬP
+        </span>
+        <h2 class="fw-black display-5 text-dark mb-3" style="font-weight: 800;">Danh Sách Bài Học Ôn Luyện</h2>
+        <p class="text-secondary fs-5 mx-auto" style="max-width: 650px; line-height: 1.6;">
+            Theo dõi lộ trình học tập, tra cứu tài liệu và hoàn thành các bài học chuẩn hóa theo từng giáo trình của bạn.
+        </p>
+    </div>
+
+    <!-- BẢNG ĐIỀU KHIỂN BỘ LỌC -->
+    <div class="filter-wrapper p-4 mb-5">
+        <div class="row align-items-center g-4">
+
+            <!-- PHẦN 1: CHỌN CHƯƠNG TRÌNH -->
+            <!-- PHẦN 1: CHỌN CHƯƠNG TRÌNH -->
+            <div class="col-lg-5 border-end-lg text-center text-lg-start">
+                <label class="form-label fw-bold text-secondary small text-uppercase tracking-wider mb-2 d-block">
+                    <i class="fas fa-layer-group me-2 text-primary"></i>1. Chọn Chương Trình
+                </label>
+                <div class="d-flex flex-wrap justify-content-center justify-content-xl-start gap-2">
+
+                    <!-- Chương trình 3.0 -->
+                    <a href="@Url.Action("DanhSachLoaiBaiTap", "QuanLyDanhSachBaiTap", new { capdo = idCapDo, chuongTrinh = 3 })"
+                       class="btn filter-btn @(currentProgram == "3" && currentIdGiaoTrinh != 4 && currentIdGiaoTrinh != 5 ? "btn-primary shadow-sm" : "btn-outline-secondary")">
+                        <i class="fas fa-star me-1"></i> C.Trình 3.0
+                    </a>
+
+                    <!-- Bản Cũ 2.0 -->
+                    <a href="@Url.Action("DanhSachLoaiBaiTap", "QuanLyDanhSachBaiTap", new { capdo = idCapDo, chuongTrinh = 2 })"
+                       class="btn filter-btn @(currentProgram == "2" ? "text-white shadow-sm" : "btn-outline-secondary")"
+                       style="@(currentProgram == "2" ? "background-color: var(--prog2-main); border-color: var(--prog2-main);" : "")">
+                        <i class="fas fa-leaf me-1"></i> Bản Cũ 2.0
+                    </a>
+
+                    <!-- Boya 3.0 -->
+                    <a href="@Url.Action("DanhSachBaiHocOnLuyen", "QuanLyDanhSachBaiHoc", new { capdo = idCapDo, idGiaoTrinh = 4, page = 1 })"
+                       class="btn filter-btn @(currentIdGiaoTrinh == 4 ? "text-white shadow-sm" : "btn-outline-secondary")"
+                       style="@(currentIdGiaoTrinh == 4 ? "background-color: var(--boya-main); border-color: var(--boya-main);" : "")">
+                        <i class="fas fa-book-open me-1"></i> Boya 3.0
+                    </a>
+
+                    <!-- HSK 3.0 -->
+                    <a href="@Url.Action("DanhSachBaiHocOnLuyen", "QuanLyDanhSachBaiHoc", new { capdo = idCapDo, idGiaoTrinh = 5, page = 1 })"
+                       class="btn filter-btn @(currentIdGiaoTrinh == 5 ? "btn-info text-white shadow-sm" : "btn-outline-secondary")">
+                        <i class="fas fa-certificate me-1"></i> HSK 3.0
+                    </a>
+
+                </div>
+            </div>
+            <!-- PHẦN 2: CHỌN CẤP ĐỘ HSK -->
+            <div class="col-lg-7">
+                <label class="form-label fw-bold text-secondary small text-uppercase tracking-wider mb-2 d-block text-center text-lg-start">
+                    <i class="fas fa-award me-2 text-primary"></i>2. Chọn Cấp Độ (Hiện tại: HSK @idCapDo)
+                </label>
+
+                <div class="level-scroll-container justify-content-lg-between">
+                    @{
+                        int maxLevel = currentProgram == "3" ? 9 : 6;
+                    }
+                    @for (int i = 1; i <= maxLevel; i++)
+                    {
+                        string activeClass = (idCapDo == i)
+                            ? (currentProgram == "3" ? "btn-primary text-white shadow" : "btn-prog2 text-white shadow")
+                            : "btn-outline-light text-dark border-secondary-subtle";
+
+                        <a href="@Url.Action("DanhSachLoaiBaiTap", new { capdo = i, chuongTrinh = currentProgram })"
+                           class="btn @activeClass px-3 fw-bold rounded-pill text-nowrap flex-fill mx-1">
+                            HSK @i
+                        </a>
+                    }
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- THANH THÔNG BÁO BỘ LỌC HIỆN TẠI -->
+    <div class="d-flex align-items-center justify-content-between mb-4 px-2">
+        <div class="text-secondary small">
+            Đang hiển thị kết quả cho:
+            <span class="badge @(currentProgram == "3" ? "bg-primary" : "bg-prog2") ms-1 text-white">
+                Chương trình @(currentProgram == "3" ? "3.0 mới" : "2.0 cũ")
+            </span>
+            <span class="badge bg-dark ms-1">Cấp độ HSK @idCapDo</span>
+        </div>
+        <div class="text-muted small">
+            Tổng số dạng bài: <strong>@(Model?.Count ?? 0)</strong>
+        </div>
+    </div>
+
+    <!-- DANH SÁCH CARDS LOẠI BÀI TẬP -->
+    <div class="row g-4">
+        @{
+            var displayList = Model?.Where(item =>
+                (item.IdLoai != 1018 || idCapDo == 3 || idCapDo == 4) &&
+                (item.IdLoai != 1019 || idCapDo >= 3)
+            ).ToList();
+        }
+
+        @if (displayList != null && displayList.Any())
+        {
+            @foreach (var item in displayList)
+            {
+                <div class="col-md-6 col-lg-4">
+                    <div class="card h-100 shadow-sm hsk-hover-card @(currentProgram == "2" ? "hsk-hover-card-old" : "") border-0 border-top border-4 @(currentProgram == "3" ? "border-primary" : "border-prog2")">
+                        <div class="card-body text-center p-4 d-flex flex-column justify-content-between">
+
+                            <div>
+                                <div class="type-badge text-white d-inline-flex align-items-center justify-content-center mb-4 rounded-circle @(currentProgram == "2" ? "badge-old-program" : "")">
+                                    @item.IdLoai
+                                </div>
+
+                                <h4 class="card-title fw-bold text-dark mb-3">@item.TenLoai</h4>
+                                <p class="card-text text-muted mb-4 px-2 fs-6">
+                                    Rèn luyện các kỹ năng chuyên sâu thuộc phần <strong class="text-dark">@item.TenLoai</strong> chuẩn hóa theo cấu trúc khung đề thi @(currentProgram == "2" ? "HSK Bản 2.0" : "HSK 3.0 Mới nhất").
+                                </p>
+                            </div>
+
+                            <!-- NÚT ĐIỀU HƯỚNG BÀI HỌC VÀ BÀI TẬP -->
+                            <div class="pt-2 d-flex flex-column gap-2">
+                                <a href="@Url.Action("DanhSachBaiHoc", "QuanLyDanhSachBaiHoc", new { capdo = idCapDo, idGiaoTrinh = (currentProgram == "3" ? 3 : 1) })"
+                                   class="btn @(currentProgram == "2" ? "btn-prog2" : "btn-primary") w-100 py-2 rounded-pill fw-semibold shadow-sm">
+                                    <i class="fas fa-book-open me-2"></i>Xem Bài Học HSK @idCapDo
+                                </a>
+
+                                <a asp-action="LamBaiTap"
+                                   asp-controller="QuanLyDanhSachBaiTap"
+                                   asp-route-idLoai="@item.IdLoai"
+                                   asp-route-idCapDo="@idCapDo"
+                                   asp-route-chuongTrinh="@currentProgram"
+                                   class="btn @(currentProgram == "2" ? "btn-outline-prog2" : "btn-outline-primary") w-100 py-2 rounded-pill fw-semibold">
+                                    Luyện tập dạng này <i class="fas fa-arrow-right ms-1 small"></i>
+                                </a>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+        else
+        {
+            <div class="col-12 text-center py-5">
+                <div class="alert alert-light border border-dashed rounded-4 shadow-sm p-5 mx-auto" style="max-width: 550px;">
+                    <div class="text-warning mb-3">
+                        <i class="fas fa-folder-open display-4"></i>
+                    </div>
+                    <h5 class="fw-bold text-dark">Chưa có dữ liệu bài tập!</h5>
+                    <p class="text-muted mb-0">
+                        Hệ thống hiện chưa tìm thấy danh sách loại bài tập nào thuộc nhóm dữ liệu <strong>HSK @idCapDo</strong> của phiên bản <strong>Chương trình @(currentProgram == "3" ? "3.0" : "2.0")</strong>. Vui lòng chọn cấp độ khác.
+                    </p>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const currentCapDo = '@idCapDo';
+        const currentProg = '@currentProgram';
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const hasCapDo = urlParams.has('capdo');
+        const hasProg = urlParams.has('chuongTrinh');
+
+        // Nếu người dùng chọn trực tiếp từ URL -> Lưu vào SessionStorage
+        if (hasCapDo || hasProg) {
+            sessionStorage.setItem('hsk_saved_capdo', currentCapDo);
+            sessionStorage.setItem('hsk_saved_program', currentProg);
+        } else {
+            // Khi người dùng bấm Back / quay lại trang từ menu không truyền param
+            const savedCapDo = sessionStorage.getItem('hsk_saved_capdo');
+            const savedProg = sessionStorage.getItem('hsk_saved_program');
+
+            if (savedCapDo || savedProg) {
+                const targetCapDo = savedCapDo || currentCapDo;
+                const targetProg = savedProg || currentProg;
+
+                // Chỉ redirect nếu tham số khác với URL hiện tại để tránh đệ quy vô tận
+                if (targetCapDo !== currentCapDo || targetProg !== currentProg) {
+                    window.location.replace(window.location.pathname + `?capdo=${targetCapDo}&chuongTrinh=${targetProg}`);
+                }
+            }
+        }
+    });
+</script>

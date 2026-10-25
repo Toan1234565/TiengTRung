@@ -1,0 +1,734 @@
+﻿@model dynamic
+@{
+    ViewData["Title"] = "Danh Sách Bài Học Hoàng Gia";
+    int currentCapDo = ViewBag.IdCapDo ?? 1;
+    int currentIdGiaoTrinh = ViewBag.IdGiaoTrinh ?? 1;
+}
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewData["Title"]</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
+
+    <style>
+        :root {
+            --royal-gold: #d4af37;
+            --royal-blue: #002366;
+            --royal-light: #f1f4f9;
+        }
+
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        .royal-header {
+            background: linear-gradient(135deg, var(--royal-blue) 0%, #003aaa 100%);
+            color: white;
+            border-radius: 20px;
+            padding: 3rem 2rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+            .royal-header::after {
+                content: '';
+                position: absolute;
+                top: -50%;
+                right: -20%;
+                width: 400px;
+                height: 400px;
+                background: rgba(212, 175, 55, 0.05);
+                border-radius: 50%;
+            }
+
+        .custom-card {
+            border-radius: 20px;
+            border: none;
+            background: #ffffff;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .btn-rounded {
+            border-radius: 50px;
+            padding: 8px 24px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+
+        .filter-container {
+            background: #ffffff;
+            border-radius: 15px;
+            padding: 12px;
+        }
+
+        .btn-filter-hsk {
+            border-radius: 12px;
+            padding: 10px 20px;
+            font-weight: 700;
+            border: 2px solid #edeef2;
+            background: #fff;
+            color: #495057;
+            transition: all 0.2s ease-in-out;
+        }
+
+            .btn-filter-hsk:hover {
+                border-color: var(--royal-blue);
+                background-color: rgba(0, 35, 102, 0.03);
+                color: var(--royal-blue);
+            }
+
+            .btn-filter-hsk.active {
+                background: var(--royal-blue);
+                border-color: var(--royal-blue);
+                color: #fff;
+                box-shadow: 0 4px 12px rgba(0, 35, 102, 0.2);
+            }
+
+        .badge-royal {
+            background-color: rgba(214, 175, 87, 0.15);
+            color: #b38f1d;
+            border: 1px solid rgba(214, 175, 87, 0.3);
+            font-weight: 600;
+            border-radius: 10px;
+            padding: 0.5rem 1rem;
+        }
+
+        .table-royal thead {
+            background-color: var(--royal-light);
+        }
+
+        .table-royal th {
+            color: var(--royal-blue);
+            font-weight: 700;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            letter-spacing: 0.5px;
+            border: none;
+            padding: 15px;
+        }
+
+        .table-royal td {
+            padding: 18px 15px;
+            vertical-align: middle;
+            border-bottom: 1px solid #edeef2;
+        }
+
+        .pagination .page-item .page-link {
+            border: none;
+            color: var(--royal-blue);
+            margin: 0 3px;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            line-height: 24px;
+            text-align: center;
+            font-weight: 600;
+        }
+
+        .pagination .page-item.active .page-link {
+            background-color: var(--royal-blue);
+            color: #fff;
+            box-shadow: 0 4px 10px rgba(0, 35, 102, 0.25);
+        }
+
+        .pagination .page-item .page-link:hover {
+            background-color: rgba(0, 35, 102, 0.08);
+            border-radius: 50%;
+        }
+
+        .form-switch .form-check-input {
+            width: 2.5em;
+            height: 1.25em;
+            cursor: pointer;
+        }
+
+        .form-switch .form-check-label {
+            cursor: pointer;
+            user-select: none;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container py-5">
+
+        <div class="royal-header text-center mb-4 shadow-sm text-white">
+            <h1 class="display-5 fw-bold mb-3">
+                <i class="bi bi-gem text-warning me-2"></i>Kho Tàng Bài Học Hoàng Gia
+            </h1>
+            <p class="lead text-white-50 mx-auto mb-0" style="max-width: 700px;">
+                Hệ thống lưu trữ toàn bộ giáo trình nâng cấp năng lực. Kính mời Hoàng đế phê duyệt và quản lý các nội dung dưới đây.
+            </p>
+            <div class="mt-3">
+                <span class="badge badge-royal text-warning">
+                    <i class="fas fa-layer-group me-2"></i>Đang xem Mục lục: HSK @currentCapDo
+                </span>
+            </div>
+        </div>
+        <div class="filter-container shadow-sm mb-4 border rounded-4 bg-white">
+            <div class="row align-items-center g-3">
+
+                <!-- BỘ LỌC GIÁO TRÌNH (SELECT) -->
+                <div class="col-lg-4 col-md-5">
+                    <div class="d-flex align-items-center">
+                        <label for="selectGiaoTrinh" class="fw-bold text-dark me-2 text-nowrap">
+                            <i class="fas fa-book text-warning me-1"></i> Giáo trình:
+                        </label>
+                        <select id="selectGiaoTrinh" class="form-select select-royal" onchange="changeGiaoTrinh(this.value)">
+                            <!option value="1" @(currentIdGiaoTrinh == 1 ? "selected" : "")>Giáo Trình Chuẩn HSK </!option>
+                            <!option value="2" @(currentIdGiaoTrinh == 2 ? "selected" : "")>Giáo Trình Hán Ngữ Boya</!option>
+                            <!option value="3" @(currentIdGiaoTrinh == 3 ? "selected" : "")>Tân HSK Course</!option>
+                            <!option value="4" @(currentIdGiaoTrinh == 4 ? "selected" : "")>ôn luyện tổng hợp</!option>
+                            <!option value="5" @(currentIdGiaoTrinh == 5 ? "selected" : "")>ôn luyện tổng hợp HSK</!option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- BỘ LỌC CẤP ĐỘ (BUTTONS HSK) -->
+                <div class="col-lg-8 col-md-7">
+                    <div class="d-flex align-items-center flex-wrap gap-2 justify-content-md-end">
+                        <span class="fw-bold text-dark d-none d-xl-inline me-2">
+                            <i class="fas fa-filter text-primary me-1"></i> Cấp độ:
+                        </span>
+                        <div class="d-flex flex-wrap gap-2 w-100 w-md-auto">
+                            @for (int i = 1; i <= 6; i++)
+                            {
+                                <a href="@Url.Action("DanhSachBaiHocAdmin", "QuanLyDanhSachBaiHoc", new { capdo = i, idGiaoTrinh = currentIdGiaoTrinh, page = 1 })"
+                                   class="btn btn-filter-hsk rounded-pill flex-fill flex-md-grow-0 px-3 py-2 fw-semibold transition-all @(currentCapDo == i ? "active" : "")">
+                                    <i class="fas fa-crown small me-1 @(currentCapDo == i ? "text-warning" : "opacity-50")"></i> HSK @i
+                                </a>
+                            }
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <div class="card custom-card shadow-sm p-4">
+            <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+                <div>
+                    <h3 class="fw-bold text-dark m-0">
+                        <i class="fas fa-book-open text-primary me-2"></i>Danh Sách Chương Trình Học
+                    </h3>
+                    <small class="text-muted">Hiển thị kết quả bài học thuộc phân khu HSK @currentCapDo</small>
+                </div>
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#importExcelModalBaiTap">
+                        Import Bài Tập
+                    </button>
+
+                    <button class="btn btn-success btn-rounded shadow-sm" data-bs-toggle="modal" data-bs-target="#importExcelModal">
+                        <i class="fas fa-file-excel me-2"></i>Nhập Excel Từ Vựng
+                    </button>
+
+                    <div id="bulk-delete-container" style="display: none;">
+                        <button id="btn-bulk-delete" class="btn btn-danger btn-rounded shadow-sm">
+                            <i class="fas fa-trash-alt me-2"></i>Xóa các mục đã chọn (<span id="selected-count">0</span>)
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            @if (Model != null && Model.data != null && Model.data.Count > 0)
+            {
+                <div class="table-responsive">
+                    <table class="table table-royal table-hover align-middle">
+                        <thead>
+                            <tr>
+                                <th class="text-center" style="width: 5%">
+                                    <input class="form-check-input" type="checkbox" id="check-all" style="cursor: pointer; width: 1.2rem; height: 1.2rem;">
+                                </th>
+                                <th class="text-center" style="width: 10%">Thứ tự bài</th>
+                                <th style="width: 30%">Tên Bài Học</th>
+                                <th style="width: 40%">Mô Tả Chi Tiết</th>
+                                <th class="text-center" style="width: 15%">Thao Tác</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in Model.data)
+                            {
+                                <tr id="row_@item.idBaiHoc">
+                                    <td class="text-center">
+                                        <input class="form-check-input row-checkbox" type="checkbox" value="@item.idBaiHoc" data-name="@item.tenBaiHoc" style="cursor: pointer; width: 1.2rem; height: 1.2rem;">
+                                    </td>
+                                    <td class="text-center">
+                                        <span class="fw-bold text-dark bg-light px-3 py-2 rounded-3 border">
+                                            @item.soThuTuBai
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div class="fw-bold text-primary fs-5 mb-1">@item.tenBaiHoc</div>
+
+                                        <div class="form-check form-switch mt-2 d-flex align-items-center">
+                                            <input class="form-check-input status-toggle me-2"
+                                                   type="checkbox"
+                                                   role="switch"
+                                                   id="switch_@item.idBaiHoc"
+                                                   data-id="@item.idBaiHoc"
+                                                   data-name="@item.tenBaiHoc"
+                                                   @(item.trangThai == true ? "checked" : "")>
+
+                                            <label class="form-check-label badge @(item.trangThai == true ? "bg-success text-white" : "bg-danger text-white") rounded-pill px-2 py-1 small"
+                                                   for="switch_@item.idBaiHoc"
+                                                   id="label_@item.idBaiHoc"
+                                                   style="font-size: 0.75rem;">
+                                                <i class="fas @(item.trangThai == true ? "fa-check-circle" : "fa-lock") me-1"></i>
+                                                <span id="text_@item.idBaiHoc">@(item.trangThai == true ? "Đang hoạt động" : "Đã khóa")</span>
+                                            </label>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="text-muted text-truncate-2" style="max-width: 450px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; white-space: normal;">
+                                            @(item.moTa ?? "Chưa có mô tả bổ sung cho bài học này.")
+                                        </div>
+                                    </td>
+                                    <td class="text-center">
+                                        <a href="/QuanLyDanhSachBaiHoc/ChiTietBaiHocAdmin/@item.idBaiHoc" class="btn btn-primary text-white btn-rounded shadow-sm btn-sm">
+                                            <i class="fas fa-eye me-1"></i> Xem chi tiết
+                                        </a>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+                @if (Model.totalPages > 1)
+                {
+                    <nav class="mt-5">
+                        <ul class="pagination justify-content-center align-items-center">
+                            <li class="page-item @(Model.currentPage == 1 ? "disabled" : "")">
+                                <a class="page-link" href="@Url.Action("DanhSachBaiHocAdmin", new { capdo = currentCapDo, page = (int)Model.currentPage - 1 })" aria-label="Previous">
+                                    <i class="fas fa-chevron-left small"></i>
+                                </a>
+                            </li>
+
+                            @for (int i = 1; i <= (int)Model.totalPages; i++)
+                            {
+                                <li class="page-item @(i == (int)Model.currentPage ? "active" : "")">
+                                    <a class="page-link" href="@Url.Action("DanhSachBaiHocAdmin", new { capdo = currentCapDo, page = i })">@i</a>
+                                </li>
+                            }
+
+                            <li class="page-item @(Model.currentPage == Model.totalPages ? "disabled" : "")">
+                                <a class="page-link" href="@Url.Action("DanhSachBaiHocAdmin", new { capdo = currentCapDo, page = (int)Model.currentPage + 1 })" aria-label="Next">
+                                    <i class="fas fa-chevron-right small"></i>
+                                </a>
+                            </li>
+                        </ul>
+                    </nav>
+                }
+
+            }
+        </div>
+    </div>
+    <div class="modal fade" id="importExcelModal" data-bs-backdrop="static" tabindex="-1" aria-labelledby="importExcelModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow" style="border-radius: 15px;">
+                <div class="modal-header text-white" style="background-color: var(--royal-blue); border-top-left-radius: 15px; border-top-right-radius: 15px;">
+                    <h5 class="modal-title fw-bold" id="importExcelModalLabel">
+                        <i class="fas fa-file-excel me-2 text-warning"></i>Cung cấp File Excel Từ Vựng
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form id="formImportExcel">
+                    <div class="modal-body p-4">
+                        <div class="mb-3">
+                            <label for="excelFile" class="form-label fw-bold text-dark">Chọn tệp dữ liệu (.xlsx, .xls)</label>
+                            <input type="file" class="form-control border-2" id="excelFile" accept=".xlsx, .xls" required style="border-radius: 10px;">
+                            <div class="form-text text-muted mt-2">
+                                <i class="fas fa-info-circle text-primary me-1"></i> Hệ thống tự động nhận diện <strong>ID Bài Học</strong> tại ô <strong>B1</strong> và danh sách từ vựng bắt đầu từ hàng thứ 2.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer bg-light" style="border-bottom-left-radius: 15px; border-bottom-right-radius: 15px;">
+                        <button type="button" class="btn btn-secondary px-4 rounded-pill fw-bold" data-bs-dismiss="modal">Hủy bỏ</button>
+                        <button type="submit" class="btn btn-success px-4 rounded-pill fw-bold">
+                            <i class="fas fa-cloud-upload-alt me-1"></i> Tiến hành Import
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+   
+
+    <div class="modal fade" id="importExcelModalBaiTap" tabindex="-1" aria-labelledby="importExcelModalBaiTapLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="importExcelModalBaiTapLabel">Import File Excel Bài Tập</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="importExcelFormBaiTap">
+                        <div class="mb-3">
+                            <label for="excelFileBaiTap" class="form-label">Chọn file Excel (.xlsx, .xls)</label>
+                            <input class="form-control" type="file" id="excelFileBaiTap" name="file" accept=".xlsx, .xls" required>
+                        </div>
+                        <div id="importMessageBaiTap" class="alert d-none" role="alert"></div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                    <button type="button" class="btn btn-success" id="btnSubmitImportBaiTap">Tải lên</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <script>
+            function changeGiaoTrinh(selectedId) {
+                var currentCapDo = @currentCapDo;
+                window.location.href = '@Url.Action("DanhSachBaiHocAdmin", "QuanLyDanhSachBaiHoc")' + '?capdo=' + currentCapDo + '&idGiaoTrinh=' + selectedId + '&page=1';
+            }
+        document.addEventListener("DOMContentLoaded", function () {
+             // Lấy đúng các phần tử theo ID mới có đuôi BaiTap
+             const btnSubmit = document.getElementById("btnSubmitImportBaiTap");
+             const fileInput = document.getElementById("excelFileBaiTap");
+             const messageDiv = document.getElementById("importMessageBaiTap");
+             const form = document.getElementById("importExcelFormBaiTap");
+
+             if (!btnSubmit || !fileInput) return; // Bảo vệ tránh lỗi nếu thiếu element
+
+             btnSubmit.addEventListener("click", async function () {
+                 // Lúc này hệ thống sẽ đọc CHÍNH XÁC ô chọn file của modal Bài Tập
+                 if (fileInput.files.length === 0) {
+                     showMessage("Vui lòng chọn một file Excel trước khi tải lên.", "danger");
+                     return;
+                 }
+
+                 const file = fileInput.files[0];
+                 const formData = new FormData();
+                 formData.append("file", file);
+
+                 try {
+                     btnSubmit.disabled = true;
+                     btnSubmit.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Đang xử lý...';
+                     messageDiv.classList.add("d-none");
+
+                     const apiUrl = "/api/quanlybaihoc/import-excel-baitap-vao-bai-hoc";
+
+                     const response = await fetch(apiUrl, {
+                         method: "POST",
+                         body: formData
+                     });
+
+                     const result = await response.json();
+
+                     if (response.ok && result.success) {
+                         showMessage(result.message, "success");
+
+                         setTimeout(() => {
+                             form.reset();
+                             messageDiv.classList.add("d-none");
+
+                             const modalElement = document.getElementById('importExcelModalBaiTap');
+                             const modalInstance = bootstrap.Modal.getInstance(modalElement);
+                             if (modalInstance) {
+                                 modalInstance.hide();
+                             }
+                         }, 2000);
+                     } else {
+                         showMessage(result.message || "Có lỗi xảy ra từ server.", "danger");
+                     }
+                 } catch (error) {
+                     console.error("Lỗi Call API:", error);
+                     showMessage("Lỗi kết nối đến hệ thống. Vui lòng thử lại sau.", "danger");
+                 } finally {
+                     btnSubmit.disabled = false;
+                     btnSubmit.innerText = "Tải lên";
+                 }
+             });
+
+             function showMessage(message, type) {
+                 messageDiv.className = `alert alert-${type} mt-3`;
+                 messageDiv.innerText = message;
+                 messageDiv.classList.remove("d-none");
+             }
+        });
+        document.addEventListener('DOMContentLoaded', function () {
+
+            // ================= Logic xử lý Import File Excel từ vựng =================
+            const formImportExcel = document.getElementById('formImportExcel');
+            const excelFileInput = document.getElementById('excelFile');
+            const importModalEl = document.getElementById('importExcelModal');
+
+            if (formImportExcel) {
+                formImportExcel.addEventListener('submit', async function(e) {
+                    e.preventDefault();
+
+                    const file = excelFileInput.files[0];
+                    if (!file) {
+                        Swal.fire('Cảnh báo', 'Vui lòng chọn một file dữ liệu!', 'warning');
+                        return;
+                    }
+
+                    // Đóng giao diện Modal chọn file trước khi mở SweetAlert loading
+                    const modalInstance = bootstrap.Modal.getInstance(importModalEl);
+                    if (modalInstance) modalInstance.hide();
+
+                    // Hiển thị trạng thái xử lý tiến trình
+                    Swal.fire({
+                        title: 'Đang đọc và import dữ liệu...',
+                        text: 'Quá trình kiểm tra kho từ vựng hoàng gia đang diễn ra, xin vui lòng đợi.',
+                        allowOutsideClick: false,
+                        didOpen: () => { Swal.showLoading(); }
+                    });
+
+                    // Khởi tạo FormData đóng gói tệp tin gửi lên API
+                    const formData = new FormData();
+                    formData.append('file', file);
+
+                    try {
+                        const response = await fetch('/api/quanlybaihoc/import-excel-tuvung-vao-bai-hoc', { // Hãy đổi lại đúng Route API gốc của bạn nếu cần
+                            method: 'POST',
+                            body: formData
+                        });
+
+                        const result = await response.json();
+
+                        if (response.ok && result.success) {
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Thành công!',
+                                text: result.message,
+                                confirmButtonColor: '#198754',
+                                confirmButtonText: 'Tuyệt vời'
+                            }).then(() => {
+                                formImportExcel.reset();
+                                location.reload(); // Làm mới trang để cập nhật giao diện
+                            });
+                        } else {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Thất bại!',
+                                text: result.message || 'Lỗi cấu trúc hoặc trùng lặp dữ liệu.',
+                                confirmButtonColor: '#dc3545',
+                                confirmButtonText: 'Kiểm tra lại file'
+                            }).then(() => {
+                                if (modalInstance) modalInstance.show(); // Hiện lại modal để chọn file khác
+                            });
+                        }
+                    } catch (error) {
+                        console.error(error);
+                        Swal.fire('Lỗi kết nối!', 'Không thể gửi dữ liệu lên máy chủ hoàng gia.', 'error').then(() => {
+                            if (modalInstance) modalInstance.show();
+                        });
+                    }
+                });
+            }
+
+
+            const statusToggles = document.querySelectorAll('.status-toggle');
+
+            statusToggles.forEach(toggle => {
+                toggle.addEventListener('change', function (e) {
+                    const idBaiHoc = this.getAttribute('data-id');
+                    const tenBaiHoc = this.getAttribute('data-name');
+                    const isChecked = this.checked; // Trạng thái mới sau khi click gạt
+
+                    const labelEle = document.getElementById(`label_${idBaiHoc}`);
+                    const textEle = document.getElementById(`text_${idBaiHoc}`);
+                    const iconEle = labelEle.querySelector('i');
+
+                    // Lưu lại trạng thái gốc trước đó để đảo ngược lại nếu chọn "Hủy"
+                    const originalState = !isChecked;
+                    const currentCapDo = '@currentCapDo';
+
+                    // Xác định từ ngữ hiển thị động căn cứ theo hành động bật/tắt của Admin
+                    const actionText = isChecked ? "kích hoạt" : "vô hiệu hóa";
+                    const confirmButtonColor = isChecked ? '#198754' : '#dc3545';
+
+                    // HIỂN THỊ MODAL BẢO XÁC NHẬN TRƯỚC KHI THỰC HIỆN
+                    Swal.fire({
+                        title: 'Xác nhận thay đổi?',
+                        text: `Bạn có muốn ${actionText} bài "${tenBaiHoc}" HSK ${currentCapDo} không?`,
+                        icon: 'question',
+                        showCancelButton: true,
+                        confirmButtonColor: confirmButtonColor,
+                        cancelButtonColor: '#6e7881',
+                        confirmButtonText: 'Đồng ý',
+                        cancelButtonText: 'Hủy bỏ',
+                        allowOutsideClick: false
+                    }).then(async (swalResult) => {
+                        if (swalResult.isConfirmed) {
+                            // Người dùng bấm ĐỒNG Ý -> Thực hiện khóa nút gạt tạm thời và Call API
+                            toggle.disabled = true;
+
+                            try {
+                                const response = await fetch(`/api/quanlybaihoc/doitrangthai/${idBaiHoc}`, {
+                                    method: 'PATCH',
+                                    headers: {
+                                        'Content-Type': 'application/json'
+                                    }
+                                });
+
+                                const result = await response.json();
+
+                                if (result.success) {
+                                    // Cập nhật lại giao diện dựa trên kết quả trả về thực tế từ API
+                                    if (result.trangThaiMoi) {
+                                        labelEle.className = "form-check-label badge bg-success text-white rounded-pill px-2 py-1 small";
+                                        iconEle.className = "fas fa-check-circle me-1";
+                                        textEle.innerText = "Đang hoạt động";
+                                    } else {
+                                        labelEle.className = "form-check-label badge bg-danger text-white rounded-pill px-2 py-1 small";
+                                        iconEle.className = "fas fa-lock me-1";
+                                        textEle.innerText = "Đã khóa";
+                                    }
+
+                                    // Thông báo Toast nhỏ ở góc phải màn hình
+                                    Swal.fire({
+                                        toast: true,
+                                        position: 'top-end',
+                                        icon: 'success',
+                                        title: result.message || 'Cập nhật trạng thái thành công!',
+                                        showConfirmButton: false,
+                                        timer: 2500,
+                                        timerProgressBar: true
+                                    });
+                                } else {
+                                    // API xử lý thất bại -> Hoàn tác trạng thái nút gạt
+                                    toggle.checked = originalState;
+                                    Swal.fire('Lỗi hệ thống', result.message, 'error');
+                                }
+                            } catch (error) {
+                                // Lỗi đường truyền mạng -> Hoàn tác trạng thái nút gạt
+                                console.error(error);
+                                toggle.checked = originalState;
+                                Swal.fire('Lỗi kết nối!', 'Không thể kết nối đến máy chủ. Vui lòng thử lại.', 'error');
+                            } finally {
+                                // Mở khóa nút gạt sau khi xử lý xong
+                                toggle.disabled = false;
+                            }
+                        } else {
+                            // Người dùng bấm HỦY BỎ -> Hoàn tác nút gạt về trạng thái ban đầu ngay lập tức
+                            toggle.checked = originalState;
+                        }
+                    });
+                });
+            });
+        });
+
+                // ================= Logic xử lý Xóa Hàng Loạt =================
+        const checkAll = document.getElementById('check-all');
+        const rowCheckboxes = document.querySelectorAll('.row-checkbox');
+        const bulkDeleteContainer = document.getElementById('bulk-delete-container');
+        const selectedCountSpan = document.getElementById('selected-count');
+        const btnBulkDelete = document.getElementById('btn-bulk-delete');
+
+        // Hàm cập nhật trạng thái ẩn/hiện của nút Xóa hàng loạt
+        function updateBulkDeleteVisibility() {
+            const checkedCount = document.querySelectorAll('.row-checkbox:checked').length;
+            selectedCountSpan.innerText = checkedCount;
+
+            if (checkedCount > 0) {
+                bulkDeleteContainer.style.display = 'block';
+            } else {
+                bulkDeleteContainer.style.display = 'none';
+            }
+        }
+
+        // Sự kiện khi click ô "Chọn tất cả"
+        if (checkAll) {
+            checkAll.addEventListener('change', function() {
+                rowCheckboxes.forEach(cb => {
+                    cb.checked = this.checked;
+                });
+                updateBulkDeleteVisibility();
+            });
+        }
+
+        // Sự kiện khi click từng ô checkbox lẻ lẻ
+        rowCheckboxes.forEach(cb => {
+            cb.addEventListener('change', function() {
+                // Nếu bỏ tích 1 ô thì ô "Chọn tất cả" cũng phải bỏ tích theo
+                if (!this.checked) {
+                    checkAll.checked = false;
+                } else {
+                    // Nếu tích đủ tất cả các ô thì tự động sáng ô "Chọn tất cả"
+                    const allChecked = document.querySelectorAll('.row-checkbox:checked').length === rowCheckboxes.length;
+                    checkAll.checked = allChecked;
+                }
+                updateBulkDeleteVisibility();
+            });
+        });
+
+        // Sự kiện click nút Xóa hàng loạt
+        if (btnBulkDelete) {
+            btnBulkDelete.addEventListener('click', function() {
+                const selectedCheckboxes = document.querySelectorAll('.row-checkbox:checked');
+                const selectedIds = Array.from(selectedCheckboxes).map(cb => parseInt(cb.value));
+
+                if (selectedIds.length === 0) return;
+
+                Swal.fire({
+                    title: 'Xác nhận xóa hàng loạt?',
+                    text: `Bạn có chắc chắn muốn xóa ${selectedIds.length} bài học đã chọn cùng toàn bộ từ vựng và câu hỏi liên quan? Hành động này không thể hoàn tác!`,
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#dc3545',
+                    cancelButtonColor: '#6e7881',
+                    confirmButtonText: 'Đồng ý xóa hết',
+                    cancelButtonText: 'Hủy bỏ',
+                    allowOutsideClick: false
+                }).then(async (result) => {
+                    if (result.isConfirmed) {
+                        // Hiển thị loading chờ xử lý từ Server
+                        Swal.fire({
+                            title: 'Đang xử lý...',
+                            text: 'Vui lòng đợi trong giây lát.',
+                            allowOutsideClick: false,
+                            didOpen: () => { Swal.showLoading(); }
+                        });
+
+                        try {
+                            // Gọi API Xóa hàng loạt (Sẽ viết ở Backend ở mục bên dưới)
+                            const response = await fetch('/api/quanlybaihoc/xoahangloat', {
+                                method: 'DELETE',
+                                headers: {
+                                    'Content-Type': 'application/json'
+                                },
+                                body: JSON.stringify(selectedIds) // Gửi mảng ID [1, 2, 3] sang JSON
+                            });
+
+                            const apiResult = await response.json();
+
+                            if (apiResult.success) {
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'Thành công!',
+                                    text: apiResult.message,
+                                    confirmButtonText: 'Đóng'
+                                }).then(() => {
+                                    // Tải lại trang để cập nhật danh sách và phân trang chuẩn xác nhất
+                                    location.reload();
+                                });
+                            } else {
+                                Swal.fire('Thất bại', apiResult.message || 'Có lỗi xảy ra khi xóa.', 'error');
+                            }
+                        } catch (error) {
+                            console.error(error);
+                            Swal.fire('Lỗi kết nối!', 'Không thể kết nối đến máy chủ. Vui lòng thử lại.', 'error');
+                        }
+                    }
+                });
+            });
+        }
+
+    </script>
+</body>
+</html>

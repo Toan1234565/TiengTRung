@@ -1,0 +1,980 @@
+﻿@using HocTiengTrung_3._0_T.Models12.TuVung
+@model List<HocTiengTrung_3._0_T.Models12.TuVung.TuVungModes>
+
+@{
+    var queryCapDo = Context.Request.Query["idCapDo"].ToString();
+    var queryLoai = Context.Request.Query["loaiOnLuyen"].ToString();
+    var querySoLuong = Context.Request.Query["soLuong"].ToString();
+
+    int currentCapDo = string.IsNullOrEmpty(queryCapDo) ? 1 : int.Parse(queryCapDo);
+    int currentLoai = string.IsNullOrEmpty(queryLoai) ? 3 : int.Parse(queryLoai);
+    int currentSoLuong = string.IsNullOrEmpty(querySoLuong) ? 20 : int.Parse(querySoLuong);
+    int totalCount = Model?.Count ?? 0;
+    bool isVipUser = ViewBag.IsVip ?? false;
+}
+
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;500;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+
+<style>
+    :root {
+        --nature-green: #28a745;
+        --soft-green: #e8f5e9;
+        --error-red: #fff5f5;
+        --border-error: #ff8080;
+        --text-dark: #2d3436;
+        --border-color: #e9ecef;
+    }
+
+    body {
+        background-color: #f0f4f3;
+        font-family: 'Noto Sans SC', sans-serif;
+        color: var(--text-dark);
+    }
+
+    .glass-card {
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+        border-radius: 16px;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+    }
+
+    .table-container {
+        max-height: 800px;
+        overflow-y: auto;
+        border-radius: 15px;
+        background: white;
+        border: 1px solid var(--border-color);
+    }
+
+    .table thead th {
+        background-color: #f8f9fa;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+        border-bottom: 2px solid var(--border-color);
+    }
+
+    .input-practice {
+        border-radius: 10px !important;
+        border: 2px solid #ddd;
+        text-align: center;
+        font-size: 1.1rem;
+        transition: all 0.3s;
+    }
+
+    .is-correct {
+        background-color: var(--soft-green) !important;
+        border-color: #a5d6a7 !important;
+        color: #2e7d32 !important;
+        pointer-events: none;
+    }
+
+    .is-wrong {
+        background-color: var(--error-red) !important;
+        border-color: var(--border-error) !important;
+        animation: headShake 0.5s;
+    }
+
+    .result-box {
+        opacity: 0;
+        transform: translateX(-10px);
+        transition: all 0.4s ease;
+    }
+
+        .result-box.show {
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+    .han-tu-display {
+        font-size: 1.4rem;
+        font-weight: bold;
+        color: var(--nature-green);
+    }
+
+    .btn-action {
+        border-radius: 50px;
+        padding: 8px 20px;
+        font-weight: 600;
+    }
+
+    .btn-reveal-one {
+        border: none;
+        background: transparent;
+        color: #adb5bd;
+        transition: color 0.2s;
+        padding: 0 6px;
+    }
+
+        .btn-reveal-one:hover {
+            color: var(--nature-green);
+        }
+
+    .hanzi-box {
+        position: relative;
+        width: 140px;
+        height: 140px;
+        background-color: #f4f4f4;
+        border-radius: 8px;
+        background-image: linear-gradient(45deg, transparent 49%, #e0e0e0 49%, #e0e0e0 51%, transparent 51%), linear-gradient(-45deg, transparent 49%, #e0e0e0 49%, #e0e0e0 51%, transparent 51%), linear-gradient(to right, transparent 49%, #e0e0e0 49%, #e0e0e0 51%, transparent 51%), linear-gradient(to bottom, transparent 49%, #e0e0e0 49%, #e0e0e0 51%, transparent 51%);
+    }
+
+    /* ==========================================
+           CSS RESPONSIVE TỐI ƯU CHO ĐIỆN THOẠI (MOBILE)
+           ========================================== */
+    @@media (max-width: 767.98px) {
+        .container-fluid {
+            padding-left: 10px !important;
+            padding-right: 10px !important;
+        }
+
+        .table-container {
+            background: transparent;
+            border: none;
+            max-height: none;
+            overflow-y: visible;
+        }
+        /* Biến Table thành dạng Cards trên Mobile */
+        .responsive-table table,
+        .responsive-table thead,
+        .responsive-table tbody,
+        .responsive-table th,
+        .responsive-table td,
+        .responsive-table tr {
+            display: block;
+        }
+
+        .responsive-table thead {
+            display: none; /* Ẩn header của bảng trên điện thoại */
+        }
+
+        .responsive-table tr.vocab-row {
+            background: white;
+            border-radius: 16px;
+            padding: 15px;
+            margin-bottom: 15px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+            position: relative;
+        }
+
+        .responsive-table td {
+            padding: 6px 0;
+            border: none !important;
+        }
+        /* Vị trí STT và Trạng thái trên thẻ Mobile */
+        .mobile-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px dashed #eee;
+            padding-bottom: 8px !important;
+            margin-bottom: 8px;
+        }
+
+        .input-practice {
+            font-size: 1rem;
+        }
+
+        .mode-btn-group label {
+            font-size: 0.8rem;
+            padding: 6px 8px;
+        }
+
+        .hanzi-box {
+            width: 110px;
+            height: 110px;
+        }
+    }
+</style>
+
+@if (ViewBag.RequiresPremium == true)
+{
+    @* GIAO DIỆN KHI CHƯA NẠP TIỀN *@
+    <main style="filter: blur(5px); pointer-events: none;">
+        <div class="container quiz-wrapper py-3 py-md-4">
+            <div class="quiz-container bg-white shadow-lg rounded-4 p-3 p-md-5">
+                <div class="quiz-header mb-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <a href="javascript:void(0);" class="btn btn-sm btn-outline-secondary rounded-pill px-3">
+                            <i class="fas fa-chevron-left me-1"></i> Quay lại
+                        </a>
+                        <div class="progress-info text-center">
+                            <span class="text-muted fw-bold d-block small">TIẾN ĐỘ LUYỆN TẬP</span>
+                            <span class="badge bg-light text-dark border shadow-sm">
+                                Câu hỏi <span class="text-primary">0</span>/0
+                            </span>
+                        </div>
+                        <div class="badge bg-success fs-6 shadow-sm px-3 py-2">
+                            <i class="fas fa-check-circle me-1"></i> Đúng: 0
+                        </div>
+                    </div>
+                    <div class="progress mb-2" style="height: 10px; border-radius: 20px;">
+                        <div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" style="width: 0%; background: linear-gradient(45deg, #fd7e14, #ffbc00);"></div>
+                    </div>
+                </div>
+
+                <div class="text-center my-5">
+                    <button type="button" class="btn btn-primary btn-lg rounded-pill px-4 px-md-5 shadow-lg fs-6 fs-md-5">
+                        <i class="fas fa-lock me-2"></i> TÍNH NĂNG GIỚI HẠN VIP
+                    </button>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        $(document).ready(function() {
+            Swal.fire({
+                title: '👑 Tính Năng Giới Hạn VIP!',
+                text: 'Bài học này thuộc gói nâng cao. Vui lòng kích hoạt/mua tài khoản Premium để mở khóa và tiếp tục sử dụng dịch vụ!',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#fd7e14',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: '<i class="fas fa-shopping-cart me-2"></i> Mua tài khoản ngay',
+                cancelButtonText: 'Quay lại',
+                allowOutsideClick: false,
+                allowEscapeKey: false
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    window.location.href = '@Url.Action("CongThanhToan", "QuanLyTaiKhoan")';
+                } else {
+                    window.location.href = '@Url.Action("DanhSachBaiHoc", "QuanLyDanhSachBaiHoc")';
+                }
+            });
+        });
+    </script>
+}
+else
+{
+    <div class="container-fluid py-3 py-md-4 px-2 px-md-4 px-lg-5">
+        <!-- Khối Bộ Lọc Tùy Chọn -->
+        <div class="card glass-card border-0 shadow-sm mb-3 mb-md-4">
+            <div class="card-body p-3 p-md-4">
+                <div class="row align-items-center g-3 mb-3">
+                    <div class="col-12 col-lg-4 text-center text-lg-start">
+                        <h3 class="fw-bold text-success mb-1 fs-4 fs-md-3">Chinh Phục HSK</h3>
+                        <p class="text-muted small mb-0">Hoàng đế đang đối mặt với <b>@totalCount</b> thử thách.</p>
+                    </div>
+                    <div class="col-12 col-lg-8">
+                        <form id="filterForm" method="get" action="@Url.Action("OnLuyenNgauNhien")" class="row g-2">
+                            <div class="col-6 col-sm-6 col-md-3">
+                                <select name="idCapDo" class="form-select form-select-sm form-select-md-normal">
+                                    @if (ViewBag.DanhSachCapDo != null)
+                                    {
+                                        foreach (var capDo in (List<CapDoModels>)ViewBag.DanhSachCapDo)
+                                        {
+                                            <option value="@capDo.IdCapDo" selected="@(capDo.IdCapDo == ViewBag.CurrentCapDo)">
+                                                @capDo.TenCapDo
+                                            </option>
+                                        }
+                                    }
+                                </select>
+                            </div>
+                            <div class="col-6 col-sm-6 col-md-4">
+                                <select name="loaiOnLuyen" class="form-select form-select-sm form-select-md-normal border-0 shadow-sm" onchange="this.form.submit()">
+                                    <option value="3" selected="@(currentLoai == 3 ? "selected" : null)">Ngẫu nhiên</option>
+                                    <option value="2" selected="@(currentLoai == 2 ? "selected" : null)">Từ mới chưa thuộc</option>
+                                    <option value="1" selected="@(currentLoai == 1 ? "selected" : null)">Ôn tập từ đã thuộc</option>
+                                </select>
+                            </div>
+                            <div class="col-4 col-sm-4 col-md-2">
+                                <input type="number" name="soLuong" class="form-control form-control-sm form-control-md-normal border-0 shadow-sm text-center" value="@currentSoLuong" min="1">
+                            </div>
+                            <div class="col-8 col-sm-8 col-md-3">
+                                <button type="submit" class="btn btn-success btn-sm btn-md-normal w-100 btn-action shadow-sm">
+                                    <i class="bi bi-shuffle me-1"></i>Trộn Thẻ
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <hr class="my-2 my-md-3" />
+
+                <!-- Chọn Chế Độ Dịch -->
+                <div class="d-flex flex-column flex-sm-row align-items-center justify-content-between gap-2">
+                    <span class="fw-bold text-muted small"><i class="bi bi-gear me-1"></i>Chế độ dịch:</span>
+                    <div class="btn-group w-100 w-sm-auto shadow-sm mode-btn-group" role="group">
+                        <input type="radio" class="btn-check" name="modeRadio" id="mode1" autocomplete="off" onchange="changeMode(1)">
+                        <label class="btn btn-outline-success btn-sm" for="mode1">Hán ➔ Việt</label>
+
+                        <input type="radio" class="btn-check" name="modeRadio" id="mode2" autocomplete="off" onchange="changeMode(2)" checked>
+                        <label class="btn btn-outline-success btn-sm" for="mode2">Việt ➔ Hán</label>
+
+                        <input type="radio" class="btn-check" name="modeRadio" id="mode3" autocomplete="off" onchange="changeMode(3)">
+                        <label class="btn btn-outline-success btn-sm" for="mode3">Trộn lẫn</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Thanh Tiến Độ -->
+        <div class="mb-3 mb-md-4">
+            <div class="d-flex justify-content-between mb-1">
+                <span class="small fw-bold">Tiến độ: <span id="percentText" class="text-success">0%</span></span>
+                <span class="small text-muted"><span id="correctCount" class="fw-bold text-dark">0</span> / @totalCount từ</span>
+            </div>
+            <div class="progress" style="height: 8px; border-radius: 10px;">
+                <div id="learningProgress" class="progress-bar bg-success" style="width: 0%"></div>
+            </div>
+        </div>
+
+        <audio id="globalAudioPlayer" style="display:none;"></audio>
+
+        <!-- Danh Sách Câu Hỏi / Bài Tập -->
+        <div class="table-container responsive-table shadow-sm">
+            <table class="table align-middle mb-0 bg-white">
+                <thead>
+                    <tr>
+                        <th class="text-center" width="5%">#</th>
+                        <th width="28%">Câu Hỏi</th>
+                        <th width="37%">Nhập Câu Trả Lời</th>
+                        <th width="20%">Đáp án & Âm Thanh</th>
+                        <th class="text-center" width="10%">Trạng thái</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @for (int i = 0; i < totalCount; i++)
+                    {
+                        var item = Model[i];
+                        <tr class="vocab-row" id="row-@i"
+                            data-id="@item.IdTuVung"
+                            data-han="@item.ChuHan"
+                            data-pinyin="@item.Pinyin"
+                            data-viet="@item.NghiaViet"
+                            data-amthanh="@item.AmThanhPath"
+                            data-loai="@item.LoaiTu"
+                            data-kieu-hien-tai="2">
+
+                            <!-- Header trên mobile (STT + Trạng thái) -->
+                            <td class="mobile-card-header text-muted">
+                                <span class="fw-bold text-secondary">@(i + 1)</span>
+                                <span id="status-mobile-@i" class="d-md-none">
+                                    <!-- Dynamic status clone for mobile header if needed -->
+                                </span>
+                            </td>
+
+                            <td class="py-2 py-md-3">
+                                <div class="question-primary fw-bold fs-5 text-dark"></div>
+                                <div class="question-secondary small text-muted"></div>
+                            </td>
+
+                            <td class="py-2 py-md-3">
+                                <div class="input-group">
+                                    <input type="text" class="form-control input-practice js-input"
+                                           id="input-@i" autocomplete="off"
+                                           data-index="@i"
+                                           placeholder="Nhập đáp án...">
+                                    <button class="btn btn-primary px-3" type="button" onclick="triggerCheck(@i)" title="Kiểm tra đáp án">
+                                        <i class="bi bi-send"></i>
+                                    </button>
+                                    <button class="btn-reveal-one ms-1 ms-md-2" type="button" onclick="revealOne(@i)" title="Xem đáp án">
+                                        <i class="bi bi-eye fs-5"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-info p-1 border-0 ms-1"
+                                            onclick="showStrokeOrder('@item.ChuHan')"
+                                            title="Hướng dẫn viết chữ">
+                                        <i class="bi bi-pen-fill fs-5 text-success"></i>
+                                    </button>
+                                </div>
+                            </td>
+
+                            <td class="py-2 py-md-3">
+                                <div id="result-@i" class="result-box">
+                                    <div class="d-flex align-items-center justify-content-between justify-content-md-start gap-2">
+                                        <div>
+                                            <div class="answer-primary fw-bold"></div>
+                                            <div class="answer-secondary small text-muted"></div>
+                                        </div>
+                                        <button class="btn btn-sm btn-outline-success border-0 rounded-circle d-none btn-audio-trigger"
+                                                id="btn-audio-@i" type="button" onclick="playVocabAudio(@i)">
+                                            <i class="bi bi-volume-up-fill fs-4"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </td>
+
+                            <td class="text-center text-md-center py-2 py-md-3 d-none d-md-table-cell">
+                                <div id="status-@i">
+                                    <i class="bi bi-circle text-light fs-4"></i>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Thanh Nút Thao Tác Bên Dưới -->
+        <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mt-3 mt-md-4 mb-4">
+            <div class="d-flex gap-2 w-100 w-sm-auto justify-content-between">
+                <button onclick="confirmExit()" class="btn btn-outline-secondary btn-action flex-grow-1 flex-sm-grow-0">Kết Thúc</button>
+                <button onclick="revealAll()" class="btn btn-outline-warning btn-action flex-grow-1 flex-sm-grow-0">Hiện Tất Cả</button>
+            </div>
+            <button onclick="saveResults()" id="btnSaveFinal" class="btn btn-success btn-action w-100 w-sm-auto d-none animate__animated animate__fadeInUp">
+                <i class="bi bi-floppy me-1"></i> Lưu Kết Quả
+            </button>
+        </div>
+    </div>
+}
+
+<!-- Modal Hướng Dẫn Viết Chữ Hán -->
+<div class="modal fade" id="hanziModal" tabindex="-1" aria-labelledby="hanziModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg px-2">
+        <div class="modal-content border-0 rounded-4 shadow-lg">
+            <div class="modal-header border-bottom-0 pb-0">
+                <h5 class="modal-title fs-6 fs-md-5 fw-bold" id="hanziModalLabel">Tập viết chữ: <span id="hanziModalWord" class="text-primary fw-bold fs-4"></span></h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body py-4">
+                <div id="hanzi-characters-container" class="d-flex flex-wrap justify-content-center gap-2 gap-md-3">
+                    <!-- Ô chữ nhúng JS -->
+                </div>
+            </div>
+            <div class="modal-footer border-top-0 justify-content-center pt-0">
+                <button type="button" class="btn btn-primary btn-action shadow-sm" onclick="replayHanzi()">
+                    <i class="bi bi-arrow-clockwise me-1"></i> Vẽ lại
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/hanzi-writer@3.5/dist/hanzi-writer.min.js"></script>
+<script>
+    let currentWriters = []; // Biến mảng lưu các đối tượng chữ hiện tại để gọi nút Vẽ lại
+
+    function showStrokeOrder(word) {
+        // 1. Cập nhật tiêu đề Modal và hiển thị nó lên
+        document.getElementById('hanziModalWord').innerText = word;
+        var myModal = new bootstrap.Modal(document.getElementById('hanziModal'));
+        myModal.show();
+
+        // 2. Xóa các chữ cũ từ lần bấm trước
+        var container = document.getElementById('hanzi-characters-container');
+        container.innerHTML = '';
+        currentWriters = [];
+
+        // 3. Tách từng ký tự Hán tự để vẽ (Hỗ trợ từ ghép nhiều chữ)
+        // Loại bỏ các ký tự dấu câu, khoảng trắng nếu có
+        let cleanWord = word.replace(/[^\u4e00-\u9fa5]/g, "");
+
+        for (let i = 0; i < cleanWord.length; i++) {
+            let char = cleanWord[i];
+
+            // Tạo the DIV chứa từng chữ
+            let boxId = 'hanzi-char-' + i;
+            let div = document.createElement('div');
+            div.id = boxId;
+            div.className = 'hanzi-box border shadow-sm';
+            container.appendChild(div);
+
+            // Cấu hình vẽ chữ bằng thư viện
+            let writer = HanziWriter.create(boxId, char, {
+                width: 150,
+                height: 150,
+                padding: 5,
+                strokeColor: '#2b3f63',   // Màu nét vẽ (Xanh Navy)
+                radicalColor: '#c43c33',  // Màu bộ thủ (Đỏ)
+                showOutline: true,        // Hiện chữ mờ phía sau để dễ nhìn form
+                strokeAnimationSpeed: 1,
+                delayBetweenStrokes: 200,
+            });
+
+            currentWriters.push(writer);
+        }
+
+        // 4. Bắt đầu vẽ sau khi modal đã hiện (delay 300ms để tránh lỗi render SVG bị sai kích thước)
+        setTimeout(() => {
+            replayHanzi();
+        }, 300);
+    }
+
+    function replayHanzi() {
+        // Duyệt qua tất cả các chữ đang có trên Modal và chạy lại animation
+        currentWriters.forEach(writer => {
+            writer.animateCharacter();
+        });
+    }
+</script>
+<script>
+    const totalItems = @totalCount;
+    let correctIds = [];
+    let isDataSaved = false;
+    const isAuthenticated = @(User.Identity.IsAuthenticated ? "true" : "false");
+    const checkApiUrl = '@Url.Action("KiemTraDapAn", "QuanLyDanhSachTuVung")';
+
+    document.addEventListener('DOMContentLoaded', async () => {
+        // Khởi tạo chế độ ban đầu (Việt -> Hán)
+        changeMode(2);
+
+        if (isAuthenticated) {
+            const pendingData = sessionStorage.getItem('pendingCorrectIds');
+            if (pendingData) {
+                const pendingIds = JSON.parse(pendingData);
+                if (pendingIds && pendingIds.length > 0) {
+                    sessionStorage.removeItem('pendingCorrectIds');
+                    await handlePendingResultsAfterLogin(pendingIds);
+                }
+            }
+        }
+
+        document.querySelectorAll('.js-input').forEach(input => {
+            // 1. Check tự động khi đang gõ
+               // 1. Check tự động khi đang gõ
+            input.addEventListener('input', function() {
+                const index = this.getAttribute('data-index');
+                const row = document.getElementById(`row-${index}`);
+                const kieuCauHoi = parseInt(row.getAttribute('data-kieu-hien-tai'));
+
+                // Sử dụng hàm cleanStringJS để chuẩn hóa câu trả lời của người dùng
+                const userValueCleaned = cleanStringJS(this.value);
+
+                if (!userValueCleaned) {
+                    this.classList.remove("is-wrong", "is-correct");
+                    return;
+                }
+
+                let isCorrectClient = false;
+
+                if (kieuCauHoi === 1) {
+                    // Xử lý kiểm tra Nghĩa Việt
+                    const rawViet = row.getAttribute('data-viet') || "";
+                    const cacNghia = rawViet.split(/[,,;|]/); // Tách các nghĩa đồng nghĩa trước
+
+                    for (let n of cacNghia) {
+                        // Check từng nghĩa xem có khớp kiểu A (B) không
+                        if (checkMatchWithParenthesesJS(n, userValueCleaned)) {
+                            isCorrectClient = true;
+                            break;
+                        }
+                    }
+                } else {
+                    // Kiểm tra Chữ Hán hoặc Pinyin
+                    const rawHan = row.getAttribute('data-han') || "";
+                    const rawPinyin = row.getAttribute('data-pinyin') || "";
+
+                    const cacChuHan = rawHan.split('|');
+                    const cacPinyin = rawPinyin.split('|');
+
+                    // Check xem có khớp với cụm chữ Hán nào không (có tính toán ngoặc)
+                    for (let h of cacChuHan) {
+                        if (checkMatchWithParenthesesJS(h, userValueCleaned)) {
+                            isCorrectClient = true;
+                            break;
+                        }
+                    }
+
+                    // Nếu chữ Hán chưa đúng, check tiếp sang mảng Pinyin (có tính toán ngoặc)
+                    if (!isCorrectClient) {
+                        for (let p of cacPinyin) {
+                            if (checkMatchWithParenthesesJS(p, userValueCleaned)) {
+                                isCorrectClient = true;
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                if (isCorrectClient) {
+                    handleCorrectUI(index, row);
+                } else {
+                    this.classList.remove("is-wrong");
+                }
+            });
+
+            // 2. Bấm Enter để check chính thức qua API
+        input.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    if (!this.readOnly) {
+                        triggerCheck(this.getAttribute('data-index'));
+                    }
+                }
+            });
+
+            // 3. Rời ô nhập tự động check
+            input.addEventListener('blur', function() {
+                if (this.value.trim() && !this.readOnly) {
+                    triggerCheck(this.getAttribute('data-index'));
+                }
+            });
+        });
+
+        // Cảnh báo rời trang
+        document.querySelectorAll('a').forEach(link => {
+            link.addEventListener('click', function(e) {
+                if (correctIds.length > 0 && !isDataSaved) {
+                    e.preventDefault();
+                    const targetUrl = this.href;
+                    Swal.fire({
+                        title: 'Bạn chưa lưu kết quả!',
+                        text: `Đã hoàn thành ${correctIds.length} từ. Lưu lại trước khi thoát?`,
+                        icon: 'warning',
+                        showDenyButton: true,
+                        showCancelButton: true,
+                        confirmButtonText: 'Lưu và đi tiếp',
+                        denyButtonText: 'Thoát luôn',
+                        cancelButtonText: 'Ở lại'
+                    }).then(async (result) => {
+                        if (result.isConfirmed) {
+                            const saved = await saveResults(true);
+                            if (saved) window.location.href = targetUrl;
+                        } else if (result.isDenied) {
+                            isDataSaved = true;
+                            window.location.href = targetUrl;
+                        }
+                    });
+                }
+            });
+        });
+    });
+
+    async function handlePendingResultsAfterLogin(pendingIds) {
+        try {
+            const response = await fetch('@Url.Content("~/api/QuanLyTuVung/luu-ket-qua-on-luyen")', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(pendingIds)
+            });
+            const data = await response.json();
+
+            if (data.success) {
+                isDataSaved = true;
+
+                document.querySelectorAll('.vocab-row').forEach((row) => {
+                    const idTuVung = parseInt(row.getAttribute('data-id'));
+
+                    if (pendingIds.includes(idTuVung)) {
+                        const index = row.id.replace('row-', '');
+                        const inputElem = document.getElementById(`input-${index}`);
+                        const resultBox = document.getElementById(`result-${index}`);
+                        const statusDiv = document.getElementById(`status-${index}`);
+                        const kieuCauHoi = parseInt(row.getAttribute('data-kieu-hien-tai'));
+                        const amThanhPath = row.getAttribute('data-amthanh');
+
+                        if (kieuCauHoi === 1) {
+                            inputElem.value = row.getAttribute('data-viet');
+                        } else {
+                            inputElem.value = row.getAttribute('data-han');
+                        }
+
+                        inputElem.classList.add("is-correct");
+                        inputElem.readOnly = true;
+                        resultBox.classList.add("show");
+
+                        if (statusDiv) {
+                            statusDiv.innerHTML = '<i class="bi bi-check-circle-fill text-success fs-4 animate__animated animate__bounceIn"></i>';
+                        }
+
+                        const btnAudio = document.getElementById(`btn-audio-${index}`);
+                        if (btnAudio && amThanhPath && amThanhPath.trim() !== "") {
+                            btnAudio.classList.remove('d-none');
+                        }
+
+                        if (!correctIds.includes(idTuVung)) {
+                            correctIds.push(idTuVung);
+                        }
+                    }
+                });
+
+                updateProgress();
+
+                Swal.fire({
+                    title: 'Đăng nhập thành công!',
+                    text: `Hệ thống đã khôi phục và đồng bộ thành công ${pendingIds.length} kết quả từ vựng của bạn!`,
+                    icon: 'success',
+                    timer: 3500,
+                    showConfirmButton: false
+                });
+            }
+        } catch (e) {
+            console.error("Lỗi đồng bộ dữ liệu sau đăng nhập:", e);
+        }
+    }
+
+    function playVocabAudio(index) {
+        const row = document.getElementById(`row-${index}`);
+        const amThanhPath = row.getAttribute('data-amthanh');
+
+        if (amThanhPath && amThanhPath.trim() !== "") {
+            const audioPlayer = document.getElementById('globalAudioPlayer');
+            audioPlayer.src = amThanhPath.startsWith('/') ? amThanhPath : '/' + amThanhPath;
+            audioPlayer.play().catch(err => console.log("Không thể phát âm thanh:", err));
+        }
+    }
+
+    function handleCorrectUI(index, row) {
+        const inputElem = document.getElementById(`input-${index}`);
+        const resultBox = document.getElementById(`result-${index}`);
+        const statusDiv = document.getElementById(`status-${index}`);
+        const idTuVung = parseInt(row.getAttribute('data-id'));
+        const amThanhPath = row.getAttribute('data-amthanh');
+
+        inputElem.classList.remove("is-wrong");
+        inputElem.classList.add("is-correct");
+        inputElem.readOnly = true;
+        resultBox.classList.add("show");
+
+        if (statusDiv) {
+            statusDiv.innerHTML = '<i class="bi bi-check-circle-fill text-success fs-4 animate__animated animate__bounceIn"></i>';
+        }
+
+        const btnAudio = document.getElementById(`btn-audio-${index}`);
+        if (btnAudio && amThanhPath && amThanhPath.trim() !== "") {
+            btnAudio.classList.remove('d-none');
+        }
+
+        if (!correctIds.includes(idTuVung)) {
+            correctIds.push(idTuVung);
+            isDataSaved = false;
+            updateProgress();
+            playVocabAudio(index);
+        }
+
+        const nextInput = document.getElementById(`input-${parseInt(index) + 1}`);
+        if (nextInput && !nextInput.readOnly) nextInput.focus();
+
+        if (correctIds.length === totalItems) {
+            Swal.fire('Tuyệt vời!', 'Bạn đã hoàn thành tất cả thử thách!', 'success');
+        }
+    }
+
+    function changeMode(modeType) {
+        document.querySelectorAll('.vocab-row').forEach((row, idx) => {
+            const han = row.getAttribute('data-han');
+            const pinyin = row.getAttribute('data-pinyin');
+            const viet = row.getAttribute('data-viet');
+            const loai = row.getAttribute('data-loai');
+
+            const qPrimary = row.querySelector('.question-primary');
+            const qSecondary = row.querySelector('.question-secondary');
+            const aPrimary = row.querySelector('.answer-primary');
+            const aSecondary = row.querySelector('.answer-secondary');
+            const inputField = document.getElementById(`input-${idx}`);
+
+            let currentKieu = modeType;
+            if (modeType === 3) {
+                currentKieu = Math.random() < 0.5 ? 1 : 2;
+            }
+
+            row.setAttribute('data-kieu-hien-tai', currentKieu);
+
+            // Cập nhật cấu trúc text hiển thị mà không phụ thuộc vào trạng thái làm bài xong hay chưa
+            if (currentKieu === 1) {
+                qPrimary.innerText = han;
+                qPrimary.classList.add('text-success');
+                qSecondary.innerText = `(${pinyin})`;
+                if(!inputField.readOnly) inputField.placeholder = "Gõ nghĩa tiếng Việt...";
+                aPrimary.innerText = viet;
+                aPrimary.classList.remove('han-tu-display');
+                aSecondary.innerText = loai;
+            } else {
+                qPrimary.innerText = viet;
+                qPrimary.classList.remove('text-success');
+                qSecondary.innerText = loai;
+                if(!inputField.readOnly) inputField.placeholder = "Gõ chữ Hán hoặc Pinyin...";
+                aPrimary.innerText = han;
+                aPrimary.classList.add('han-tu-display');
+                aSecondary.innerText = `(${pinyin})`;
+            }
+        });
+
+        const firstActive = document.querySelector('.js-input:not([readonly])');
+        if (firstActive) firstActive.focus();
+    }
+
+    async function triggerCheck(index) {
+        const inputElem = document.getElementById(`input-${index}`);
+        if (inputElem.readOnly) return;
+
+        const userValue = inputElem.value.trim();
+        if (!userValue) return;
+
+        const row = document.getElementById(`row-${index}`);
+        const idTuVung = parseInt(row.getAttribute('data-id'));
+        const kieuCauHoi = parseInt(row.getAttribute('data-kieu-hien-tai'));
+        const statusDiv = document.getElementById(`status-${index}`);
+        const amThanhPath = row.getAttribute('data-amthanh');
+
+        if (statusDiv) {
+            statusDiv.innerHTML = '<div class="spinner-border spinner-border-sm text-primary" role="status"></div>';
+        }
+        inputElem.classList.remove("is-wrong", "is-correct");
+
+        try {
+            const response = await fetch(checkApiUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    IdTuVung: idTuVung,
+                    KieuCauHoi: kieuCauHoi,
+                    CauTraLoi: userValue,
+                    AmThanhPath: amThanhPath
+                })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                if (data.isCorrect) {
+                    handleCorrectUI(index, row);
+                } else {
+                    inputElem.classList.add("is-wrong");
+                    if (statusDiv) {
+                        statusDiv.innerHTML = '<i class="bi bi-x-circle-fill text-danger fs-4 animate__animated animate__shakeX"></i>';
+                    }
+                }
+            } else {
+                Swal.fire('Lỗi', data.message || 'Có lỗi xảy ra', 'error');
+                if (statusDiv) {
+                    statusDiv.innerHTML = '<i class="bi bi-exclamation-circle text-warning fs-4"></i>';
+                }
+            }
+        } catch (error) {
+            console.error(error);
+            Swal.fire('Lỗi', 'Không thể kết nối đến máy chủ chấm điểm.', 'error');
+            if (statusDiv) statusDiv.innerHTML = '';
+        }
+    }
+
+    function revealOne(index) {
+        document.getElementById(`result-${index}`).classList.toggle("show");
+    }
+
+    function revealAll() {
+        Swal.fire({
+            title: 'Hiện tất cả đáp án?',
+            text: "Bạn sẽ không thể rèn luyện tập trung nếu biết trước đáp án.",
+            icon: 'info',
+            showCancelButton: true,
+            confirmButtonText: 'Hiện hết đi!',
+            cancelButtonText: 'Để tôi tự làm'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                document.querySelectorAll('.result-box').forEach(box => box.classList.add("show"));
+            }
+        });
+    }
+
+    function updateProgress() {
+        const percent = Math.round((correctIds.length / totalItems) * 100);
+        document.getElementById('correctCount').innerText = correctIds.length;
+        document.getElementById('percentText').innerText = percent + '%';
+        document.getElementById('learningProgress').style.width = percent + '%';
+        if (correctIds.length > 0) {
+            document.getElementById('btnSaveFinal').classList.remove('d-none');
+        }
+    }
+
+    async function saveResults(isSilent = false) {
+        if (correctIds.length === 0) return false;
+
+        if (!isAuthenticated) {
+            sessionStorage.setItem('pendingCorrectIds', JSON.stringify(correctIds));
+            const currentUrl = window.location.pathname + window.location.search;
+            const returnUrl = encodeURIComponent(currentUrl);
+            const loginUrl = '@Url.Action("DangNhap", "QuanLyTaiKhoan")' + '?returnUrl=' + returnUrl;
+
+            if (!isSilent) {
+                Swal.fire({
+                    title: 'Yêu cầu đăng nhập',
+                    text: 'Bạn cần đăng nhập để hệ thống ghi nhận và lưu kết quả tiến độ!',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#28a745',
+                    cancelButtonColor: '#6c757d',
+                    confirmButtonText: 'Đăng nhập ngay',
+                    cancelButtonText: 'Ở lại trang này'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        window.location.href = loginUrl;
+                    }
+                });
+            } else {
+                window.location.href = loginUrl;
+            }
+            return false;
+        }
+
+        try {
+            const response = await fetch('@Url.Content("~/api/QuanLyTuVung/luu-ket-qua-on-luyen")', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(correctIds)
+            });
+            const data = await response.json();
+            if (data.success) {
+                isDataSaved = true;
+                sessionStorage.removeItem('pendingCorrectIds');
+                if (!isSilent) await Swal.fire('Thành công', 'Đã lưu tiến độ!', 'success');
+                return true;
+            }
+        } catch (e) {
+            console.error(e);
+            return false;
+        }
+    }
+
+    function confirmExit() {
+        if (correctIds.length > 0 && !isDataSaved) {
+            // Kích hoạt logic cảnh báo chưa lưu
+            Swal.fire({
+                title: 'Bạn chưa lưu kết quả!',
+                text: 'Lưu lại tiến độ trước khi rời khỏi màn hình ôn luyện?',
+                icon: 'warning',
+                showDenyButton: true,
+                showCancelButton: true,
+                confirmButtonText: 'Lưu và thoát',
+                denyButtonText: 'Thoát luôn',
+                cancelButtonText: 'Ở lại'
+            }).then(async (result) => {
+                if (result.isConfirmed) {
+                    const saved = await saveResults(true);
+                    window.location.href = '@Url.Action("Index", "Home")';
+                } else if (result.isDenied) {
+                    window.location.href = '@Url.Action("Index", "Home")';
+                }
+            });
+        } else {
+            window.location.href = '@Url.Action("Index", "Home")';
+        }
+    }
+   // Lưu ý: Đặt hàm cleanStringJS này ra ngoài cùng (hoặc dưới cùng) của script, bên ngoài khối DOMContentLoaded để dùng chung
+   // Hàm kiểm tra khớp cả 3 trường hợp: A, B, hoặc AB
+        function checkMatchWithParenthesesJS(dbValue, userValueCleaned) {
+            if (!dbValue) return false;
+
+            // 1. Khớp toàn bộ chuỗi (sau khi đã xóa ngoặc) -> Khách nhập AB
+            if (cleanStringJS(dbValue) === userValueCleaned) return true;
+
+            // Pattern tìm nội dung trong ngoặc đơn () hoặc （）
+            const pattern = /\((.*?)\)|（(.*?)）/g;
+
+            if (dbValue.match(pattern)) {
+                // 2. Lấy phần BÊN NGOÀI ngoặc (Khách nhập A)
+                const outside = dbValue.replace(pattern, "").trim();
+                if (outside && cleanStringJS(outside) === userValueCleaned) {
+                    return true;
+                }
+
+                // 3. Lấy phần BÊN TRONG ngoặc (Khách nhập B)
+                // Dùng matchAll để bắt được toàn bộ các group trong ngoặc
+                const matches = [...dbValue.matchAll(/\((.*?)\)|（(.*?)）/g)];
+                for (let match of matches) {
+                    const inside = match[1] || match[2]; // match[1] là ngoặc Anh, match[2] là ngoặc Trung
+                    if (inside && cleanStringJS(inside) === userValueCleaned) {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        }
+</script>

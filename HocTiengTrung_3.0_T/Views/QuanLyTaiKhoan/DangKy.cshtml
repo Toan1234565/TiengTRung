@@ -1,0 +1,121 @@
+﻿@model HocTiengTrung_3._0_T.Models12.QuanLyTaiKhoan.RegisterRequest
+
+@{
+    ViewData["Title"] = "Đăng ký thành viên";
+}
+
+<div class="container mt-5 mb-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-5">
+            <div class="card shadow-sm border-0 rounded-3">
+                <div class="card-header bg-success text-white text-center py-3">
+                    <h4 class="mb-0"><i class="bi bi-person-plus"></i> Đăng Ký Tài Khoản</h4>
+                </div>
+                <div class="card-body p-4">
+
+                    <!-- Hiển thị thông báo thành công nếu có (ví dụ: thông báo tặng 10 ngày VIP) -->
+                    @if (TempData["Success"] != null)
+                    {
+                        <div class="alert alert-success d-flex align-items-center" role="alert">
+                            <i class="bi bi-check-circle-fill me-2"></i>
+                            <div>@TempData["Success"]</div>
+                        </div>
+                    }
+
+                    <!-- Hiển thị thông báo lỗi nếu có -->
+                    @if (ViewBag.Error != null)
+                    {
+                        <div class="alert alert-danger d-flex align-items-center" role="alert">
+                            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                            <div>@ViewBag.Error</div>
+                        </div>
+                    }
+
+                    <form asp-action="DangKy" method="post" id="registerForm">
+
+                        <div class="form-floating mb-3">
+                            <input asp-for="HoTen" class="form-control" id="floatingHoTen" placeholder="Nguyễn Văn A" required />
+                            <label for="floatingHoTen">Họ và tên của bạn</label>
+                            <span asp-validation-for="HoTen" class="text-danger small"></span>
+                        </div>
+
+                        <div class="form-floating mb-3">
+                            <input asp-for="TenDangNhap" class="form-control" id="floatingUser" placeholder="username" required />
+                            <label for="floatingUser">Tên đăng nhập</label>
+                            <span asp-validation-for="TenDangNhap" class="text-danger small"></span>
+                        </div>
+
+                        <div class="form-floating mb-3">
+                            <input asp-for="MatKhau" type="password" class="form-control" id="floatingPassword" placeholder="Password" required />
+                            <label for="floatingPassword">Mật khẩu</label>
+                            <span asp-validation-for="MatKhau" class="text-danger small"></span>
+                        </div>
+
+                        <div class="form-floating mb-3">
+                            <input type="password" class="form-control" id="floatingConfirmPassword" placeholder="Confirm Password" required />
+                            <label for="floatingConfirmPassword">Xác nhận mật khẩu</label>
+                            <div id="passwordMatchError" class="text-danger small mt-1" style="display:none;">
+                                <i class="bi bi-x-circle"></i> Mật khẩu xác nhận không khớp!
+                            </div>
+                        </div>
+
+                        <div class="d-grid mt-4">
+                            <button type="submit" class="btn btn-success btn-lg" id="btnRegister">
+                                Đăng ký ngay
+                            </button>
+                        </div>
+                    </form>
+                </div>
+                <div class="card-footer text-center py-3 bg-light">
+                    <p class="mb-0 small text-muted">Đã có tài khoản? <a asp-action="DangNhap" class="text-success fw-bold text-decoration-none">Đăng nhập</a></p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <!-- Nếu dự án có dùng client-side validation của ASP.NET Core -->
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const password = document.getElementById("floatingPassword");
+            const confirmPassword = document.getElementById("floatingConfirmPassword");
+            const errorDiv = document.getElementById("passwordMatchError");
+            const submitBtn = document.getElementById("btnRegister");
+            const registerForm = document.getElementById("registerForm");
+
+            function checkPasswordMatch() {
+                // Nếu ô xác nhận để trống thì ẩn lỗi, chưa khóa nút vội (để required xử lý)
+                if (confirmPassword.value === "") {
+                    errorDiv.style.display = "none";
+                    submitBtn.disabled = false;
+                    return;
+                }
+
+                if (password.value !== confirmPassword.value) {
+                    errorDiv.style.display = "block";
+                    submitBtn.disabled = true; // Khóa nút đăng ký khi mật khẩu không khớp
+                } else {
+                    errorDiv.style.display = "none";
+                    submitBtn.disabled = false; // Mở khóa nút đăng ký khi khớp
+                }
+            }
+
+            password.addEventListener("input", checkPasswordMatch);
+            confirmPassword.addEventListener("input", checkPasswordMatch);
+
+            // Chặn submit form phòng hờ nếu người dùng cố tình bypass bằng F12
+            registerForm.addEventListener("submit", function (e) {
+                if (password.value !== confirmPassword.value) {
+                    e.preventDefault();
+                    errorDiv.style.display = "block";
+                    confirmPassword.focus();
+                }
+            });
+        });
+    </script>
+}

@@ -1,0 +1,942 @@
+﻿@model List<HocTiengTrung_3._0_T.Models12.NguPhap.NguPhapModels>
+
+@{
+    ViewData["Title"] = "Quản lý Bài tập Ngữ pháp";
+    int currentPage = ViewBag.CurrentPage ?? 1;
+    int pageSize = ViewBag.PageSize ?? 5;
+    int totalItems = ViewBag.TotalItems ?? 0;
+    int currentCapDo = ViewBag.CurrentCapDo ?? 0;
+    int totalPages = (int)Math.Ceiling((double)totalItems / pageSize);
+}
+
+<style>
+    .correct-answer {
+        color: #198754;
+        font-weight: 600;
+        background-color: #e8f5e9;
+        padding: 6px 10px;
+        border-radius: 6px;
+        border: 1px solid #c8e6c9;
+        display: inline-block;
+        margin-top: 5px;
+    }
+
+    .question-card {
+        border-top: 4px solid #0d6efd;
+        background-color: #ffffff;
+        transition: transform 0.2s;
+    }
+
+        .question-card:hover {
+            box-shadow: 0 .5rem 1rem rgba(0,0,0,.15) !important;
+        }
+
+    .accordion-button:not(.collapsed) {
+        background-color: #e7f1ff;
+        color: #0c63e4;
+        font-weight: bold;
+    }
+
+    .grammar-info-box {
+        background-color: #f8f9fa;
+        border-left: 5px solid #198754;
+        padding: 15px 20px;
+        border-radius: 0 8px 8px 0;
+    }
+
+    .grammar-text {
+        white-space: pre-line;
+        line-height: 1.6;
+        color: #495057;
+    }
+
+    .scrambled-words {
+        color: #d63384;
+        font-size: 1.1rem;
+        font-weight: 600;
+        letter-spacing: 1px;
+        background-color: #fff0f6;
+        padding: 4px 8px;
+        border-radius: 4px;
+        line-height: 1.8;
+    }
+
+    .grammar-select-checkbox {
+        transform: scale(1.2);
+        cursor: pointer;
+        z-index: 10;
+    }
+</style>
+
+<div class="container-fluid px-4 mt-4 mb-5">
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 pb-3 border-bottom gap-3">
+        <h2 class="text-primary fw-bold mb-0">
+            <i class="fas fa-book-open me-2"></i> Hệ thống Bài tập Ngữ pháp
+        </h2>
+
+        <div class="d-flex align-items-center gap-2 generic-actions">
+            <button id="btnBulkDelete" class="btn btn-danger shadow-sm d-none" onclick="bulkDeleteNguPhap()">
+                <i class="fas fa-trash-alt me-1"></i> Xóa mục đã chọn (<span id="selectedCount">0</span>)
+            </button>
+
+            <div class="form-check me-2">
+                <input type="checkbox" class="form-check-input border-secondary" id="checkAllGrammar" onchange="toggleSelectAll(this)">
+                <label class="form-check-label fw-semibold text-muted small" for="checkAllGrammar">Chọn tất cả</label>
+            </div>
+
+            <form method="get" asp-action="DanhSachBaiTapAdmin" class="d-flex gap-2">
+                <select name="capdo" class="form-select shadow-sm w-auto" onchange="this.form.submit()">
+                    <option value="">-- Tất cả cấp độ HSK --</option>
+                    @for (int i = 1; i <= 6; i++)
+                    {
+                        <!option value="@i" @(currentCapDo == i ? "selected" : "")>HSK @i (3.0)</!option>
+                    }
+                </select>
+            </form>
+            <!-- Nút mở Modal Import Bài Tập -->
+            <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#importBaiTapModal">
+                <i class="bi bi-file-earmark-excel"></i> Nhập bài tập từ Excel
+            </button>
+        </div>
+    </div>
+
+    @if (Model != null && Model.Any())
+    {
+        <div class="accordion shadow-sm" id="accordionNguPhap">
+            @for (int i = 0; i < Model.Count; i++)
+            {
+                var nguPhap = Model[i];
+                var cauHois = nguPhap.SelectedCauHoiIds ?? new List<HocTiengTrung_3._0_T.Models12.BaiTap.CauHoiModels>();
+                string headingId = $"heading_{nguPhap.IdNguPhap}";
+                string collapseId = $"collapse_{nguPhap.IdNguPhap}";
+
+                <div class="accordion-item mb-3 border rounded shadow-sm overflow-hidden" id="grammar-row-@nguPhap.IdNguPhap">
+                    <h2 class="accordion-header" id="@headingId">
+                        <div class="accordion-button collapsed py-3" type="button" data-bs-toggle="collapse" data-bs-target="#@collapseId" aria-expanded="false" aria-controls="@collapseId">
+                            <div class="d-flex justify-content-between w-100 pe-3 align-items-center">
+                                <div class="d-flex align-items-center" onclick="event.stopPropagation();">
+                                    <input type="checkbox" class="form-check-input me-3 border-primary grammar-select-checkbox" value="@nguPhap.IdNguPhap" onchange="updateBulkDeleteState()">
+                                    <span>
+                                        <span class="badge bg-primary me-2 px-2 py-1 fs-6">HSK @nguPhap.IdCapDo</span>
+                                        <span class="fw-bold fs-5 text-dark" id="txt-ten-@nguPhap.IdNguPhap">@nguPhap.TenNguPhap</span>
+                                        <span class="text-danger ms-2 fw-bold" style="font-size: 1.1em;" id="txt-cautruc-@nguPhap.IdNguPhap">[ @nguPhap.CauTruc ]</span>
+                                    </span>
+                                </div>
+                                <span class="badge bg-secondary rounded-pill px-3 py-2">@cauHois.Count bài tập</span>
+                            </div>
+                        </div>
+                    </h2>
+
+                    <div id="@collapseId" class="accordion-collapse collapse" aria-labelledby="@headingId" data-bs-parent="#accordionNguPhap">
+                        <div class="accordion-body bg-light">
+
+                            <div class="grammar-info-box mb-4 shadow-sm border bg-white">
+                                <div class="mb-3">
+                                    <h6 class="fw-bold text-success mb-2">
+                                        <i class="fas fa-info-circle me-2"></i>Cách dùng & Giải thích
+                                    </h6>
+                                    <div class="grammar-text ps-4" id="txt-giaithich-@nguPhap.IdNguPhap">@nguPhap.GiaiThich</div>
+                                </div>
+
+                                @if (!string.IsNullOrEmpty(nguPhap.ViDu))
+                                {
+                                    <hr class="text-muted opacity-25" />
+                                    <div>
+                                        <h6 class="fw-bold text-info mb-2">
+                                            <i class="fas fa-lightbulb me-2 text-warning"></i>Ví dụ minh họa
+                                        </h6>
+                                        <div class="grammar-text ps-4 fst-italic text-dark" id="txt-vidu-@nguPhap.IdNguPhap">@nguPhap.ViDu</div>
+                                    </div>
+                                }
+                            </div>
+
+                            <div class="d-flex justify-content-end mb-3 gap-2">
+                                <button class="btn btn-sm btn-outline-warning shadow-sm"
+                                        onclick="openEditGrammarModal(@nguPhap.IdNguPhap, '@nguPhap.TenNguPhap', '@nguPhap.CauTruc', `@nguPhap.GiaiThich`, `@nguPhap.ViDu`, @nguPhap.IdCapDo)">
+                                    <i class="fas fa-edit me-1"></i> Sửa cấu trúc ngữ pháp
+                                </button>
+                                <button class="btn btn-sm btn-primary shadow-sm" onclick="openAddQuestionModal(@nguPhap.IdNguPhap, '@nguPhap.TenNguPhap')">
+                                    <i class="fas fa-plus me-1"></i> Thêm câu hỏi mới
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger shadow-sm" onclick="deleteSingleNguPhap(@nguPhap.IdNguPhap)">
+                                    <i class="fas fa-trash me-1"></i> Xóa ngữ pháp này
+                                </button>
+                            </div>
+
+                            @if (cauHois.Any())
+                            {
+                                <div class="row g-3">
+                                    @foreach (var ch in cauHois)
+                                    {
+                                        <div class="col-md-6" id="question-box-@ch.IdCauHoi">
+                                            <div class="card question-card h-100 shadow-sm">
+                                                <div class="card-body d-flex flex-column">
+                                                    <div class="d-flex justify-content-between align-items-start mb-3">
+                                                        <div class="pe-2">
+                                                            <div class="text-muted small mb-1 fw-bold">Câu hỏi ID: @ch.IdCauHoi</div>
+                                                            <div class="scrambled-words">@ch.NoiDung</div>
+                                                        </div>
+
+                                                        <div class="d-flex gap-1">
+                                                            <button class="btn btn-sm btn-outline-warning py-0 px-2 shadow-sm btn-trigger-edit-question"
+                                                                    title="Sửa câu hỏi này"
+                                                                    data-id="@ch.IdCauHoi"
+                                                                    data-content="@ch.NoiDung"
+                                                                    data-type="@ch.IdLoai"
+                                                                    data-explain="@ch.GiaiThich"
+                                                                    data-answers='@System.Text.Json.JsonSerializer.Serialize(ch.DapAns)'>
+                                                                <i class="fas fa-edit"></i>
+                                                            </button>
+                                                            <button class="btn btn-sm btn-outline-danger py-0 px-2 shadow-sm" title="Xóa câu hỏi này" onclick="deleteCauHoi(@ch.IdCauHoi)">
+                                                                <i class="fas fa-times"></i>
+                                                            </button>
+                                                        </div>
+                                                    </div>
+
+                                                    @if (!string.IsNullOrEmpty(ch.GiaiThich))
+                                                    {
+                                                        <div class="bg-light p-2 rounded mb-3 border border-light">
+                                                            <small class="text-secondary d-block" style="white-space: pre-line;">
+                                                                <i class="fas fa-language me-1 text-primary"></i> <strong>Pinyin & Dịch:</strong><br />
+                                                                @ch.GiaiThich
+                                                            </small>
+                                                        </div>
+                                                    }
+
+                                                    <div class="mt-auto">
+                                                        <strong class="text-dark small">Đáp án hệ thống:</strong>
+                                                        <ul class="list-unstyled mb-0 mt-1">
+                                                            @foreach (var da in ch.DapAns)
+                                                            {
+                                                                <li class="@(da.LaDapAnDung ? "correct-answer" : "text-muted ms-2 mb-1")">
+                                                                    <i class="@(da.LaDapAnDung ? "fas fa-check-circle me-1 text-success" : "far fa-circle me-1")"></i>
+                                                                    @da.NoiDungDapAn
+                                                                </li>
+                                                            }
+                                                        </ul>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
+                            }
+                            else
+                            {
+                                <div class="alert alert-light text-center border text-muted py-4">
+                                    <i class="fas fa-folder-open fa-2x mb-2 text-secondary opacity-50"></i>
+                                    <p class="mb-0">Ngữ pháp này chưa có bài tập nào.</p>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+
+        @if (totalPages > 1)
+        {
+            <nav class="mt-4" aria-label="Page navigation">
+                <ul class="pagination justify-content-center shadow-sm">
+                    <li class="page-item @(currentPage <= 1 ? "disabled" : "")">
+                        <a class="page-link" href="@Url.Action("DanhSachBaiTapAdmin", new { capdo = currentCapDo, page = currentPage - 1, pagesize = pageSize })">Trước</a>
+                    </li>
+                    @for (int p = 1; p <= totalPages; p++)
+                    {
+                        <li class="page-item @(p == currentPage ? "active" : "")">
+                            <a class="page-link" href="@Url.Action("DanhSachBaiTapAdmin", new { capdo = currentCapDo, page = p, pagesize = pageSize })">@p</a>
+                        </li>
+                    }
+                    <li class="page-item @(currentPage >= totalPages ? "disabled" : "")">
+                        <a class="page-link" href="@Url.Action("DanhSachBaiTapAdmin", new { capdo = currentCapDo, page = currentPage + 1, pagesize = pageSize })">Sau</a>
+                    </li>
+                </ul>
+            </nav>
+        }
+    }
+    else
+    {
+        <div class="alert alert-warning text-center mt-4 p-5 shadow-sm rounded">
+            <i class="fas fa-exclamation-triangle fa-3x mb-3 text-warning"></i>
+            <h4 class="fw-bold">Chưa có dữ liệu</h4>
+            <p class="text-muted mb-0">Không tìm thấy danh sách ngữ pháp hoặc bài tập nào cho cấp độ này.</p>
+        </div>
+    }
+</div>
+
+<div class="modal fade" id="modalAddQuestion" data-bs-backdrop="static" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title fw-bold"><i class="fas fa-plus-circle me-2"></i>Thêm câu hỏi: <span id="lblTargetGrammar"></span></h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="hidNguPhapId" />
+                <div class="row g-3">
+                    <div class="col-md-8">
+                        <label class="form-label fw-bold">Nội dung câu hỏi / Từ xáo trộn (Dùng dấu / phân cách)</label>
+                        <input type="text" id="txtQuestContent" class="form-control" placeholder="Ví dụ: 我 / 是 / 越南人" required />
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold">Loại câu hỏi (IdLoai)</label>
+                        <select id="ddlQuestType" class="form-select">
+                            <option value="1">Sắp xếp thành câu (Ngữ pháp)</option>
+                            <option value="2">Trắc nghiệm chọn đáp án</option>
+                        </select>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label fw-bold">Giải thích chi tiết (Pinyin, Dịch nghĩa hoặc Mẹo làm bài)</label>
+                        <textarea id="txtQuestExplain" class="form-control" rows="2" placeholder="Nhập phiên âm pinyin và nghĩa dịch giúp học viên hiểu bài..."></textarea>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label fw-bold text-primary"><i class="fas fa-list-ol me-1"></i> Thiết lập 4 phương án trả lời</label>
+                        <div class="card p-3 bg-light border">
+                            <div class="row g-2">
+                                @for (int k = 1; k <= 4; k++)
+                                {
+                                    <div class="col-md-9">
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-white">Đáp án @k</span>
+                                            <input type="text" class="form-control cls-answer-text" placeholder="Nhập nội dung lựa chọn..." />
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3 d-flex align-items-center justify-content-center">
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input cls-answer-correct" type="radio" name="rdCorrectAnswer" id="rdCorrect_@k">
+                                            <label class="form-check-label text-success fw-bold" for="rdCorrect_@k">Đáp án đúng</label>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer bg-light">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy bỏ</button>
+                <button type="button" class="btn btn-primary px-4" onclick="submitAddQuestion()"><i class="fas fa-save me-1"></i>Lưu câu hỏi</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalEditQuestion" data-bs-backdrop="static" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-warning text-dark">
+                <h5 class="modal-title fw-bold"><i class="fas fa-edit me-2"></i>Cập nhật câu hỏi bài tập</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="hidEditQuestId" />
+                <div class="row g-3">
+                    <div class="col-md-8">
+                        <label class="form-label fw-bold">Nội dung câu hỏi / Từ xáo trộn</label>
+                        <input type="text" id="txtEditQuestContent" class="form-control" required />
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-bold">Loại câu hỏi (IdLoai)</label>
+                        <select id="ddlEditQuestType" class="form-select">
+                            <option value="1">Sắp xếp thành câu (Ngữ pháp)</option>
+                            <option value="2">Trắc nghiệm chọn đáp án</option>
+                        </select>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label fw-bold">Giải thích chi tiết (Pinyin, Dịch nghĩa)</label>
+                        <textarea id="txtEditQuestExplain" class="form-control" rows="2"></textarea>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label fw-bold text-warning"><i class="fas fa-list-ol me-1"></i> Thiết lập 4 phương án trả lời</label>
+                        <div class="card p-3 bg-light border">
+                            <div class="row g-2">
+                                @for (int k = 1; k <= 4; k++)
+                                {
+                                    <div class="col-md-9">
+                                        <div class="input-group">
+                                            <span class="input-group-text bg-white">Đáp án @k</span>
+                                            <input type="text" class="form-control cls-edit-answer-text" placeholder="(Trống)" />
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3 d-flex align-items-center justify-content-center">
+                                        <div class="form-check form-switch">
+                                            <input class="form-check-input cls-edit-answer-correct" type="radio" name="rdEditCorrectAnswer" id="rdEditCorrect_@k">
+                                            <label class="form-check-label text-success fw-bold" for="rdEditCorrect_@k">Đáp án đúng</label>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer bg-light">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                <button type="button" class="btn btn-warning px-4 fw-bold" onclick="submitEditQuestion()"><i class="fas fa-check-circle me-1"></i> Xác nhận lưu</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalEditGrammar" data-bs-backdrop="static" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-warning text-dark">
+                <h5 class="modal-title fw-bold"><i class="fas fa-edit me-2"></i>Cập nhật thông tin Ngữ pháp</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="hidEditNguPhapId" />
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">Tên Ngữ Pháp</label>
+                        <input type="text" id="txtEditTen" class="form-control" required />
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold">Cấu trúc cốt lõi</label>
+                        <input type="text" id="txtEditCauTruc" class="form-control" required />
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-bold">Cấp độ HSK</label>
+                        <select id="ddlEditCapDo" class="form-select">
+                            @for (int i = 1; i <= 6; i++)
+                            {
+                                <option value="@i">HSK @i</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label fw-bold">Giải thích/Cách sử dụng</label>
+                        <textarea id="txtEditGiaiThich" class="form-control" rows="3" required></textarea>
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label fw-bold">Ví dụ thực tế</label>
+                        <textarea id="txtEditViDu" class="form-control" rows="2"></textarea>
+                    </div>
+                </div>
+                <div class="alert alert-info mt-3 py-2 small mb-0 shadow-sm border border-info">
+                    <i class="fas fa-info-circle me-1"></i> Hệ thống sẽ tự động giữ nguyên các danh sách câu hỏi bài tập hiện hữu thuộc cấu trúc ngữ pháp này khi lưu thông tin.
+                </div>
+            </div>
+            <div class="modal-footer bg-light">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                <button type="button" class="btn btn-warning px-4 fw-bold" onclick="submitEditGrammar()"><i class="fas fa-check-circle me-1"></i>Xác nhận cập nhật</button>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Modal Import Bài Tập -->
+<div class="modal fade" id="importBaiTapModal" tabindex="-1" aria-labelledby="importBaiTapModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="importBaiTapModalLabel">Nhập bài tập cho Ngữ Pháp Đã Có</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+
+            <div class="modal-body">
+                <form id="formImportBaiTap">
+                    <div class="mb-3">
+                        <label for="excelFileBaiTap" class="form-label">Chọn file Excel (.xlsx)</label>
+                        <!-- Thuộc tính accept giới hạn chỉ cho phép chọn file excel -->
+                        <input class="form-control" type="file" id="excelFileBaiTap" name="file" accept=".xlsx, .xls" required>
+                    </div>
+                    <div class="alert alert-info" role="alert">
+                        <small>
+                            <strong>Lưu ý cấu trúc file:</strong><br />
+                            - Hàng 1 (B1): Tên ngữ pháp<br />
+                            - Hàng 2 (B2): ID Cấp độ (VD: 1, 2, 3...)<br />
+                            - Hàng 3: Tiêu đề cột<br />
+                            - Hàng 4 trở đi: Dữ liệu câu hỏi & đáp án
+                        </small>
+                    </div>
+                    <!-- Nơi hiển thị thông báo lỗi hoặc thành công -->
+                    <div id="importBaiTapMessage" class="mt-2"></div>
+                </form>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                <button type="button" class="btn btn-primary" id="btnSubmitImportBaiTap">Tải lên & Nhập dữ liệu</button>
+            </div>
+        </div>
+    </div>
+</div>
+@section Scripts {
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+
+    <script>
+        // Khởi tạo các Modal Bootstrap 5
+        let modalAddQuestObj, modalEditGrammarObj, modalEditQuestObj;
+
+        document.addEventListener("DOMContentLoaded", function() {
+            modalAddQuestObj = new bootstrap.Modal(document.getElementById('modalAddQuestion'));
+            modalEditGrammarObj = new bootstrap.Modal(document.getElementById('modalEditGrammar'));
+            modalEditQuestObj = new bootstrap.Modal(document.getElementById('modalEditQuestion'));
+
+            // Bắt sự kiện Click nút Sửa Câu hỏi động qua data-attribute chống vỡ chuỗi chữ Hán
+            document.addEventListener('click', function (e) {
+                const btn = e.target.closest('.btn-trigger-edit-question');
+                if (btn) {
+                    openEditQuestionModal(btn);
+                }
+            });
+        });
+
+        // -------------------------------------------------------------
+        // XỬ LÝ CHỌN HÀNG LOẠT (BULK SELECTION MECHANISM)
+        // -------------------------------------------------------------
+        function toggleSelectAll(masterCheckbox) {
+            const checkboxes = document.querySelectorAll('.grammar-select-checkbox');
+            checkboxes.forEach(cb => cb.checked = masterCheckbox.checked);
+            updateBulkDeleteState();
+        }
+
+        function updateBulkDeleteState() {
+            const checkedBoxes = document.querySelectorAll('.grammar-select-checkbox:checked');
+            const btnBulk = document.getElementById('btnBulkDelete');
+            const lblCount = document.getElementById('selectedCount');
+
+            if (checkedBoxes.length > 0) {
+                btnBulk.classList.remove('d-none');
+                lblCount.innerText = checkedBoxes.length;
+            } else {
+                btnBulk.classList.add('d-none');
+                lblCount.innerText = "0";
+                document.getElementById('checkAllGrammar').checked = false;
+            }
+        }
+
+        // API THAO TÁC: Xóa hàng loạt các ngữ pháp được chọn
+        async function bulkDeleteNguPhap() {
+            const checkedBoxes = document.querySelectorAll('.grammar-select-checkbox:checked');
+            const selectedIds = Array.from(checkedBoxes).map(cb => parseInt(cb.value));
+
+            if (selectedIds.length === 0) return;
+
+            if (confirm(`HỆ THỐNG CẢNH BÁO CAO:\nBạn có chắc chắn muốn xóa đồng loạt ${selectedIds.length} cấu trúc ngữ pháp đã chọn kèm toàn bộ bài tập liên quan không? Dữ liệu sẽ mất vĩnh viễn.`)) {
+                try {
+                    let successCount = 0;
+                    for(let id of selectedIds) {
+                        const res = await fetch(`/api/quanlynguphap/admin/xoa-ngu-phap/${id}`, { method: 'DELETE' });
+                        if(res.ok) successCount++;
+                    }
+
+                    alert(`Đã hoàn tất xử lý xóa sạch các mục được chọn.`);
+                    location.reload();
+                } catch (error) {
+                    console.error("Lỗi xóa hàng loạt:", error);
+                    alert("Gặp lỗi trong tiến trình gửi yêu cầu xóa hệ thống.");
+                }
+            }
+        }
+
+        // -------------------------------------------------------------
+        // API ADMIN: XÓA MỘT CÂU HỎI CỤ THỂ
+        // -------------------------------------------------------------
+        async function deleteCauHoi(idCauHoi) {
+            if (confirm(`Bạn chắc chắn muốn xóa vĩnh viễn câu hỏi bài tập ID: ${idCauHoi}?`)) {
+                try {
+                    const response = await fetch(`/api/quanlynguphap/admin/xoa-cau-hoi/${idCauHoi}`, {
+                        method: 'DELETE',
+                        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+                    });
+
+                    const data = await response.json();
+                    if (data.success) {
+                        alert(data.message);
+                        const element = document.getElementById(`question-box-${idCauHoi}`);
+                        if (element) element.remove();
+                    } else {
+                        alert("Thao tác thất bại: " + data.message);
+                    }
+                } catch (error) {
+                    console.error("Error deleting question:", error);
+                    alert("Lỗi kết nối máy chủ không thể thực hiện lệnh xóa.");
+                }
+            }
+        }
+
+        // Xóa đơn lẻ một ngữ pháp
+        async function deleteSingleNguPhap(idNguPhap) {
+            if (confirm("Xóa cấu trúc ngữ pháp này cùng toàn bộ các câu hỏi bên trong?")) {
+                try {
+                    const response = await fetch(`/api/quanlynguphap/admin/xoa-ngu-phap/${idNguPhap}`, { method: 'DELETE' });
+                    if (response.ok) {
+                        document.getElementById(`grammar-row-${idNguPhap}`).remove();
+                        alert("Đã xóa thành công.");
+                    }
+                } catch(e) { alert("Lỗi hệ thống."); }
+            }
+        }
+
+        // -------------------------------------------------------------
+        // API ADMIN: THÊM CÂU HỎI MỚI KÈM ĐÁP ÁN
+        // -------------------------------------------------------------
+        function openAddQuestionModal(idNguPhap, tenNguPhap) {
+            document.getElementById('hidNguPhapId').value = idNguPhap;
+            document.getElementById('lblTargetGrammar').innerText = tenNguPhap;
+
+            document.getElementById('txtQuestContent').value = "";
+            document.getElementById('txtQuestExplain').value = "";
+            document.querySelectorAll('.cls-answer-text').forEach(input => input.value = "");
+            document.querySelectorAll('.cls-answer-correct').forEach(radio => radio.checked = false);
+
+            modalAddQuestObj.show();
+        }
+
+        async function submitAddQuestion() {
+            const idNguPhap = document.getElementById('hidNguPhapId').value;
+            const content = document.getElementById('txtQuestContent').value.trim();
+            const typeId = parseInt(document.getElementById('ddlQuestType').value);
+            const explain = document.getElementById('txtQuestExplain').value.trim();
+
+            if(!content) {
+                alert("Vui lòng nhập nội dung câu hỏi bài tập!");
+                return;
+            }
+
+            const ansInputs = document.querySelectorAll('.cls-answer-text');
+            const ansCorrects = document.querySelectorAll('.cls-answer-correct');
+            const dapAnsPayload = [];
+            let checkHasCorrect = false;
+
+            for(let i = 0; i < ansInputs.length; i++) {
+                const textVal = ansInputs[i].value.trim();
+                if(textVal) {
+                    const isCorrect = ansCorrects[i].checked;
+                    if(isCorrect) checkHasCorrect = true;
+
+                    dapAnsPayload.push({
+                        NoiDungDapAn: textVal,
+                        LaDapAnDung: isCorrect
+                    });
+                }
+            }
+
+            
+
+            const payload = {
+                NoiDung: content,
+                IdLoai: typeId,
+                GiaiThich: explain,
+                AmThanhPath: null,
+                DapAns: dapAnsPayload
+            };
+
+            try {
+                const response = await fetch(`/api/quanlynguphap/admin/them-cau-hoi/${idNguPhap}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const result = await response.json();
+                if(result.success) {
+                    alert(result.message + " (ID Câu hỏi mới: " + result.idCauHoi + ")");
+                    modalAddQuestObj.hide();
+                    location.reload();
+                } else {
+                    alert("Lỗi từ hệ thống: " + result.message);
+                }
+            } catch (error) {
+                console.error("Lỗi thêm câu hỏi:", error);
+                alert("Hệ thống mất kết nối, vui lòng thử lại sau.");
+            }
+        }
+
+        // -------------------------------------------------------------
+        // API UPDATE: CẬP NHẬT THÔNG TIN NGỮ PHÁP (Hoàn thiện đoạn bị cắt cụt)
+        // -------------------------------------------------------------
+        function openEditGrammarModal(id, ten, cauTruc, giaiThich, viDu, capDo) {
+            document.getElementById('hidEditNguPhapId').value = id;
+            document.getElementById('txtEditTen').value = ten;
+            document.getElementById('txtEditCauTruc').value = cauTruc;
+            document.getElementById('txtEditGiaiThich').value = giaiThich;
+            document.getElementById('txtEditViDu').value = viDu;
+            document.getElementById('ddlEditCapDo').value = capDo;
+
+            modalEditGrammarObj.show();
+        }
+
+        async function submitEditGrammar() {
+            const id = document.getElementById('hidEditNguPhapId').value;
+
+            const updatePayload = {
+                TenNguPhap: document.getElementById('txtEditTen').value.trim(),
+                CauTruc: document.getElementById('txtEditCauTruc').value.trim(),
+                GiaiThich: document.getElementById('txtEditGiaiThich').value.trim(),
+                ViDu: document.getElementById('txtEditViDu').value.trim(),
+                IdCapDo: parseInt(document.getElementById('ddlEditCapDo').value),
+                SelectedCauHoiIds: []
+            };
+
+            if(!updatePayload.TenNguPhap || !updatePayload.CauTruc) {
+                alert("Vui lòng hoàn thành điền các thông tin bắt buộc.");
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/quanlynguphap/cap-nhat/${id}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(updatePayload)
+                });
+
+                const result = await response.json();
+                if(result.success) {
+                    alert(result.message);
+                    modalEditGrammarObj.hide();
+
+                    // Đồng bộ text thời gian thực trên UI cây danh sách (Đoạn code đã sửa đổi hoàn chỉnh)
+                    document.getElementById(`txt-ten-${id}`).innerText = updatePayload.TenNguPhap;
+                    document.getElementById(`txt-cautruc-${id}`).innerText = `[ ${updatePayload.CauTruc} ]`;
+                    document.getElementById(`txt-giaithich-${id}`).innerText = updatePayload.GiaiThich;
+
+                    const viDuElement = document.getElementById(`txt-vidu-${id}`);
+                    if(viDuElement) {
+                        viDuElement.innerText = updatePayload.ViDu;
+                    }
+                } else {
+                    alert("Cập nhật thất bại: " + result.message);
+                }
+            } catch (error) {
+                console.error("Lỗi cập nhật cấu trúc ngữ pháp:", error);
+                alert("Máy chủ không phản hồi, vui lòng thử lại.");
+            }
+        }
+
+        // -------------------------------------------------------------
+        // API UPDATE: CẬP NHẬT CÂU HỎI BÀI TẬP (MỚI THÊM)
+        // -------------------------------------------------------------
+        function openEditQuestionModal(btnElement) {
+            // Đọc dữ liệu thô từ data-attributes của button được click
+            const idCauHoi = btnElement.getAttribute('data-id');
+            const content = btnElement.getAttribute('data-content');
+            const idLoai = btnElement.getAttribute('data-type');
+            const explain = btnElement.getAttribute('data-explain');
+            const answers = JSON.parse(btnElement.getAttribute('data-answers') || '[]');
+
+            // Gán giá trị cơ bản vào form modal sửa
+            document.getElementById('hidEditQuestId').value = idCauHoi;
+            document.getElementById('txtEditQuestContent').value = content;
+            document.getElementById('ddlEditQuestType').value = idLoai;
+            document.getElementById('txtEditQuestExplain').value = explain;
+
+            // Reset toàn bộ input 4 phương án sửa về trống
+            const editAnsInputs = document.querySelectorAll('.cls-edit-answer-text');
+            const editAnsRadios = document.querySelectorAll('.cls-edit-answer-correct');
+            editAnsInputs.forEach(input => input.value = "");
+            editAnsRadios.forEach(radio => radio.checked = false);
+
+            // Điền dữ liệu đáp án cũ có sẵn vào ô nhập
+            for (let idx = 0; idx < answers.length; idx++) {
+                if (idx < editAnsInputs.length) {
+                    editAnsInputs[idx].value = answers[idx].NoiDungDapAn;
+                    editAnsRadios[idx].checked = answers[idx].LaDapAnDung;
+                }
+            }
+
+            modalEditQuestObj.show();
+        }
+
+                async function submitEditQuestion() {
+            const idCauHoi = document.getElementById('hidEditQuestId')?.value;
+            const content = document.getElementById('txtEditQuestContent')?.value.trim();
+
+            // 1. Lấy nội dung Giải thích (Vá lỗi thiếu biến 'explain' ở bản cũ)
+            const explainInput = document.getElementById('txtEditQuestExplain'); // Đảm bảo ID này khớp với HTML của bạn
+            const explain = explainInput ? explainInput.value.trim() : "";
+
+            // Phòng trường hợp IdLoai lấy ra bị sai selector hoặc rỗng
+            const typeSelect = document.getElementById('ddlEditQuestType');
+            const typeId = typeSelect ? parseInt(typeSelect.value) : 0;
+
+            if (!idCauHoi) {
+                alert("Không tìm thấy mã định danh câu hỏi. Vui lòng tải lại trang.");
+                return;
+            }
+
+            if (!content) {
+                alert("Nội dung câu hỏi bài tập không được bỏ trống.");
+                return;
+            }
+
+            if (!typeId || isNaN(typeId)) {
+                alert("Loại câu hỏi không hợp lệ, vui lòng kiểm tra lại.");
+                return;
+            }
+
+            const editAnsInputs = document.querySelectorAll('.cls-edit-answer-text');
+            const editAnsRadios = document.querySelectorAll('.cls-edit-answer-correct');
+            const dapAnsPayload = [];
+            let checkHasCorrect = false;
+
+            for (let i = 0; i < editAnsInputs.length; i++) {
+                const textVal = editAnsInputs[i].value.trim();
+                if (textVal) {
+                    const isCorrect = editAnsRadios[i].checked;
+                    if (isCorrect) checkHasCorrect = true;
+
+                    dapAnsPayload.push({
+                        NoiDungDapAn: textVal,
+                        LaDapAnDung: isCorrect
+                    });
+                }
+            }
+
+            // 2. Rào lỗi dữ liệu trống trước khi đẩy lên API
+            if (dapAnsPayload.length === 0) {
+                alert("Vui lòng điền nội dung cho ít nhất một đáp án.");
+                return;
+            }
+
+            if (!checkHasCorrect) {
+                alert("Vui lòng tích chọn ít nhất một đáp án đúng cho câu hỏi này.");
+                return;
+            }
+
+            const payload = {
+                NoiDung: content,
+                IdLoai: typeId,
+                GiaiThich: explain,
+                DapAns: dapAnsPayload
+            };
+
+            try {
+                const response = await fetch(`/api/quanlynguphap/cap-nhat-cau-hoi/${idCauHoi}`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                // 3. Xử lý an toàn khi phản hồi từ Server không thành công (400, 404, 500)
+                if (!response.ok) {
+                    let errorMsg = `Mã lỗi: ${response.status}`;
+                    try {
+                        const errResult = await response.json();
+                        errorMsg = errResult.message || errorMsg;
+                    } catch (jsonErr) {
+                        // Đề phòng trường hợp server trả về lỗi dạng HTML thô thay vì JSON
+                    }
+                    alert("Lỗi cập nhật dữ liệu: " + errorMsg);
+                    return;
+                }
+
+                const result = await response.json();
+                if (result.success) {
+                    alert(result.message || "Cập nhật câu hỏi thành công.");
+
+                    // Kiểm tra thực thể Modal trước khi ẩn để tránh lỗi crash JS
+                    if (typeof modalEditQuestObj !== 'undefined' && modalEditQuestObj.hide) {
+                        modalEditQuestObj.hide();
+                    }
+                    location.reload();
+                } else {
+                    alert("Lỗi từ hệ thống: " + result.message);
+                }
+            } catch (error) {
+                console.error("Lỗi cập nhật câu hỏi:", error);
+                alert("Kết nối tới máy chủ thất bại, vui lòng kiểm tra lại endpoint hệ thống.");
+            }
+        }
+
+    </script>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const btnSubmit = document.getElementById("btnSubmitImportBaiTap");
+            const fileInput = document.getElementById("excelFileBaiTap");
+            const messageDiv = document.getElementById("importBaiTapMessage");
+            const formImport = document.getElementById("formImportBaiTap");
+
+            // Kiểm tra an toàn: Đảm bảo các phần tử tồn tại trước khi gán sự kiện
+            if (!btnSubmit || !fileInput || !messageDiv) return;
+
+            btnSubmit.addEventListener("click", async function () {
+                // 1. Kiểm tra xem người dùng đã chọn file chưa
+                if (fileInput.files.length === 0) {
+                    showMessage("Vui lòng chọn file Excel trước khi tải lên.", "warning");
+                    return;
+                }
+
+                const file = fileInput.files[0];
+
+                // 1.1 Kiểm tra đuôi file (Chỉ cho phép Excel)
+                const allowedExtensions = /(\.xls|\.xlsx)$/i;
+                if (!allowedExtensions.exec(file.name)) {
+                    showMessage("Định dạng không hợp lệ. Vui lòng chỉ tải lên file Excel (.xls, .xlsx).", "danger");
+                    fileInput.value = ''; // Reset lại input
+                    return;
+                }
+
+                // Tạo FormData để đóng gói file
+                const formData = new FormData();
+                formData.append("file", file);
+
+                // 2. Cập nhật UI trạng thái đang tải
+                const originalBtnText = btnSubmit.innerHTML; // Lưu lại text gốc của nút
+                btnSubmit.disabled = true;
+                btnSubmit.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Đang xử lý...';
+                messageDiv.innerHTML = "";
+
+                try {
+                    // 3. Call API bằng Fetch
+                    const response = await fetch("/api/quanlynguphap/admin/nhap-bai-tap-excel", {
+                        method: "POST",
+                        body: formData
+                    });
+
+                    // Đề phòng trường hợp server lỗi 500 trả về HTML thay vì JSON
+                    const contentType = response.headers.get("content-type");
+                    if (!response.ok && contentType && contentType.indexOf("application/json") === -1) {
+                        throw new Error(`Lỗi HTTP: ${response.status} - Máy chủ gặp sự cố.`);
+                    }
+
+                    // Parse kết quả trả về từ API
+                    const result = await response.json();
+
+                    // 4. Xử lý UI dựa trên Response
+                    if (response.ok && result.success) {
+                        showMessage(result.message, "success");
+
+                        // Reset form sau khi import thành công
+                        if (formImport) formImport.reset();
+
+                        // Delay 1.5s để người dùng kịp đọc thông báo thành công
+                        setTimeout(() => {
+                            // Đóng modal theo chuẩn Bootstrap 5 (Vanilla JS)
+                            const modalElement = document.getElementById('importBaiTapModal');
+                            if (modalElement) {
+                                const modalInstance = bootstrap.Modal.getInstance(modalElement);
+                                if (modalInstance) modalInstance.hide();
+                            }
+
+                            // Tải lại trang (Hoặc gọi hàm fetch/reload bảng dữ liệu tại đây)
+                            window.location.reload();
+                        }, 1500);
+
+                    } else {
+                        showMessage(result.message || "Đã xảy ra lỗi khi xử lý dữ liệu.", "danger");
+                    }
+                } catch (error) {
+                    console.error("Lỗi gọi API:", error);
+                    showMessage("Không thể kết nối đến máy chủ hoặc dữ liệu trả về không hợp lệ.", "danger");
+                } finally {
+                    // 5. Phục hồi lại trạng thái nút bấm
+                    btnSubmit.disabled = false;
+                    btnSubmit.innerHTML = originalBtnText; // Trả lại text ban đầu
+                }
+            });
+
+            // Hàm phụ trợ để render HTML thông báo dạng Alert Bootstrap
+            function showMessage(text, type) {
+                messageDiv.innerHTML = `
+                    <div class="alert alert-${type} alert-dismissible fade show shadow-sm" role="alert">
+                        ${text}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>`;
+            }
+        });
+    </script>
+}

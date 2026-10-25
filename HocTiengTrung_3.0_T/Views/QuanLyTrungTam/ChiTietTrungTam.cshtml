@@ -1,0 +1,744 @@
+﻿@model HocTiengTrung_3._0_T.Models12.QuanLyTrungTam.ChiTietTrungTamViewModel
+@{
+    ViewData["Title"] = "Chi tiết Trung tâm - " + (Model?.TenTrungTam ?? "Hệ thống");
+
+    bool isExpired = ViewBag.IsExpired ?? false;
+    string expiredMessage = ViewBag.Message ?? "Trung tâm này đã hết hạn dịch vụ.";
+
+    DateTime? hetHan = Model?.NgayHetHan;
+    bool isPastDue = hetHan.HasValue && hetHan.Value < DateTime.Now;
+    var danhSachLop = Model?.DanhSachLopHoc ?? new List<HocTiengTrung_3._0_T.Models12.QuanLyTrungTam.LopHocModels>();
+
+    string maTrungTam = User.FindFirst("MaTrungTam")?.Value
+                       ?? Context.Session.GetString("MaTrungTam")
+                       ?? "";
+}
+
+<div class="container-fluid py-4">
+    <!-- Breadcrumb & Header Navigation -->
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+        <div>
+            <h3 class="fw-bold text-dark mb-0">@(Model?.TenTrungTam ?? "Thông tin cơ sở")</h3>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <button type="button" onclick="history.back()" class="btn btn-outline-secondary d-flex align-items-center gap-2">
+                <i class="fa-solid fa-arrow-left"></i> Quay lại
+            </button>
+            @if (Model != null)
+            {
+                <!-- Nút Mở Modal Thêm Lớp Thủ Công -->
+                <button type="button" class="btn btn-primary d-flex align-items-center gap-2 shadow-sm" onclick="moModalThemLopThuCong()">
+                    <i class="fa-solid fa-plus"></i> Thêm lớp học
+                </button>
+                <button type="button" class="btn btn-success d-flex align-items-center gap-2 shadow-sm" onclick="moModalImportExcel()">
+                    <i class="fa-solid fa-file-excel"></i> Nhập lớp từ Excel
+                </button>
+                <button type="button" class="btn btn-warning text-dark d-flex align-items-center gap-2 shadow-sm fw-semibold" onclick="moModalCapNhatTrungTam('@maTrungTam')" ">
+                    <i class="fa-regular fa-pen-to-square"></i> Chỉnh sửa
+                </button>
+                
+            }
+
+            <!-- Nút Chuông Thông Báo & Nhật Ký -->
+            <div class="position-relative ms-1">
+                <button type="button"
+                        id="btnChuongThongBao"
+                        class="btn btn-light rounded-circle shadow-sm d-flex align-items-center justify-content-center"
+                        style="width: 42px; height: 42px; border: 1px solid #dee2e6;"
+                        data-bs-toggle="modal"
+                        data-bs-target="#detailModal"
+                        title="Xem nhật ký hoạt động hệ thống">
+                    <i class="fa-solid fa-bell text-primary fs-5"></i>
+                    <span id="badgeSoThongBao"
+                          class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger border border-light d-none"
+                          style="font-size: 0.65rem;">
+                        0
+                    </span>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    @if (isExpired || Model == null)
+    {
+        <div class="alert alert-warning border-0 shadow-sm d-flex align-items-center gap-3 p-4 mb-4 rounded-3" role="alert">
+            <div class="display-6 text-warning"><i class="fa-solid fa-triangle-exclamation"></i></div>
+            <div>
+                <h5 class="alert-heading fw-bold mb-1">Tài khoản trung tâm bị giới hạn truy cập!</h5>
+                <p class="mb-0 text-muted">@expiredMessage</p>
+            </div>
+        </div>
+    }
+    else
+    {
+        <!-- KPI Cards -->
+        <div class="row g-3 mb-4">
+            <div class="col-md-3 col-sm-6">
+                <div class="card border-0 shadow-sm p-3 h-100">
+                    <div class="d-flex align-items-center">
+                        <div class="rounded-3 bg-primary-subtle text-primary p-3 me-3 fs-4">
+                            <i class="fa-solid fa-chalkboard-user"></i>
+                        </div>
+                        <div>
+                            <span class="text-muted small text-uppercase fw-semibold">Tổng số lớp học</span>
+                            <h3 class="fw-bold mb-0 text-dark">@danhSachLop.Count</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-3 col-sm-6">
+                <div class="card border-0 shadow-sm p-3 h-100">
+                    <div class="d-flex align-items-center">
+                        <div class="rounded-3 bg-success-subtle text-success p-3 me-3 fs-4">
+                            <i class="fa-solid fa-circle-check"></i>
+                        </div>
+                        <div>
+                            <span class="text-muted small text-uppercase fw-semibold">Lớp đang mở</span>
+                            <h3 class="fw-bold mb-0 text-dark">@danhSachLop.Count(x => x.TrangThai)</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-3 col-sm-6">
+                <div class="card border-0 shadow-sm p-3 h-100">
+                    <div class="d-flex align-items-center">
+                        <div class="rounded-3 bg-info-subtle text-info p-3 me-3 fs-4">
+                            <i class="fa-solid fa-users-gear"></i>
+                        </div>
+                        <div>
+                            <span class="text-muted small text-uppercase fw-semibold">Nhân sự cơ sở</span>
+                            <h3 class="fw-bold mb-0 text-dark" id="countTongNhanSu">0</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-3 col-sm-6">
+                <div class="card border-0 shadow-sm p-3 h-100">
+                    <div class="d-flex align-items-center">
+                        <div class="rounded-3 @(isPastDue ? "bg-danger-subtle text-danger" : "bg-secondary-subtle text-secondary") p-3 me-3 fs-4">
+                            <i class="fa-regular fa-calendar-days"></i>
+                        </div>
+                        <div>
+                            <span class="text-muted small text-uppercase fw-semibold">Hạn dịch vụ</span>
+                            <h5 class="fw-bold mb-0 @(isPastDue ? "text-danger" : "text-dark")">
+                                @(hetHan.HasValue ? hetHan.Value.ToString("dd/MM/yyyy") : "Vô thời hạn")
+                            </h5>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-4">
+            <!-- Cột trái: Thông tin cơ sở -->
+            <div class="col-lg-4">
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-body text-center p-4">
+                        <div class="position-relative d-inline-block mb-3">
+                            @if (!string.IsNullOrEmpty(Model.Logo))
+                            {
+                                <img src="@Model.Logo" alt="@Model.TenTrungTam" class="rounded-circle border shadow-sm object-fit-cover" width="100" height="100" />
+                            }
+                            else
+                            {
+                                <div class="rounded-circle bg-light border d-flex align-items-center justify-content-center text-secondary mx-auto shadow-sm" style="width: 100px; height: 100px;">
+                                    <i class="fa-solid fa-building-columns fa-2x"></i>
+                                </div>
+                            }
+                            <span class="position-absolute bottom-0 end-0 p-2 bg-@(Model.TrangThai ? "success" : "secondary") border border-white rounded-circle"></span>
+                        </div>
+
+                        <h5 class="fw-bold mb-1 text-dark">@Model.TenTrungTam</h5>
+                        <p class="text-muted small mb-2"><i class="fa-solid fa-barcode me-1"></i>@(string.IsNullOrEmpty(Model.MaTrungTam) ? "Chưa có mã" : Model.MaTrungTam)</p>
+
+                        <div class="badge bg-light text-primary border px-3 py-2 font-monospace mb-3">
+                            https://@(string.IsNullOrEmpty(Model.Subdomain) ? "..." : Model.Subdomain).hoctiengtrung.vn
+                        </div>
+
+                        <hr class="text-muted opacity-25" />
+
+                        <ul class="list-group list-group-flush text-start small">
+                            <li class="list-group-item d-flex justify-content-between px-0 py-2">
+                                <span class="text-muted"><i class="fa-solid fa-phone me-2 text-secondary"></i>Số điện thoại:</span>
+                                <span class="fw-semibold">@(Model.SoDienThoai ?? "Chưa cập nhật")</span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between px-0 py-2">
+                                <span class="text-muted"><i class="fa-regular fa-envelope me-2 text-secondary"></i>Email:</span>
+                                <span class="fw-semibold">@(Model.Email ?? "Chưa cập nhật")</span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between px-0 py-2">
+                                <span class="text-muted"><i class="fa-solid fa-location-dot me-2 text-secondary"></i>Địa chỉ:</span>
+                                <span class="fw-semibold text-end" style="max-width: 60%;">@(Model.DiaChi ?? "Chưa cập nhật")</span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between px-0 py-2">
+                                <span class="text-muted"><i class="fa-regular fa-clock me-2 text-secondary"></i>Ngày kích hoạt:</span>
+                                <span class="fw-semibold">@(Model.NgayKichHoat.HasValue ? Model.NgayKichHoat.Value.ToString("dd/MM/yyyy HH:mm") : "--")</span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between px-0 py-2">
+                                <span class="text-muted"><i class="fa-solid fa-shield-halved me-2 text-secondary"></i>Trạng thái:</span>
+                                <span class="badge bg-@(Model.TrangThai ? "success-subtle text-success" : "secondary-subtle text-secondary")">
+                                    @(Model.TrangThai ? "Đang hoạt động" : "Đã tạm dừng")
+                                </span>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Cột phải: Lớp học & Nhân sự -->
+            <div class="col-lg-8">
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-white border-bottom pt-3 pb-0">
+                        <ul class="nav nav-tabs border-bottom-0" id="trungTamTab" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active fw-semibold" id="tab-lophoc" data-bs-toggle="tab" data-bs-target="#content-lophoc" type="button" role="tab">
+                                    <i class="fa-solid fa-chalkboard me-2 text-primary"></i>Lớp học (@danhSachLop.Count)
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link fw-semibold" id="tab-nhansu" data-bs-toggle="tab" data-bs-target="#content-nhansu" type="button" role="tab" onclick="loadDanhSachNhanSu(ID_TRUNG_TAM)">
+                                    <i class="fa-solid fa-user-tie me-2 text-success"></i>Nhân sự & Giảng viên
+                                </button>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div class="tab-content" id="trungTamTabContent">
+                        <!-- TAB 1: LỚP HỌC -->
+                        <div class="tab-pane fade show active p-0" id="content-lophoc" role="tabpanel">
+                            <div class="p-3 border-bottom d-flex justify-content-between align-items-center flex-wrap gap-2">
+                                <div>
+                                    <h6 class="fw-bold mb-0 text-dark">Lớp đào tạo trực thuộc</h6>
+                                    <small class="text-muted">Các lớp học được mở bởi cơ sở này</small>
+                                </div>
+                                <div class="input-group input-group-sm" style="max-width: 220px;">
+                                    <span class="input-group-text bg-light border-end-0"><i class="fa-solid fa-magnifying-glass text-muted"></i></span>
+                                    <input type="text" id="filterLopHocInput" class="form-control border-start-0" placeholder="Lọc theo tên lớp..." onkeyup="locDanhSachLopClient('filterLopHocInput', 'tableLopHoc')">
+                                </div>
+                            </div>
+
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle mb-0" id="tableLopHoc">
+                                    <thead class="table-light text-secondary text-uppercase small">
+                                        <tr>
+                                            <th style="width: 50px;">#ID</th>
+                                            <th>Tên lớp học</th>
+                                            <th>Mô tả / Ghi chú</th>
+                                            <th>Ngày khai giảng</th>
+                                            <th class="text-center" style="width: 120px;">Trạng thái</th>
+                                            <th class="text-end" style="width: 130px;">Thao tác</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @if (danhSachLop.Count > 0)
+                                        {
+                                            foreach (var lop in danhSachLop)
+                                            {
+                                                <tr>
+                                                    <td class="fw-bold text-muted">@lop.IdLopHoc</td>
+                                                    <td>
+                                                        <a asp-controller="QuanLyLopHoc"
+                                                           asp-action="ChiTietLopHoc"
+                                                           asp-route-id="@lop.IdLopHoc"
+                                                           class="fw-semibold text-dark text-decoration-none lop-name link-primary">
+                                                            @lop.TenLopHoc (@lop.MaLopHoc)
+                                                        </a>
+                                                    </td>
+                                                    <td>
+                                                        <small class="text-muted text-truncate d-inline-block" style="max-width: 250px;">
+                                                            @(string.IsNullOrEmpty(lop.MoTa) ? "--" : lop.MoTa)
+                                                        </small>
+                                                    </td>
+                                                    <td>
+                                                        @if (lop.NgayKhaiGiang.HasValue)
+                                                        {
+                                                            <span class="small"><i class="fa-regular fa-calendar me-1 text-muted"></i>@lop.NgayKhaiGiang.Value.ToString("dd/MM/yyyy")</span>
+                                                        }
+                                                        else
+                                                        {
+                                                            <span class="text-muted small">Chưa xếp lịch</span>
+                                                        }
+                                                    </td>
+                                                    <td class="text-center">
+                                                        <span class="badge @(lop.TrangThai ? "bg-success-subtle text-success" : "bg-secondary-subtle text-secondary")">
+                                                            @(lop.TrangThai ? "Đang mở" : "Đã đóng")
+                                                        </span>
+                                                    </td>
+                                                    <td class="text-end">
+                                                        <a asp-controller="QuanLyLopHoc"
+                                                           asp-action="ChiTietLopHoc"
+                                                           asp-route-id="@lop.IdLopHoc"
+                                                           class="btn btn-sm btn-outline-primary d-inline-flex align-items-center gap-1">
+                                                            <i class="fa-regular fa-eye"></i> Chi tiết
+                                                        </a>
+                                                    </td>
+                                                </tr>
+                                            }
+                                        }
+                                        else
+                                        {
+                                            <tr>
+                                                <td colspan="6" class="text-center py-5 text-muted">
+                                                    <i class="fa-regular fa-calendar-xmark fa-2x mb-2 d-block"></i>
+                                                    Trung tâm này hiện chưa có lớp học trực thuộc nào.
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- TAB 2: NHÂN SỰ -->
+                        <div class="tab-pane fade p-0" id="content-nhansu" role="tabpanel">
+                            <div class="p-3 border-bottom d-flex justify-content-between align-items-center flex-wrap gap-2">
+                                <div>
+                                    <h6 class="fw-bold mb-0 text-dark">Quản lý và Giảng viên</h6>
+                                    <small class="text-muted">Danh sách tài khoản phụ trách giảng dạy và điều hành cơ sở</small>
+                                </div>
+                                <div class="d-flex gap-2">
+                                    <div class="input-group input-group-sm" style="max-width: 200px;">
+                                        <span class="input-group-text bg-light border-end-0"><i class="fa-solid fa-magnifying-glass text-muted"></i></span>
+                                        <input type="text" id="filterNhanSuInput" class="form-control border-start-0" placeholder="Tìm tên, tài khoản..." onkeyup="locDanhSachNhanSu('filterNhanSuInput')">
+                                    </div>
+                                    <button type="button" class="btn btn-sm btn-primary d-flex align-items-center gap-1 shadow-sm" onclick="moModalThemNhanSu()">
+                                        <i class="fa-solid fa-user-plus"></i> Thêm tài khoản
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle mb-0" id="tableNhanSu">
+                                    <thead class="table-light text-secondary text-uppercase small">
+                                        <tr>
+                                            <th style="width: 50px;">#ID</th>
+                                            <th>Nhân sự</th>
+                                            <th>Tài khoản</th>
+                                            <th>Vai trò</th>
+                                            <th>Liên hệ</th>
+                                            <th class="text-center" style="width: 120px;">Trạng thái</th>
+                                            <th class="text-end" style="width: 110px;">Thao tác</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="bodyNhanSu">
+                                        <tr>
+                                            <td colspan="7" class="text-center py-5 text-muted">
+                                                <div class="spinner-border spinner-border-sm text-primary me-2"></div> Đang nạp danh sách nhân sự...
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+
+
+<!-- ========================================== -->
+<!-- MODAL THÊM TÀI KHOẢN NHÂN SỰ -->
+<!-- ========================================== -->
+<div class="modal fade" id="modalThemNhanSu" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-light">
+                <h5 class="modal-title fw-bold">
+                    <i class="fa-solid fa-user-plus text-primary me-2"></i>Thêm tài khoản Giảng viên / Quản lý
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="formThemNhanSu" onsubmit="xuLyThemNhanSu(event, @(Model?.IdTrungTam ?? 0), () => { loadDanhSachNhanSu(ID_TRUNG_TAM); capNhatBadgeSoLuongThongBao(ID_TRUNG_TAM, MA_TRUNG_TAM); })">
+                <div class="modal-body p-4">
+                    <div class="alert alert-light border small text-muted mb-3">
+                        <i class="fa-solid fa-circle-info text-primary me-1"></i>
+                        Tài khoản tạo mới sẽ tự động thuộc cơ sở: <strong>@(Model?.TenTrungTam)</strong>.
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Họ và tên <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="txtHoTenNhanSu" required placeholder="VD: Thầy Nguyễn Văn A">
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Tên đăng nhập <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control font-monospace" id="txtTenDangNhapNhanSu" required placeholder="VD: gv_vana">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Mật khẩu <span class="text-danger">*</span></label>
+                            <input type="password" class="form-control" id="txtMatKhauNhanSu" minlength="6" required placeholder="Tối thiểu 6 ký tự">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Vai trò đảm nhiệm <span class="text-danger">*</span></label>
+                        <select class="form-select" id="selectVaiTroNhanSu" required>
+                            <option value="">-- Đang nạp danh sách vai trò... --</option>
+                        </select>
+                    </div>
+                    <div class="row g-2">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Email</label>
+                            <input type="email" class="form-control" id="txtEmailNhanSu" placeholder="email@gmail.com">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold">Số điện thoại</label>
+                            <input type="tel" class="form-control" id="txtSdtNhanSu" placeholder="0987654321">
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                    <button type="submit" id="btnSubmitNhanSu" class="btn btn-primary px-4">
+                        <i class="fa-solid fa-check me-1"></i> Tạo tài khoản
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ========================================== -->
+<!-- MODAL IMPORT EXCEL -->
+<!-- ========================================== -->
+<div class="modal fade" id="modalImportExcel" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-light">
+                <h5 class="modal-title fw-bold">
+                    <i class="fa-solid fa-file-excel text-success me-2"></i>Nhập danh sách lớp từ Excel
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="formImportExcel" onsubmit="xuLyImportExcel(event)">
+                <div class="modal-body p-4">
+                    <div class="alert alert-info border-0 small mb-3">
+                        <i class="fa-solid fa-circle-info me-1"></i>
+                        Hệ thống sẽ tự động tạo Lớp học, tạo Tài khoản & phân bổ Học viên theo file mẫu.
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold small">Chọn file Excel (.xlsx, .xls) <span class="text-danger">*</span></label>
+                        <input type="file" class="form-control" id="fileExcelLopHoc" accept=".xlsx,.xls" required>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center pt-2 border-top">
+                        <span class="small text-muted">Chưa có file mẫu chuẩn?</span>
+                        <button type="button" class="btn btn-sm btn-link text-decoration-none" onclick="taiFileMauExcel('@(Model?.MaTrungTam ?? Model?.IdTrungTam.ToString() ?? "TT_001")')">
+                            <i class="fa-solid fa-download me-1"></i>Tải file mẫu CSV
+                        </button>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="submit" id="btnSubmitImport" class="btn btn-success px-4">
+                        <i class="fa-solid fa-upload me-1"></i> Bắt đầu xử lý
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ========================================== -->
+<!-- MODAL CẬP NHẬT THÔNG TIN TRUNG TÂM -->
+<!-- ========================================== -->
+<div class="modal fade" id="modalTrungTam" tabindex="-1" aria-labelledby="modalTrungTamTitle" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-light">
+                <h5 class="modal-title fw-bold" id="modalTrungTamTitle">Thêm mới Trung tâm</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="formTrungTam" onsubmit="luuThongTinTrungTam(event)">
+                <div class="modal-body p-4">
+                    <input type="hidden" id="modalIdTrungTam" name="IdTrungTam" value="0" />
+
+                    <div class="row g-3">
+                        <div class="col-md-8">
+                            <label class="form-label fw-semibold small">Tên trung tâm <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="txtTenTrungTam" name="TenTrungTam" required placeholder="Nhập tên trung tâm...">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold small">Mã trung tâm (dùng làm tài khoản đăng nhập) <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control font-monospace" id="txtMaTrungTam" name="MaTrungTam" required placeholder="VD: KimHoa001">
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold small">Subdomain</label>
+                            <div class="input-group">
+                                <input type="text" class="form-control font-monospace" id="txtSubdomain" name="Subdomain" placeholder="kimhoa">
+                                <span class="input-group-text small text-muted">.hoctiengtrung.vn</span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold small">Số điện thoại</label>
+                            <input type="tel" class="form-control" id="txtSoDienThoai" name="SoDienThoai" placeholder="VD: 0987654321">
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold small">Email liên hệ</label>
+                            <input type="email" class="form-control" id="txtEmail" name="Email" placeholder="contact@trungtam.com">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold small">Ngày hết hạn dịch vụ</label>
+                            <input type="date" class="form-control" id="txtNgayHetHan" name="NgayHetHan" readonly>
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label fw-semibold small">Địa chỉ trụ sở</label>
+                            <input type="text" class="form-control" id="txtDiaChi" name="DiaChi" placeholder="Số nhà, đường, quận/huyện, tỉnh/thành...">
+                        </div>
+
+                        <div class="col-md-8">
+                            <label class="form-label fw-semibold small">Logo đại diện (Chỉ nhận .jpg, .jpeg, .png, .webp)</label>
+                            <input type="file" class="form-control" id="fileLogo" name="fileLogo" accept=".jpg,.jpeg,.png,.webp" onchange="previewImageTrungTam(this)">
+                        </div>
+                        <div class="col-md-4 text-center">
+                            <label class="form-label fw-semibold small d-block">Xem trước Logo</label>
+                            <img id="imgPreview" src="" alt="Logo Preview" class="rounded border object-fit-cover d-none" width="64" height="64" />
+                            <div id="imgPlaceholder" class="rounded bg-light border d-inline-flex align-items-center justify-content-center text-muted" style="width: 64px; height: 64px;">
+                                <i class="fa-regular fa-image fa-lg"></i>
+                            </div>
+                        </div>
+
+                        <div class="col-12 mt-2">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="chkTrangThai" name="TrangThai" checked>
+                                <label class="form-check-label fw-semibold small" for="chkTrangThai">Kích hoạt hoạt động ngay sau khi lưu</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                    <button type="submit" id="btnSubmitModal" class="btn btn-primary px-4">
+                        <i class="fa-solid fa-floppy-disk me-1"></i> Lưu thông tin
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ========================================== -->
+<!-- MODAL NHẬT KÝ HỆ THỐNG / LỊCH SỬ THAY ĐỔI -->
+<!-- ========================================== -->
+<div class="modal fade" id="detailModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-light">
+                <h5 class="modal-title fw-bold text-dark mb-0">
+                    <i class="fa-solid fa-clock-rotate-left text-primary me-2"></i>Nhật ký hệ thống & Lịch sử truy vết
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-0" id="modalBodyNhatKy">
+                @await Html.PartialAsync("_LichSuThayDoi")
+            </div>
+            <div class="modal-footer bg-light py-2">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Đóng</button>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- ========================================== -->
+<!-- MODAL THÊM LỚP HỌC THỦ CÔNG                -->
+<!-- ========================================== -->
+<div class="modal fade" id="modalThemLopThuCong" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
+        <form id="formThemLopThuCong" onsubmit="xuLyThemLopThuCong(event)" class="modal-content border-0 shadow">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title fw-bold">
+                    <i class="fa-solid fa-chalkboard-user me-2"></i>Thêm mới lớp học thủ công
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body p-4">
+                <!-- SECTION 1: THÔNG TIN LỚP HỌC (BẮT BUỘC) -->
+                <div class="d-flex align-items-center mb-3">
+                    <span class="badge bg-primary me-2">1</span>
+                    <h6 class="fw-bold mb-0 text-dark">Thông tin lớp học <span class="text-danger small">(Bắt buộc)</span></h6>
+                </div>
+
+                <div class="row g-3 mb-3">
+                    <div class="col-md-8">
+                        <label class="form-label small fw-semibold">Tên lớp học <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="txtThemTenLop" required placeholder="VD: Tiếng Trung Giao Tiếp HSK 3 (Tối 2-4-6)">
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label small fw-semibold">Mã lớp học</label>
+                        <input type="text" class="form-control font-monospace" id="txtThemMaLop" placeholder="VD: HSK3_T246 (Để trống tự sinh)">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold">Ngày khai giảng</label>
+                        <input type="date" class="form-control" id="txtThemNgayKhaiGiang">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label small fw-semibold">Ngày kết thúc</label>
+                        <input type="date" class="form-control" id="txtThemNgayKetThuc">
+                    </div>
+                    <div class="col-12">
+                        <label class="form-label small fw-semibold">Mô tả / Ghi chú</label>
+                        <textarea class="form-control" id="txtThemMoTaLop" rows="2" placeholder="Ghi chú về ca học, phòng học, giáo trình..."></textarea>
+                    </div>
+                </div>
+
+                <hr class="my-4 text-muted opacity-25">
+
+                <!-- SECTION 2: PHÂN CÔNG GIẢNG VIÊN (TÙY CHỌN) -->
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <div class="d-flex align-items-center">
+                        <span class="badge bg-secondary me-2">2</span>
+                        <h6 class="fw-bold mb-0 text-dark">Phân công Giảng viên <span class="text-muted small fw-normal">(Tùy chọn)</span></h6>
+                    </div>
+                </div>
+                <div class="card bg-light border-0 p-3 mb-3">
+                    <div class="row g-2 align-items-end">
+                        <div class="col-md-6">
+                            <label class="form-label small fw-semibold mb-1">Chọn giảng viên của cơ sở</label>
+                            <select class="form-select form-select-sm" id="selectChonGiangVien">
+                                <option value="">-- Đang nạp danh sách giảng viên... --</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label small fw-semibold mb-1">Vai trò giảng dạy</label>
+                            <select class="form-select form-select-sm" id="selectVaiTroDayLop">
+                                <option value="Giảng viên chính">Giảng viên chính</option>
+                                <option value="Trợ giảng">Trợ giảng</option>
+                                <option value="Giảng viên phụ trách khẩu ngữ">Giảng viên khẩu ngữ</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <button type="button" class="btn btn-sm btn-outline-primary w-100" onclick="themGiangVienVaoBang()">
+                                <i class="fa-solid fa-plus me-1"></i>Thêm
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="table-responsive mt-3">
+                        <table class="table table-sm table-bordered bg-white mb-0" id="tableGvPhanCong">
+                            <thead class="table-light small">
+                                <tr>
+                                    <th>Giảng viên</th>
+                                    <th>Tài khoản</th>
+                                    <th>Vai trò dạy</th>
+                                    <th class="text-center" style="width: 50px;">Xóa</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbodyGvPhanCong">
+                                <tr id="rowGvEmpty">
+                                    <td colspan="4" class="text-center text-muted small py-2">Chưa phân công giảng viên nào</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <hr class="my-4 text-muted opacity-25">
+
+                <!-- SECTION 3: DANH SÁCH HỌC VIÊN BAN ĐẦU (TÙY CHỌN) -->
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <div class="d-flex align-items-center">
+                        <span class="badge bg-secondary me-2">3</span>
+                        <h6 class="fw-bold mb-0 text-dark">Thêm học viên ban đầu <span class="text-muted small fw-normal">(Tùy chọn - Hệ thống tự cấp tài khoản)</span></h6>
+                    </div>
+                    <button type="button" class="btn btn-sm btn-outline-success" onclick="themDongHocVien()">
+                        <i class="fa-solid fa-user-plus me-1"></i>Thêm dòng
+                    </button>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-sm table-bordered mb-0" id="tableHocVienThuCong">
+                        <thead class="table-light small">
+                            <tr>
+                                <th style="min-width: 180px;">Họ và tên <span class="text-danger">*</span></th>
+                                <th style="min-width: 160px;">Email</th>
+                                <th style="min-width: 140px;">Số điện thoại</th>
+                                <th style="min-width: 130px;">Ngày sinh</th>
+                                <th class="text-center" style="width: 50px;">Xóa</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbodyHocVienThuCong">
+                            <tr id="rowHvEmpty">
+                                <td colspan="5" class="text-center text-muted small py-3">
+                                    Chưa có học viên nào. Bấm <strong>"Thêm dòng"</strong> nếu muốn tạo tài khoản học viên ngay.
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="modal-footer bg-light">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy bỏ</button>
+                <button type="submit" id="btnSubmitThemLopThuCong" class="btn btn-primary px-4 fw-semibold">
+                    <i class="fa-solid fa-check me-1"></i> Hoàn tất tạo lớp
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    
+
+    
+
+    <!-- 3. JS Phân hệ Lớp học: CRUD, Lọc client, Thêm thủ công -->
+    <script src="~/js/LopHoc/danhsach-lophoc.js"></script>
+    <!-- 1. JS Dùng chung: Chuông thông báo & Nhật ký hệ thống -->
+    <script src="~/js/ThongBao-NhatKy/thongbao-nhatky.js"></script>
+
+    <!-- 2. JS Dùng chung: Import Excel lớp học -->
+    <script src="~/js/import/import-excel-lophoc.js"></script>
+
+    <!-- 3. JS Phân hệ Trung tâm: Quản lý thông tin & Nhân sự -->
+    <script src="~/js/TrungTam/quanly-trungtam.js"></script>
+    <script src="~/js/TrungTam/nhansu-trungtam.js"></script>
+
+  
+    <script>
+        const ID_TRUNG_TAM = @(Model?.IdTrungTam ?? 0);
+        const MA_TRUNG_TAM = '@(Model?.MaTrungTam ?? "")';
+
+        document.addEventListener("DOMContentLoaded", function () {
+            // Kiểm tra phân quyền truy cập
+            const isAccessDenied = "@(TempData["AccessDenied"]?.ToString() ?? "")" === "true";
+            const errorMessage = "@Html.Raw(TempData["ErrorMessage"]?.ToString() ?? "Bạn không có quyền truy cập chức năng này!")";
+
+            if (isAccessDenied) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Truy cập bị từ chối!',
+                    text: errorMessage,
+                    timer: 2500,
+                    timerProgressBar: true,
+                    confirmButtonText: 'Quay lại Trang chủ',
+                    confirmButtonColor: '#d33',
+                    allowOutsideClick: false
+                }).then(() => {
+                    window.location.href = "/";
+                });
+                return;
+            }
+
+            // Gọi các hàm khởi tạo từ file js đã tách
+            loadDanhSachNhanSu(ID_TRUNG_TAM);
+            capNhatBadgeSoLuongThongBao(ID_TRUNG_TAM, MA_TRUNG_TAM);
+        });
+
+        // Hàm mở modal cập nhật thông tin trung tâm sử dụng logic từ quanly-trungtam.js
+        function moModalCapNhatTrungTamView() {
+            if (modalTrungTamInstance) {
+                modalTrungTamInstance.show();
+            }
+        }
+    </script>
+}

@@ -1,0 +1,508 @@
+﻿
+@using Microsoft.AspNetCore.Http
+@{
+    // 1. Lấy IdTrungTam hoặc MaTrungTam từ Claims / Session
+    var idTrungTam = User.FindFirst("IdTrungTam")?.Value
+                     ?? Context.Session.GetString("IdTrungTam")
+                     ?? "0";
+
+    var maTrungTam = User.FindFirst("MaTrungTam")?.Value
+                     ?? Context.Session.GetString("MaTrungTam")
+                     ?? "";
+
+    // 2. Ưu tiên lấy tham số điều hướng (Id hoặc Mã)
+    var routeValue = (!string.IsNullOrEmpty(idTrungTam) && idTrungTam != "0")
+                     ? idTrungTam
+                     : maTrungTam;
+
+    ViewData["Title"] = "Trang Chủ - Học Tiếng Trung HSK 3.0";
+    var currentUserName = User.Identity?.IsAuthenticated == true ? User.Identity.Name : "Khách";
+}
+
+<style>
+    /* Hero Section */
+    .hero-container {
+        position: relative;
+        padding: 80px 0;
+        background: linear-gradient(135deg, #0984e3 0%, #00cec9 100%);
+        border-radius: 24px;
+        color: white;
+        overflow: hidden;
+        margin-bottom: 50px;
+    }
+
+        .hero-container::before {
+            content: "";
+            position: absolute;
+            top: -30%;
+            left: -10%;
+            width: 350px;
+            height: 350px;
+            background: rgba(255, 255, 255, 0.12);
+            border-radius: 50%;
+            z-index: 0;
+        }
+
+        .hero-container::after {
+            content: "";
+            position: absolute;
+            bottom: -20%;
+            right: -5%;
+            width: 250px;
+            height: 250px;
+            background: rgba(255, 255, 255, 0.08);
+            border-radius: 50%;
+            z-index: 0;
+        }
+
+    .hero-content {
+        position: relative;
+        z-index: 1;
+    }
+
+    /* Feature Cards Base */
+    .feature-box {
+        background: white;
+        padding: 28px 20px;
+        border-radius: 18px;
+        border: 1px solid rgba(0, 0, 0, 0.05);
+        transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        height: 100%;
+        position: relative;
+    }
+
+    .feature-icon-wrapper {
+        width: 55px;
+        height: 55px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 14px;
+        margin: 0 auto 18px;
+        font-size: 1.4rem;
+        transition: all 0.3s ease;
+    }
+
+    .clickable-card {
+        cursor: pointer;
+        text-decoration: none !important;
+    }
+
+        .clickable-card:hover .feature-box {
+            transform: translateY(-8px);
+            background-color: #fff;
+            box-shadow: 0 15px 30px rgba(9, 132, 227, 0.12) !important;
+        }
+
+        .clickable-card:hover .feature-icon-wrapper {
+            transform: scale(1.1) rotate(5deg);
+        }
+
+    /* Left Borders for Categorization */
+    .card-hsk-vocab .feature-box {
+        border-left: 4px solid #0984e3;
+    }
+
+    .card-industry-vocab .feature-box {
+        border-left: 4px solid #00b894;
+    }
+
+    .card-daily-practice .feature-box {
+        border-left: 4px solid #d63031;
+    }
+
+    .card-grammar .feature-box {
+        border-left: 4px solid #6c5ce7;
+    }
+
+    .card-exercise .feature-box {
+        border-left: 4px solid #ff9800;
+    }
+
+    .card-listening .feature-box {
+        border-left: 4px solid #00cec9;
+    }
+
+    .card-lessons .feature-box {
+        border-left: 4px solid #e84393;
+    }
+
+    .card-listening-img .feature-box {
+        border-left: 4px solid #4f46e5;
+    }
+
+    .card-arena .feature-box {
+        border-left: 4px solid #d97706;
+    }
+
+    .card-vip .feature-box {
+        border-left: 4px solid #f59e0b;
+    }
+
+    .card-lobby .feature-box {
+        border-left: 4px solid #10b981;
+    }
+
+    /* HSK Cards */
+    .hsk-card {
+        border: none;
+        border-radius: 20px;
+        background: white;
+        transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+        border: 1px solid rgba(0, 0, 0, 0.05);
+    }
+
+        .hsk-card:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 20px 35px rgba(0, 0, 0, 0.08) !important;
+            border-color: #0984e3;
+        }
+
+    .hsk-circle {
+        width: 65px;
+        height: 65px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        margin: 5px auto 15px;
+        color: white;
+        font-weight: 700;
+        font-size: 1.25rem;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+    }
+
+    .bg-hsk1 {
+        background: linear-gradient(135deg, #55efc4, #00b894);
+    }
+
+    .bg-hsk2 {
+        background: linear-gradient(135deg, #81ecec, #00cec9);
+    }
+
+    .bg-hsk3 {
+        background: linear-gradient(135deg, #74b9ff, #0984e3);
+    }
+
+    .bg-hsk4 {
+        background: linear-gradient(135deg, #a29bfe, #6c5ce7);
+    }
+
+    .bg-hsk5 {
+        background: linear-gradient(135deg, #fab1a0, #e17055);
+    }
+
+    .bg-hsk6 {
+        background: linear-gradient(135deg, #ff7675, #d63031);
+    }
+
+    /* Section Title */
+    .section-title {
+        position: relative;
+        display: inline-block;
+        margin-bottom: 45px;
+        font-weight: 700;
+        color: #2d3436;
+    }
+
+        .section-title::after {
+            content: "";
+            position: absolute;
+            bottom: -12px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60px;
+            height: 4px;
+            background: linear-gradient(90deg, #0984e3, #00cec9);
+            border-radius: 10px;
+        }
+</style>
+
+<div class="container pb-5">
+    <!-- Hero Banner -->
+    <div class="hero-container text-center shadow-lg">
+        <div class="hero-content px-3">
+            <span class="badge bg-white text-primary px-3 py-2 rounded-pill mb-3 fw-semibold shadow-sm">Tiêu chuẩn HSK 3.0 Mới Nhất</span>
+            <h1 class="display-4 fw-bold mb-3">Chinh Phục Tiếng Trung</h1>
+            <p class="lead mb-4 opacity-90 mx-auto" style="max-width: 700px;">
+                Chào mừng <span class="fw-bold text-warning">@currentUserName</span>! Hệ thống học từ vựng, ngữ pháp cốt lõi và luyện nghe thông minh giúp bạn bứt phá điểm số hiệu quả.
+            </p>
+            <div class="d-flex justify-content-center gap-3 mb-2">
+                <a href="#hsk-list" class="btn btn-light btn-lg px-5 rounded-pill fw-semibold text-primary shadow-sm">Bắt đầu ngay</a>
+                <a asp-controller="Home" asp-action="Privacy" class="btn btn-outline-light btn-lg px-4 rounded-pill">Tìm hiểu thêm</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Features Grid -->
+    <div class="row g-4 mb-5 text-center justify-content-center">
+        <!-- 1. Từ vựng HSK 3.0 -->
+        <div class="col-12 col-sm-6 col-md-4 col-lg-3">
+            <a href="/QuanLyDanhSachTuVung/DanhSachTuVung" class="clickable-card text-decoration-none text-dark d-block h-100 card-hsk-vocab">
+                <div class="feature-box shadow-sm">
+                    <div class="feature-icon-wrapper" style="background: rgba(9, 132, 227, 0.08); color: #0984e3;">
+                        <i class="fa-solid fa-font"></i>
+                    </div>
+                    <h5 class="fw-bold mb-2 fs-5 text-dark">Từ vựng HSK 3.0</h5>
+                    <p class="text-muted small mb-0">Hệ thống kho từ vựng phân cấp rõ ràng, hỗ trợ ghi nhớ khoa học.</p>
+                </div>
+            </a>
+        </div>
+
+        <!-- 2. Từ vựng Chuyên Ngành -->
+        <div class="col-12 col-sm-6 col-md-4 col-lg-3">
+            <a href="/QuanLyDanhSachTuVung/TuVungChuyenNganh" class="clickable-card text-decoration-none text-dark d-block h-100 card-industry-vocab">
+                <div class="feature-box shadow-sm">
+                    <div class="feature-icon-wrapper" style="background: rgba(0, 184, 148, 0.08); color: #00b894;">
+                        <i class="fa-solid fa-briefcase"></i>
+                    </div>
+                    <h5 class="fw-bold mb-2 fs-5 text-dark">Từ vựng Chuyên Ngành</h5>
+                    <p class="text-muted small mb-0">Mở rộng vốn từ thuộc đa dạng các lĩnh vực kinh tế, thương mại, công nghệ.</p>
+                </div>
+            </a>
+        </div>
+
+        <!-- 3. Ôn Luyện Hàng Ngày -->
+        <div class="col-12 col-sm-6 col-md-4 col-lg-3">
+            <a href="/QuanLyDanhSachTuVung/OnLuyenNgauNhien" class="clickable-card text-decoration-none text-dark d-block h-100 card-daily-practice">
+                <div class="feature-box shadow-sm">
+                    <div class="feature-icon-wrapper" style="background: rgba(214, 48, 49, 0.08); color: #d63031;">
+                        <i class="fa-solid fa-bolt"></i>
+                    </div>
+                    <h5 class="fw-bold mb-2 fs-5 text-dark">Ôn Luyện Hàng Ngày</h5>
+                    <p class="text-muted small mb-0">Thuật toán lặp lại ngắt quãng giúp kích thích và thử thách phản xạ trí nhớ.</p>
+                </div>
+            </a>
+        </div>
+
+        <!-- 4. Ngữ Pháp Cốt Lõi -->
+        <div class="col-12 col-sm-6 col-md-4 col-lg-3">
+            <a href="/QuanLyDanhSachNguPhap/DanhSachNguPhap" class="clickable-card text-decoration-none text-dark d-block h-100 card-grammar">
+                <div class="feature-box shadow-sm">
+                    <div class="feature-icon-wrapper" style="background: rgba(108, 92, 231, 0.08); color: #6c5ce7;">
+                        <i class="fa-solid fa-spell-check"></i>
+                    </div>
+                    <h5 class="fw-bold mb-2 fs-5 text-dark">Ngữ Pháp Cốt Lõi</h5>
+                    <p class="text-muted small mb-0">Hệ thống hóa toàn bộ các cấu trúc ngữ pháp trọng điểm từ HSK 1 đến HSK 6.</p>
+                </div>
+            </a>
+        </div>
+
+        <!-- 5. Bài Tập Thực Hành -->
+        <div class="col-12 col-sm-6 col-md-4 col-lg-4">
+            <a href="/QuanLyDanhSachBaiTap/DanhSachLoaiBaiTap?capdo=1&amp;chuongTrinh=3" class="clickable-card text-decoration-none text-dark d-block h-100 card-exercise">
+                <div class="feature-box shadow-sm">
+                    <div class="feature-icon-wrapper" style="background: rgba(255, 152, 0, 0.08); color: #ff9800;">
+                        <i class="fa-solid fa-vial"></i>
+                    </div>
+                    <h5 class="fw-bold mb-2 fs-5 text-dark">Bài Tập Thực Hành</h5>
+                    <p class="text-muted small mb-0">Kho bài tập trắc nghiệm phong phú, củng cố toàn diện kiến thức vừa học.</p>
+                </div>
+            </a>
+        </div>
+
+        <!-- 6. Luyện Nghe Audio -->
+        <div class="col-12 col-sm-6 col-md-4 col-lg-4">
+            <a href="/QuanLyLuyenNghe/CapDoLuyenNghe" class="clickable-card text-decoration-none text-dark d-block h-100 card-listening">
+                <div class="feature-box shadow-sm">
+                    <div class="feature-icon-wrapper" style="background: rgba(0, 206, 201, 0.08); color: #00cec9;">
+                        <i class="fa-solid fa-headphones"></i>
+                    </div>
+                    <h5 class="fw-bold mb-2 fs-5 text-dark">Luyện Nghe Audio</h5>
+                    <p class="text-muted small mb-0">Rèn luyện kỹ năng nghe hiểu qua hội thoại thực tế với audio chuẩn bản xứ.</p>
+                </div>
+            </a>
+        </div>
+
+        <!-- 7. Ôn Luyện Bài Học -->
+        <div class="col-12 col-sm-6 col-md-4 col-lg-4">
+            <a href="@Url.Action("DanhSachChuongTrinhTinh", "QuanLyDanhSachBaiHoc", new { capdo = 1, page = 1 })" class="clickable-card text-decoration-none text-dark d-block h-100 card-lessons">
+                <div class="feature-box shadow-sm">
+                    <div class="feature-icon-wrapper" style="background: rgba(232, 67, 147, 0.08); color: #e84393;">
+                        <i class="fa-solid fa-book-open"></i>
+                    </div>
+                    <h5 class="fw-bold mb-2 fs-5 text-dark">Ôn Luyện Bài Học</h5>
+                    <p class="text-muted small mb-0">Lộ trình bài giảng bài bản, thiết kế bài tập logic, phân chia cấp độ khoa học.</p>
+                </div>
+            </a>
+        </div>
+
+        <!-- 8. Luyện Nghe Hình Ảnh -->
+        <div class="col-12 col-sm-6 col-md-4 col-lg-4">
+            <a href="@Url.Action("ChiTietLuyenNgheHA", "LuyenNgheHinhAnh", new { capdo = 1, page = 1 })" class="clickable-card text-decoration-none text-dark d-block h-100 card-listening-img">
+                <div class="feature-box shadow-sm">
+                    <div class="feature-icon-wrapper" style="background: rgba(79, 70, 229, 0.1); color: #4f46e5;">
+                        <i class="fa-solid fa-image"></i>
+                    </div>
+                    <h5 class="fw-bold mb-2 fs-5 text-dark">Nghe Minh Họa Hình Ảnh</h5>
+                    <p class="text-muted small mb-0">Lộ trình bài nghe trực quan sinh động theo cấp độ + hình ảnh minh họa.</p>
+                </div>
+            </a>
+        </div>
+
+        <!-- 9. Đấu Trường Xếp Hạng -->
+        <div class="col-12 col-sm-6 col-md-4 col-lg-4">
+            <a href="@Url.Action("DauTruongXepHangA", "DauTruongXepHang")" class="clickable-card text-decoration-none text-dark d-block h-100 card-arena">
+                <div class="feature-box shadow-sm">
+                    <div class="feature-icon-wrapper" style="background: rgba(245, 158, 11, 0.12); color: #d97706;">
+                        <i class="fa-solid fa-trophy"></i>
+                    </div>
+                    <h5 class="fw-bold mb-2 fs-5 text-dark">Đấu Trường Xếp Hạng</h5>
+                    <p class="text-muted small mb-0">Hệ thống thi đấu trực tuyến, cho phép người học cạnh tranh và nâng cao trình độ.</p>
+                </div>
+            </a>
+        </div>
+
+        <div class="col-12 col-sm-6 col-md-4 col-lg-4">
+            <a href="@Url.Action("LuyenNghePhanXa", "LuyenNghePhanXa")" class="clickable-card text-decoration-none text-dark d-block h-100 card-arena">
+                <div class="feature-box shadow-sm">
+                    <div class="feature-icon-wrapper" style="background: rgba(245, 158, 11, 0.12); color: #d97706;">
+                        <i class="fa-solid fa-trophy"></i>
+                    </div>
+                    <h5 class="fw-bold mb-2 fs-5 text-dark">Luyện Nghe Phản Xạ</h5>
+                    <p class="text-muted small mb-0">Hệ thống thi đấu trực tuyến, cho phép người học cạnh tranh và nâng cao trình độ.</p>
+                </div>
+            </a>
+        </div>
+
+        <div class="col-12 col-sm-6 col-md-4 col-lg-4 mb-4">
+            <a href="@Url.Action("PhanTichChuHan", "PhanTichCauTaoChuHan")" class="clickable-card text-decoration-none text-dark d-block h-100">
+                <div class="feature-box p-4 rounded-4 shadow-sm bg-white h-100 border transition-all position-relative overflow-hidden"
+                     style="transition: all 0.3s ease; border-color: #f1f5f9;">
+                    <!-- Icon Wrapper -->
+                    <div class="d-inline-flex align-items-center justify-content-center rounded-3 mb-3"
+                         style="width: 52px; height: 52px; background: rgba(190, 18, 60, 0.1); color: #be123c; font-size: 1.4rem;">
+                        <i class="fa-solid fa-pen-nib"></i>
+                    </div>
+                    <!-- Tiêu đề -->
+                    <h5 class="fw-bold mb-2 fs-5 text-dark">Phân Tích Cấu Tạo Chữ Hán</h5>
+                    <!-- Mô tả -->
+                    <p class="text-secondary small mb-3 line-clamp-2" style="line-height: 1.5;">
+                        Tra cứu 214 bộ thủ Khang Hy, quy luật triết tự Lục thư, thứ tự nét viết trực quan và xuất slide bài giảng tự động.
+                    </p>
+                    <!-- Badge nhãn bổ trợ -->
+                   
+                </div>
+            </a>
+        </div> 
+
+        @*<!-- 10. Phòng Chờ Thi Đấu -->
+        <div class="col-12 col-sm-6 col-md-4 col-lg-4">
+            <a href="@Url.Action("DauTruongXepHangTest", "DauTruongXepHang")" class="clickable-card text-decoration-none text-dark d-block h-100 card-lobby">
+                <div class="feature-box shadow-sm">
+                    <div class="feature-icon-wrapper" style="background: rgba(16, 185, 129, 0.12); color: #10b981;">
+                        <i class="fa-solid fa-users"></i>
+                    </div>
+                    <h5 class="fw-bold mb-2 fs-5 text-dark">Phòng Chờ Thi Đấu</h5>
+                    <p class="text-muted small mb-0">Tham gia phòng đấu 1v1 hoặc đa người chơi realtime theo mã phòng.</p>
+                </div>
+            </a>
+        </div> *@
+
+
+       
+        @* <!-- 11. Nâng Cấp Tài Khoản VIP -->
+        <div class="col-12 col-sm-6 col-md-4 col-lg-4">
+            <a href="@Url.Action("CongThanhToan", "QuanLyTaiKhoan")" class="clickable-card text-decoration-none text-dark d-block h-100 card-vip">
+                <div class="feature-box shadow-sm">
+                    <div class="feature-icon-wrapper" style="background: rgba(245, 158, 11, 0.12); color: #f59e0b;">
+                        <i class="fa-solid fa-crown"></i>
+                    </div>
+                    <h5 class="fw-bold mb-2 fs-5 text-dark">Nâng Cấp Tài Khoản VIP</h5>
+                    <p class="text-muted small mb-0">Mở khóa toàn bộ khóa học, đề thi HSK và các đặc quyền học tập không giới hạn.</p>
+                </div>
+            </a>
+        </div>  *@
+    </div>
+
+    <!-- HSK Level Selection -->
+    <div id="hsk-list" class="pt-5 text-center">
+        <h2 class="section-title">Chọn Cấp Độ HSK</h2>
+        <div class="row g-4 justify-content-center text-start mt-2">
+            @for (int i = 1; i <= 6; i++)
+            {
+                <div class="col-6 col-md-4 col-lg-2">
+                    <div class="card hsk-card text-center h-100 shadow-sm p-3">
+                        <div class="card-body p-2">
+                            <div class="hsk-circle bg-hsk@(i)">
+                                @i
+                            </div>
+                            <h5 class="fw-bold mb-1 text-dark">HSK @i</h5>
+                            <p class="text-muted x-small mb-3" style="font-size: 0.75rem;">
+                                Cấp độ @(i <= 2 ? "Sơ cấp" : i <= 4 ? "Trung cấp" : "Cao cấp")
+                            </p>
+                            <a href="/QuanLyDanhSachTuVung/DanhSachTuVung?capDo=@i" class="btn btn-primary w-100 rounded-pill btn-sm fw-semibold py-2 shadow-sm">
+                                Học ngay
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Info Banner -->
+    <div class="mt-5 p-4 rounded-4 shadow-sm" style="background: #f8f9fa; border: 1px dashed #dee2e6;">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h5 class="fw-bold mb-1 text-dark">
+                    <i class="fa-solid fa-circle-info me-2 text-primary"></i>Hệ thống tự động
+                </h5>
+                <p class="mb-0 text-muted">Nền tảng liên tục cập nhật theo tiêu chuẩn HSK 3.0 mới nhất với đầy đủ các tính năng hỗ trợ học viên đạt kết quả tối ưu.</p>
+            </div>
+            <div class="col-md-4 text-md-end mt-3 mt-md-0">
+                <a href="/QuanLyDeThi/DanhSachCapDo" class="btn btn-dark rounded-pill px-4 fw-semibold shadow-sm">
+                    Thử sức với đề thi <i class="fa-solid fa-arrow-right ms-2"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            kiemTraThoiHanVipUser();
+        });
+
+        function kiemTraThoiHanVipUser() {
+            fetch('/api/quanlytaikhoannguoidung/kiem-tra-han-vip', {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+                .then(response => response.status === 200 ? response.json() : null)
+                .then(data => {
+                    if (data && data.sapHetHan) {
+                        if (!sessionStorage.getItem('daThongBaoSapHetHanVip')) {
+                            if (typeof Swal !== 'undefined') {
+                                Swal.fire({
+                                    title: 'Sắp Hết Hạn VIP! 👑',
+                                    text: data.message,
+                                    icon: 'warning',
+                                    showCancelButton: true,
+                                    confirmButtonColor: '#dc3545',
+                                    cancelButtonColor: '#6c757d',
+                                    confirmButtonText: 'Gia hạn ngay',
+                                    cancelButtonText: 'Để sau',
+                                    backdrop: `rgba(0,0,123,0.1)`
+                                }).then((result) => {
+                                    if (result.isConfirmed) {
+                                        window.location.href = '/QuanLyTaiKhoan/CongThanhToan';
+                                    }
+                                });
+                            } else {
+                                var confirmGiaHan = confirm(data.message + "\n\nBấm OK để chuyển tới cổng thanh toán gia hạn.");
+                                if (confirmGiaHan) {
+                                    window.location.href = '/QuanLyTaiKhoan/CongThanhToan';
+                                }
+                            }
+                            sessionStorage.setItem('daThongBaoSapHetHanVip', 'true');
+                        }
+                    }
+                })
+                .catch(error => console.error('Lỗi hệ thống kiểm tra VIP:', error));
+        }
+    </script>
+}

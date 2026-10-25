@@ -1,0 +1,331 @@
+﻿<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đăng ký nâng cấp tài khoản VIP - HocTiengTrung</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+            .fade-in {
+                animation: fadeIn 0.4s ease-in-out forwards;
+            }
+
+            @@keyframes fadeIn {
+                from {
+                    opacity: 0;
+                    transform: translateY(10px);
+                }
+
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+            }
+
+            /* Tùy chỉnh thanh cuộn */
+            ::-webkit-scrollbar {
+                width: 6px;
+            }
+
+            ::-webkit-scrollbar-track {
+                background: #f1f1f1;
+            }
+
+            ::-webkit-scrollbar-thumb {
+                background: #cbd5e1;
+                border-radius: 10px;
+            }
+
+                ::-webkit-scrollbar-thumb:hover {
+                    background: #94a3b8;
+                }
+    </style>
+</head>
+<body class="bg-slate-50 font-sans min-h-screen flex items-center justify-center p-4">
+
+    <!-- Container chính -->
+    <div class="max-w-4xl w-full bg-white rounded-2xl shadow-xl overflow-hidden border border-slate-100 transition-all duration-300" id="mainCard">
+
+        <!-- 1. MÀN HÌNH CHỌN GÓI VIP -->
+        <div id="introSection" class="p-6 md:p-10 fade-in">
+            <div class="text-center mb-8">
+                <span class="bg-amber-100 text-amber-800 text-xs font-semibold px-3 py-1 rounded-full uppercase tracking-wider">Premium Access</span>
+                <h2 class="text-3xl font-bold text-slate-800 mt-4">Nâng cấp tài khoản VIP</h2>
+                <p class="text-slate-500 text-sm mt-2 max-w-xl mx-auto">Mở khóa toàn bộ tính năng cao cấp không giới hạn. Học tập hiệu quả hơn với hệ thống bài tập và ngữ pháp chuẩn hóa.</p>
+            </div>
+
+            <!-- Các đặc quyền -->
+            <div class="max-w-2xl mx-auto bg-slate-50 rounded-xl p-5 mb-8 border border-slate-100">
+                <ul class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-slate-700 font-medium">
+                    <li class="flex items-center"><i class="fa-solid fa-circle-check text-emerald-500 mr-3 text-lg"></i> Học toàn bộ ngữ pháp HSK 1 - 6</li>
+                    <li class="flex items-center"><i class="fa-solid fa-circle-check text-emerald-500 mr-3 text-lg"></i> Truy cập kho audio & bài tập</li>
+                    <li class="flex items-center"><i class="fa-solid fa-circle-check text-emerald-500 mr-3 text-lg"></i> Không quảng cáo làm phiền</li>
+                    <li class="flex items-center"><i class="fa-solid fa-circle-check text-emerald-500 mr-3 text-lg"></i> Ưu tiên hỗ trợ từ hệ thống</li>
+                </ul>
+            </div>
+
+            <!-- Danh sách gói VIP -->
+            <div id="packagesContainer" class="grid grid-cols-1 md:grid-cols-3 gap-5 mb-8">
+                <div class="col-span-full bg-amber-50 border border-amber-100 rounded-xl p-8 text-center flex flex-col justify-center items-center">
+                    <i class="fa-solid fa-spinner fa-spin text-3xl text-amber-500 mb-3"></i>
+                    <span class="text-slate-500 text-sm">Đang tải danh sách các gói ưu đãi...</span>
+                </div>
+            </div>
+
+            <!-- Nút thanh toán -->
+            <<div class="max-w-md mx-auto space-y-3">
+                <!-- Nút chính: Thanh toán (Nổi bật hơn với hiệu ứng Shadow & Scale) -->
+                <button id="btnBuyVip" onclick="handleRegisterVip()" disabled
+                        class="w-full bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 hover:from-amber-600 hover:to-orange-600 text-white font-bold py-3.5 px-5 rounded-xl shadow-lg shadow-orange-500/25 transition-all duration-200 hover:scale-[1.01] active:scale-[0.98] flex items-center justify-center gap-2.5 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:shadow-none">
+                    <i class="fa-solid fa-crown text-amber-200 text-lg"></i>
+                    <span>Chọn một gói để thanh toán</span>
+                </button>
+
+                <!-- Nút phụ: Tạo tài khoản (Giao diện Viền / Nền sáng nhẹ nhàng) -->
+                <a href="/QuanLyTaiKhoan/DangKy"
+                   class="w-full bg-amber-50/60 hover:bg-amber-100/80 text-amber-800 border border-amber-200/80 font-semibold py-3 px-5 rounded-xl transition-all duration-200 hover:scale-[1.01] active:scale-[0.98] flex items-center justify-center gap-2 text-sm text-center">
+                    <i class="fa-solid fa-user-plus text-amber-600"></i>
+                    <span>Chưa có tài khoản? Tạo tài khoản để đăng ký VIP</span>
+                </a>
+            </div>
+        </div>
+
+        <!-- 2. MÀN HÌNH CHỜ THANH TOÁN (PAYOS) -->
+        <div id="paymentSection" class="p-6 md:p-12 hidden bg-white fade-in text-center">
+            <div class="max-w-lg mx-auto">
+                <button onclick="backToIntro()" class="text-slate-400 hover:text-slate-600 text-sm mb-6 flex items-center gap-1 cursor-pointer transition-colors">
+                    <i class="fa-solid fa-arrow-left"></i> Chọn gói khác
+                </button>
+
+                <div class="bg-blue-50 text-blue-600 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6">
+                    <i class="fa-solid fa-money-check-dollar text-4xl"></i>
+                </div>
+
+                <h3 class="text-2xl font-bold text-slate-800">Đang chờ bạn thanh toán</h3>
+                <p class="text-sm text-slate-500 mt-2">Hệ thống đã tạo một cổng thanh toán an toàn qua <strong>PayOS</strong>.</p>
+
+                <div class="my-8 p-6 bg-slate-50 rounded-2xl border border-slate-100 shadow-sm relative overflow-hidden">
+                    <div class="flex items-center justify-center gap-3 mb-4 text-amber-600 font-medium">
+                        <i class="fa-solid fa-circle-notch fa-spin text-xl"></i>
+                        <span class="animate-pulse">Đang tự động kiểm tra giao dịch...</span>
+                    </div>
+                    <p class="text-xs text-slate-400 mb-4">Mã đơn hàng: <span id="lblMaGiaoDich" class="font-mono text-slate-600 font-bold">---</span></p>
+                    <p class="text-sm text-slate-600">Vui lòng hoàn tất thanh toán ở trang vừa được mở. <strong>Không đóng cửa sổ này!</strong> Hệ thống sẽ tự động chuyển sang trạng thái thành công ngay khi nhận được tiền.</p>
+                </div>
+
+                <!-- Nút phòng hờ trường hợp trình duyệt chặn popup -->
+                <a id="linkPayOS" href="#" target="_blank" class="inline-flex items-center justify-center w-full gap-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3.5 px-4 rounded-xl shadow-md transition-all">
+                    <i class="fa-solid fa-arrow-up-right-from-square"></i> Mở trang thanh toán PayOS
+                </a>
+            </div>
+        </div>
+
+        <!-- 3. MÀN HÌNH THÀNH CÔNG -->
+        <div id="successSection" class="p-8 md:p-12 text-center hidden bg-white fade-in">
+            <div class="max-w-md mx-auto">
+                <div class="w-24 h-24 bg-emerald-50 text-emerald-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner">
+                    <i class="fa-solid fa-check text-5xl"></i>
+                </div>
+                <h3 class="text-3xl font-bold text-slate-800">Thanh Toán Thành Công!</h3>
+                <p class="text-slate-500 text-base mt-3 px-4">Tài khoản của bạn đã được kích hoạt đặc quyền <strong>VIP</strong>. Hãy bắt đầu hành trình chinh phục tiếng Trung ngay nhé!</p>
+
+                <button onclick="goToDashboard()" class="mt-8 w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-3.5 px-4 rounded-xl shadow-md shadow-emerald-200 transition-all cursor-pointer">
+                    Vào trang học tập ngay <i class="fa-solid fa-chevron-right text-sm ml-1"></i>
+                </button>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+            const BASE_URL = "/api/thanh-toan";
+            let pollingInterval = null;
+            let currentMaGiaoDich = "";
+            let danhSachGoiVip = [];
+            let selectedIdGoi = "";
+
+            window.onload = async function() {
+                await loadThongTinGoiVip();
+            };
+
+            // 1. Tải danh sách các gói VIP từ Backend
+            async function loadThongTinGoiVip() {
+                try {
+                    const response = await fetch(`${BASE_URL}/so-tien-thanh-toan`);
+                    if (!response.ok) throw new Error("API response error");
+
+                    const data = await response.json();
+
+                    if (Array.isArray(data) && data.length > 0) {
+                        danhSachGoiVip = data;
+
+                        // Mặc định chọn gói đầu tiên
+                        if (data.length > 0) {
+                            selectedIdGoi = data[0].idGoi || data[0].IdGoi;
+                        }
+
+                        renderPackages();
+                        updateBuyButtonState();
+                    } else {
+                        document.getElementById("packagesContainer").innerHTML = '<div class="col-span-full text-slate-500 text-center py-6">Hiện không có gói VIP nào khả dụng.</div>';
+                    }
+                } catch (error) {
+                    console.error("Lỗi tải thông tin gói:", error);
+                    document.getElementById("packagesContainer").innerHTML = '<div class="col-span-full text-red-500 text-center py-6">Lỗi kết nối dữ liệu. Vui lòng tải lại trang (F5).</div>';
+                }
+            }
+
+            // 2. Render danh sách thẻ gói VIP
+            function renderPackages() {
+                const container = document.getElementById("packagesContainer");
+
+                container.innerHTML = danhSachGoiVip.map(goi => {
+                    const idGoi = goi.idGoi || goi.IdGoi;
+                    const soTien = goi.soTien || goi.SoTien || 0;
+                    const soThang = goi.soThang || goi.SoThang || 1;
+                    const tenGoi = goi.tenGoi || goi.TenGoi || `Gói ${soThang} Tháng`;
+
+                    const isSelected = (String(selectedIdGoi) === String(idGoi));
+                    const formattedPrice = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(soTien);
+
+                    // Mặc định gọi gói 6 tháng hoặc 12 tháng là gói tiết kiệm
+                    const isBestSeller = soThang >= 6;
+
+                    return `
+                                <div onclick="selectPackage('${idGoi}')"
+                                     class="relative border-2 rounded-2xl p-5 cursor-pointer transition-all duration-300 transform hover:-translate-y-1 bg-white
+                                     ${isSelected ? 'border-amber-500 shadow-md shadow-amber-100 ring-4 ring-amber-50' : 'border-slate-200 hover:border-amber-300 hover:shadow'}">
+
+                                    ${isBestSeller ? `<div class="absolute -top-3 left-1/2 -translate-x-1/2 bg-gradient-to-r from-red-500 to-orange-500 text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider shadow-sm whitespace-nowrap">Tiết kiệm nhất</div>` : ''}
+
+                                    <!-- Icon Check Radio -->
+                                    <div class="absolute top-4 right-4 w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${isSelected ? 'border-amber-500 bg-amber-500' : 'border-slate-300 bg-slate-100'}">
+                                        ${isSelected ? '<i class="fa-solid fa-check text-white text-[10px]"></i>' : ''}
+                                    </div>
+
+                                    <div class="text-left mt-1">
+                                        <h3 class="text-lg font-bold text-slate-700 pr-6">${tenGoi}</h3>
+                                        <div class="mt-3">
+                                            <span class="text-2xl font-black ${isSelected ? 'text-amber-600' : 'text-slate-800'}">${formattedPrice}</span>
+                                        </div>
+                                        <div class="text-sm font-medium text-slate-500 mt-1">Sử dụng trong ${soThang} tháng</div>
+                                    </div>
+                                </div>
+                            `;
+                }).join('');
+            }
+
+            // 3. Chọn gói VIP khi click
+            function selectPackage(id) {
+                selectedIdGoi = String(id);
+                renderPackages();
+                updateBuyButtonState();
+            }
+
+            // Cập nhật trạng thái nút bấm thanh toán
+            function updateBuyButtonState() {
+                const btn = document.getElementById("btnBuyVip");
+
+                if (selectedIdGoi !== "") {
+                    const goiDaChon = danhSachGoiVip.find(g => String(g.idGoi || g.IdGoi) === selectedIdGoi);
+                    if (goiDaChon) {
+                        const price = new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(goiDaChon.soTien || goiDaChon.SoTien || 0);
+                        btn.disabled = false;
+                        btn.innerHTML = `<i class="fa-solid fa-crown"></i> Thanh toán ${price} ngay`;
+                        return;
+                    }
+                }
+                btn.disabled = true;
+                btn.innerHTML = `<i class="fa-solid fa-crown"></i> Chọn một gói để thanh toán`;
+            }
+
+            // 4. Gọi API Đăng ký mua VIP & Tạo Payment Link
+            async function handleRegisterVip() {
+                if (!selectedIdGoi) return;
+
+                const btn = document.getElementById("btnBuyVip");
+                btn.disabled = true;
+                btn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Đang tạo cổng thanh toán...`;
+
+                try {
+                    const response = await fetch(`${BASE_URL}/dang-ky-mua`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        // Sửa lại Payload thành IdGoi theo đúng DTO của Backend
+                        body: JSON.stringify({ IdGoi: parseInt(selectedIdGoi) })
+                    });
+
+                    // Nếu Backend chặn vì chưa đăng nhập (Trả về Unauthorized 401)
+                    if (response.status === 401) {
+                        alert("Vui lòng đăng nhập để thực hiện tính năng này!");
+                        window.location.href = "/login"; // Trỏ về trang đăng nhập của bạn
+                        return;
+                    }
+
+                    const data = await response.json();
+
+                    if (data.success && data.checkoutUrl) {
+                        currentMaGiaoDich = data.maGiaoDich;
+
+                        // Mở tab thanh toán PayOS
+                        window.open(data.checkoutUrl, '_blank');
+
+                        // Chuyển UI sang màn hình "Chờ thanh toán"
+                        document.getElementById("introSection").classList.add("hidden");
+                        document.getElementById("paymentSection").classList.remove("hidden");
+
+                        document.getElementById("lblMaGiaoDich").innerText = data.maGiaoDich;
+                        document.getElementById("linkPayOS").href = data.checkoutUrl;
+
+                        // Bắt đầu lắng nghe trạng thái từ Backend
+                        startPolling(data.maGiaoDich);
+                    } else {
+                        alert(data.message || "Lỗi khởi tạo thanh toán! Vui lòng thử lại.");
+                        updateBuyButtonState();
+                    }
+                } catch (e) {
+                    console.error("Lỗi đăng ký VIP:", e);
+                    alert("Lỗi kết nối máy chủ! Vui lòng kiểm tra lại mạng.");
+                    updateBuyButtonState();
+                }
+            }
+
+            // 5. Polling kiểm tra trạng thái thanh toán tự động (mỗi 3 giây)
+            function startPolling(maGiaoDich) {
+                if (pollingInterval) clearInterval(pollingInterval);
+
+                pollingInterval = setInterval(async () => {
+                    try {
+                        const res = await fetch(`${BASE_URL}/kiem-tra-trang-thai/${maGiaoDich}`);
+                        const data = await res.json();
+
+                        // Khi người dùng thanh toán xong, backend webhook xử lý và update trạng thái = Thành công
+                        if (data.isPaid === true) {
+                            clearInterval(pollingInterval);
+
+                            // Chuyển sang màn hình Thành Công
+                            document.getElementById("paymentSection").classList.add("hidden");
+                            document.getElementById("successSection").classList.remove("hidden");
+                        }
+                    } catch (e) {
+                        // Bỏ qua lỗi ngầm để không làm crash luồng UI nếu mạng lag 1-2 nhịp
+                    }
+                }, 3000);
+            }
+
+            // 6. Quay lại màn chọn gói (Nếu người dùng muốn đổi ý)
+            function backToIntro() {
+                if (pollingInterval) clearInterval(pollingInterval);
+                document.getElementById("paymentSection").classList.add("hidden");
+                document.getElementById("introSection").classList.remove("hidden");
+                updateBuyButtonState();
+            }
+
+            // 7. Điều hướng sau khi thanh toán thành công
+            function goToDashboard() {
+                window.location.href = "/"; // Đổi thành URL trang dashboard / trang chủ khóa học của bạn
+            }
+    </script>
+</body>
+</html>

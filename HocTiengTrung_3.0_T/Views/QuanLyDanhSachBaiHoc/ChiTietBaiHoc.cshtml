@@ -1,0 +1,1760 @@
+﻿@model List<dynamic>
+@{
+    // Dữ liệu bốc đề từ Controller truyền qua (Tối đa 10 câu của đề hiện tại)
+    var displays = Model ?? new List<dynamic>();
+
+    int idBaiHoc = ViewBag.IdBaiHoc ?? 0;
+    int currentLoaiId = ViewBag.CurrentLoaiId ?? 0; 
+    int currentDeSo = ViewBag.CurrentDeSo ?? 1;
+    int tongSoDe = ViewBag.TongSoDe ?? 1;
+    string tenBaiHoc = ViewBag.TenBaiHoc ?? "Chi tiết bài học";
+    bool isReadingComprehension = currentLoaiId == 1004 || currentLoaiId == 1011;
+    int idGiaoTrinh = ViewBag.IdGiaoTrinh ?? 1;
+
+    // Lấy câu hỏi đầu tiên để trích xuất thông tin Đoạn Văn / Cấp Độ / Loại
+    var firstQ = displays.FirstOrDefault();
+    int idCapDo = firstQ?.IdCapDo ?? 0;
+    int idLoai = firstQ?.IdLoai ?? 0;
+
+    // Trích xuất thông tin Đoạn văn từ navigation hoặc thuộc tính động
+    var doanVanObj = firstQ?.DoanVan ?? firstQ?.idDoanVanNavigation ?? firstQ?.IdDoanVanNavigation;
+
+    var menuLoai = ViewBag.MenuLoai as List<HocTiengTrung_3._0_T.Controllers.QuanLyBaiHoc.MenuLoaiModel>
+                    ?? new List<HocTiengTrung_3._0_T.Controllers.QuanLyBaiHoc.MenuLoaiModel>();
+
+    bool isSubmitted = ViewBag.IsSubmitted ?? false;
+    var danhSachTuVung = ViewBag.DanhSachTuVung as List<dynamic> ?? new List<dynamic>();
+
+    // Trích xuất Pool từ vựng gợi ý dành riêng cho dạng bài Điền từ (Loại ID = 2)
+    List<string> poolWords = new List<string>();
+    if (currentLoaiId == 2)
+    {
+        foreach (var q in displays)
+        {
+            if (q.dapAns != null)
+            {
+                foreach (var d in q.dapAns)
+                {
+                    if ((bool)(d.laDapAnDung ?? false) && d.noiDungDapAn != null)
+                    {
+                        poolWords.Add((string)d.noiDungDapAn);
+                    }
+                }
+            }
+        }
+        // Trộn ngẫu nhiên danh sách từ gợi ý
+        poolWords = poolWords.OrderBy(x => Guid.NewGuid()).ToList();
+    }
+}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@tenBaiHoc</title>
+    @* <link rel="stylesheet" href="~/css/dannhsachbaitap/lambaithucte.css" asp-append-version="true" /> *@
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <link href="~/css/quanlybaihoc/chitietbaihoc.css" rel="stylesheet" />
+    <style>
+            #matching-quiz-container .matching-item-left span.text-chinese,
+            #matching-quiz-container .matching-item-right span.text-chinese {
+                font-size: 20px !important;
+            
+            }
+            .col-lg-3{
+                margin-bottom: 40px;
+            }
+    </style>
+</head>
+<body>
+   
+    <main>
+        <div class="container-fluid quiz-wrapper py-4"
+             id="quiz-container-data"
+             data-total="@displays.Count"
+             data-idbaihoc="@idBaiHoc"
+             data-loai="@currentLoaiId"
+             data-deso="@currentDeSo">
+
+            <div class="row px-md-4">
+                @* =========================================================================
+                        CỘT TRÁI: MENU DỌC PHÂN LOẠI
+                        ========================================================================= *@
+                <div class="col-lg-3 mb-4">
+                    <div class="card shadow-sm border-0 rounded-4 sticky-top" style="top: 20px; z-index: 10;">
+                        <div class="card-header bg-dark text-white fw-bold py-3 text-center rounded-top-4">
+                            <i class="fas fa-book me-2"></i> @tenBaiHoc
+                        </div>
+                        <div class="list-group list-group-flush rounded-bottom-4">
+                            @if (idGiaoTrinh == 1 || idGiaoTrinh == 2 || idGiaoTrinh == 3)
+                            {
+                                @* PHẦN TỪ VỰNG LUÔN ĐỨNG ĐẦU *@
+                                <a href="@Url.Action("ChiTietBaiHoc", "QuanLyDanhSachBaiHoc", new { id = idBaiHoc, loaiId = 0, deSo = 1 })"
+                                   class="list-group-item list-group-item-action d-flex justify-content-between align-items-center py-3 px-4 @(currentLoaiId == 0 ? "active text-white" : "")">
+                                    <div>
+                                        <i class="fas fa-language me-3"></i>
+                                        <span class="fw-bold">Từ vựng bài học</span>
+                                    </div>
+                                    <span class="badge @(currentLoaiId == 0 ? "bg-white text-dark" : "bg-warning text-dark") rounded-pill">@danhSachTuVung.Count Từ</span>
+                                </a>
+
+                                <a href="@Url.Action("ChiTietBaiHoc", "QuanLyDanhSachBaiHoc", new { id = idBaiHoc, loaiId = -1, deSo = 1 })"
+                                   class="list-group-item list-group-item-action d-flex justify-content-between align-items-center py-3 px-4 @(currentLoaiId == -1 ? "active text-white" : "")"
+                                   style="@(currentLoaiId == -1 ? "" : "border-left: 4px solid #dc3545 !important;")">
+                                    <div>
+                                        <i class="fas fa-brain me-3 @(currentLoaiId == -1 ? "text-white" : "text-danger")"></i>
+                                        <span class="fw-bold">Ôn luyện phản xạ</span>
+                                    </div>
+                                    <span class="badge @(currentLoaiId == -1 ? "bg-white text-dark" : "bg-danger text-white") rounded-pill">Flashcard</span>
+                                </a>
+                                <a href="@Url.Action("ChiTietBaiHoc", "QuanLyDanhSachBaiHoc", new { id = idBaiHoc, loaiId = -2, deSo = 1 })"
+                                   class="list-group-item list-group-item-action d-flex justify-content-between align-items-center py-3 px-4 @(currentLoaiId == -2 ? "active text-white" : "")"
+                                   style="@(currentLoaiId == -2 ? "" : "border-left: 4px solid #0d6efd !important;")">
+                                    <div>
+                                        <i class="fas fa-headphones me-3 @(currentLoaiId == -2 ? "text-white" : "text-primary")"></i>
+                                        <span class="fw-bold">Luyện nghe phản xạ</span>
+                                    </div>
+                                    <span class="badge @(currentLoaiId == -2 ? "bg-white text-dark" : "bg-primary text-white") rounded-pill">Audio</span>
+                                </a>
+
+                            }
+                            @* DANH SÁCH CÁC DẠNG TRẮC NGHIỆM TIẾP THEO *@
+                            @foreach (var item in menuLoai)
+                            {
+                                <a href="@Url.Action("ChiTietBaiHoc", "QuanLyDanhSachBaiHoc", new { id = idBaiHoc, loaiId = item.IdLoai, deSo = 1 })"
+                                   class="list-group-item list-group-item-action d-flex justify-content-between align-items-center py-3 px-4 @(currentLoaiId == item.IdLoai ? "active text-white" : "")">
+                                    <div>
+                                        <i class="fas @item.Icon me-3"></i>
+                                        <span>@item.TenLoai</span>
+                                    </div>
+                                    <span class="badge @(currentLoaiId == item.IdLoai ? "bg-white text-dark" : "bg-secondary text-white") rounded-pill">@item.TotalCount Câu</span>
+                                </a>
+                            }
+                        </div>
+                    </div>
+                </div>
+
+                @* =========================================================================
+                        CỘT PHẢI: KHU VỰC HIỂN THỊ NỘI DUNG TƯƠNG ỨNG
+                        ========================================================================= *@
+                <div class="col-lg-9">
+                    <div class="quiz-container bg-white shadow-lg rounded-4 p-3 p-md-5 animate__animated animate__fadeIn @(ViewBag.CurrentLoaiId == 1023 ? "quiz-wide-1500" : "")">
+
+                        @if (currentLoaiId == 0)
+                        {
+                            @* =========================================================================
+                                    GIAO DIỆN TỪ VỰNG (KHI CURRENTLOAIID == 0)
+                                    ========================================================================= *@
+                            <div class="quiz-header mb-4 p-3 bg-white rounded-3 shadow-sm border">
+                                <div class="row align-items-center g-2">
+                                    <!-- Nút Trở về -->
+                                    <div class="col-12 col-md-3">
+                                        <a href="javascript:void(0);" onclick="goBackToLessonList()" class="btn btn-sm btn-outline-secondary rounded-pill px-3 transition-all">
+                                            <i class="fas fa-chevron-left me-1"></i> Trở về bài học
+                                        </a>
+                                    </div>
+
+                                    <!-- Tiêu đề trung tâm -->
+                                    <div class="col-12 col-md-6 text-md-center">
+                                        <h4 class="mb-0 fw-bold text-dark fs-5">
+                                            <span class="p-2 bg-warning bg-opacity-10 rounded-circle me-2 d-inline-flex align-items-center justify-content-center" style="width: 36px; height: 36px;">
+                                                <i class="fas fa-graduation-cap text-warning fs-6"></i>
+                                            </span>
+                                            HỌC TỪ VỰNG TRƯỚC KHI LÀM BÀI
+                                        </h4>
+                                    </div>
+
+                                    <!-- Thẻ số lượng từ mới -->
+                                    <div class="col-12 col-md-3 text-md-end">
+                                        <span class="badge bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 px-3 py-2 rounded-pill fw-medium fs-7">
+                                            <i class="fas fa-book-open me-1"></i> Tổng: <strong class="fs-6">@danhSachTuVung.Count</strong> từ mới
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            @if (danhSachTuVung.Any())
+                            {
+                                <div class="row g-3">
+                                    @foreach (var item in danhSachTuVung)
+                                    {
+                                        var tv = item.idTuVungNavigation != null ? item.idTuVungNavigation : item;
+                                        if (tv != null)
+                                        {
+                                            <div class="col-sm-6 col-md-4">
+                                                <div class="bg-white p-3 rounded-3 shadow-sm border h-100 d-flex flex-column" style="border-left: 5px solid #fd7e14 !important;">
+                                                    <div class="flex-grow-1">
+                                                        <div class="d-flex align-items-center justify-content-between mb-2">
+                                                            <span class="text-chinese fw-bold text-primary fs-4">@tv.chuHan</span>
+                                                            @if (tv.loaiTu != null && !string.IsNullOrEmpty((string)tv.loaiTu))
+                                                            {
+                                                                <span class="badge bg-secondary opacity-75 small">@tv.loaiTu</span>
+                                                            }
+                                                        </div>
+
+                                                        <div class="d-flex flex-wrap gap-2 align-items-center mb-2">
+                                                            <span class="text-danger small fw-bold">[ @tv.pinyin ]</span>
+
+                                                            @if (tv.amThanhPath != null && !string.IsNullOrEmpty((string)tv.amThanhPath))
+                                                            {
+                                                                <button class="btn btn-sm btn-link text-primary p-0 border-0 ms-1 play-audio-btn"
+                                                                        onclick="playAudio('@tv.amThanhPath', this)"
+                                                                        title="Nghe phát âm">
+                                                                    <i class="bi bi-volume-up-fill fs-5"></i> 🔊
+                                                                </button>
+                                                            }
+
+                                                            <!-- NÚT HƯỚNG DẪN VIẾT CHỮ MỚI THÊM -->
+                                                            <button class="btn btn-sm btn-outline-info p-0 border-0 ms-2"
+                                                                    onclick="showStrokeOrder('@tv.chuHan')"
+                                                                    title="Hướng dẫn viết chữ">
+                                                                <i class="bi bi-pen-fill fs-5 text-success"></i> ✍️
+                                                            </button>
+                                                            <!-- =============================== -->
+                                                            @if (tv.amHan != null && !string.IsNullOrEmpty((string)tv.amHan))
+                                                            {
+                                                                <span class="badge bg-light text-dark border small text-muted font-monospace fw-normal">
+                                                                    Hán Việt: <span class="text-dark fw-bold">@tv.amHan</span>
+                                                                </span>
+                                                            }
+                                                        </div>
+
+                                                        <div class="text-muted border-top pt-2 mt-2 small lh-sm mb-2">
+                                                            <strong class="text-dark">Nghĩa:</strong> @tv.nghiaViet
+                                                        </div>
+
+                                                        <!-- PHẦN HIỂN THỊ VÍ DỤ -->
+                                                        @if (tv.cauViDus != null && tv.cauViDus.Count > 0)
+                                                        {
+                                                            <div class="mt-3 pt-2 border-top text-muted">
+                                                                <div class="fw-bold text-dark mb-2" style="font-size: 0.85rem;">
+                                                                    <i class="bi bi-journal-text text-warning"></i> Ví dụ:
+                                                                </div>
+                                                                <div class="d-flex flex-column gap-2">
+                                                                    @foreach (var vd in tv.cauViDus)
+                                                                    {
+                                                                        <div class="bg-light p-2 rounded border border-light" style="font-size: 0.85rem;">
+                                                                            <div class="text-dark fw-bold text-chinese fs-6 mb-1">@vd.noiDungHan</div>
+                                                                            <div class="text-danger mb-1" style="font-size: 0.8rem;">@vd.noiDungPinyin</div>
+                                                                            <div class="fst-italic text-secondary">@vd.noiDungViet</div>
+                                                                        </div>
+                                                                    }
+                                                                </div>
+                                                            </div>
+                                                        }
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        }
+                                    }
+                                </div>
+                            }
+                        }
+                        else if (currentLoaiId == -1)
+                        {
+                            <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-4">
+                                <!-- Header Thao Tác -->
+                                <div class="card-header bg-white py-3 px-4 d-flex justify-content-between align-items-center border-bottom">
+                                    <a href="javascript:void(0);" onclick="goBackToLessonList()" class="btn btn-sm btn-outline-secondary rounded-pill px-3 transition-all">
+                                        <i class="fas fa-chevron-left me-1"></i> Trở về bài học
+                                    </a>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-2 rounded-pill fs-6" id="scoreBadge">
+                                            <i class="fas fa-check-circle me-1"></i> Đã đúng: <span id="correctCount">0</span>/@Model.Count
+                                        </span>
+
+                                    </div>
+                                </div>
+
+                                <!-- Bảng Dữ Liệu -->
+                                <div class="table-responsive">
+                                    <table class="table align-middle mb-0 bg-white custom-vocab-table">
+                                        <thead class="bg-light text-secondary text-uppercase fs-7 fw-bold border-bottom">
+                                            <tr>
+                                                <th class="text-center py-3" width="5%">#</th>
+                                                <th py-3 width="30%">Câu Hỏi / Phiên Âm</th>
+                                                <th py-3 width="30%">Nhập Câu Trả Lời</th>
+                                                <th py-3 width="25%">Đáp Án & Phát Âm</th>
+                                                <th class="text-center py-3" width="10%">Trạng Thái</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="vocabTableBody">
+                                            @if (Model != null && Model.Count > 0)
+                                            {
+                                                for (int i = 0; i < Model.Count; i++)
+                                                {
+                                                    var q = Model[i];
+                                                    string firstAnswer = "";
+                                                    string audioUrl = q.AudioUrl ?? q.audioUrl ?? q.amThanh ?? "";
+
+                                                    if (q.dapAns != null && q.dapAns.Count > 0)
+                                                    {
+                                                        firstAnswer = q.dapAns[0]?.noiDungDapAn?.ToString() ?? "";
+                                                    }
+
+                                                    <tr id="row-@i" class="vocab-row">
+                                                        <td class="text-center fw-bold text-muted">@(i + 1)</td>
+                                                        <td>
+                                                            <div class="text-chinese fs-5 fw-medium text-dark mb-1">@q.noiDung</div>
+                                                            @if (q.pinyin != null)
+                                                            {
+                                                                <small class="text-muted fst-italic">@q.pinyin</small>
+                                                            }
+                                                        </td>
+                                                        <td>
+                                                            <div class="input-group">
+                                                                <input type="text"
+                                                                       class="form-control rounded-3 vocab-input"
+                                                                       id="input-@i"
+                                                                       placeholder="Nhập chữ Hán..."
+                                                                       data-correct="@firstAnswer"
+                                                                       onkeypress="handleKeyPress(event, @i)">
+                                                            </div>
+                                                        </td>
+                                                        <td>
+                                                            <div class="d-flex align-items-center gap-2">
+                                                                @if (!string.IsNullOrEmpty(audioUrl))
+                                                                {
+                                                                    <button class="btn btn-sm btn-outline-primary rounded-circle btn-audio-play"
+                                                                            onclick="playAudio('@audioUrl', this)"
+                                                                            title="Nghe phát âm">
+                                                                        <i class="fas fa-volume-high"></i>
+                                                                    </button>
+                                                                }
+                                                                <span class="answer-mask text-secondary fw-bold font-monospace bg-light px-2 py-1 rounded border d-none" id="answer-@i">
+                                                                    @firstAnswer
+                                                                </span>
+                                                            </div>
+                                                        </td>
+                                                        <td class="text-center" id="status-@i">
+                                                            <span class="badge bg-secondary-subtle text-secondary rounded-pill px-3 py-2">
+                                                                <i class="far fa-circle me-1"></i> Chưa làm
+                                                            </span>
+                                                        </td>
+                                                    </tr>
+                                                }
+                                            }
+                                            else
+                                            {
+                                                <tr>
+                                                    <td colspan="5" class="text-center py-5 text-muted">
+                                                        <i class="fas fa-inbox fa-3x mb-3 text-opacity-25 text-secondary d-block"></i>
+                                                        <div>Không có dữ liệu câu hỏi ôn luyện cho phần này.</div>
+                                                    </td>
+                                                </tr>
+                                            }
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                            <audio id="globalAudioPlayer" class="d-none"></audio>
+                        }
+                        else if (currentLoaiId == -2)
+                        {
+                            <div class="card border-0 shadow-sm rounded-4 overflow-hidden mb-4" id="reflexPracticeContainer" data-id-bai-hoc="@idBaiHoc">
+                                <!-- Header Thao Tác -->
+                                <div class="card-header bg-white py-3 px-4 d-flex justify-content-between align-items-center border-bottom flex-wrap gap-2">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <a href="javascript:void(0);" onclick="goBackToLessonList()" class="btn btn-sm btn-outline-secondary rounded-pill px-3 transition-all">
+                                            <i class="fas fa-chevron-left me-1"></i> Trở về bài học
+                                        </a>
+                                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-2 rounded-pill fs-6" id="scoreBadge">
+                                            <i class="fas fa-check-circle me-1"></i> Đã đúng: <span id="correctCount">0</span>/<span id="totalCount">0</span>
+                                        </span>
+                                    </div>
+
+                                    <div class="d-flex align-items-center gap-2">
+                                        <button type="button" class="btn btn-sm btn-outline-danger rounded-pill px-3" onclick="resetReflexPractice()">
+                                            <i class="fas fa-redo me-1"></i> Làm lại
+                                        </button>
+                                        <button type="button" class="btn btn-sm btn-primary rounded-pill px-4" id="btnNopBai" onclick="submitReflexPractice()">
+                                            <i class="fas fa-paper-plane me-1"></i> Nộp bài
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Khung Hướng Dẫn Nhanh -->
+                                <div class="bg-light px-4 py-2 border-bottom d-flex align-items-center justify-content-between text-muted fs-7">
+                                    <span><i class="fas fa-lightbulb text-warning me-2"></i><strong>Mẹo:</strong> Bấm vào biểu tượng <i class="fas fa-volume-high text-primary mx-1"></i> để nghe âm thanh. Nhấn phím <strong>Enter</strong> sau khi nhập để chuyển nhanh sang câu tiếp theo.</span>
+                                </div>
+
+                                <!-- Bảng Dữ Liệu Luyện Nghe -->
+                                <div class="table-responsive">
+                                    <table class="table align-middle mb-0 bg-white custom-vocab-table">
+                                        <thead class="bg-light text-secondary text-uppercase fs-7 fw-bold border-bottom">
+                                            <tr>
+                                                <th class="text-center py-3" width="5%">#</th>
+                                                <th class="py-3" width="25%">Phát Âm & Gợi Ý</th>
+                                                <th class="py-3" width="35%">Nhập Câu Trả Lời</th>
+                                                <th class="py-3" width="23%">Đáp Án Chuẩn</th>
+                                                <th class="text-center py-3" width="12%">Trạng Thái</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="vocabTableBody">
+                                            <!-- Dữ liệu được nạp động từ API loadReflexPractice(idBaiHoc) -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        }
+                        else
+                        {
+                            @* =========================================================================
+                                    GIAO DIỆN LÀM BÀI TRẮC NGHIỆM (KHI CURRENTLOAIID > 0)
+                                    ========================================================================= *@
+                            <div class="quiz-header mb-4">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <a href="javascript:void(0);" onclick="goBackToLessonList()" class="btn btn-sm btn-outline-secondary rounded-pill px-3 transition-all">
+                                        <i class="fas fa-chevron-left me-1"></i> Trở về bài học
+                                    </a>
+                                    <div class="progress-info text-center">
+                                        <span class="text-muted fw-bold d-block small">TIẾN ĐỘ ĐỀ THI</span>
+                                        <span class="badge bg-light text-dark border shadow-sm">
+                                            Câu hỏi <span id="current-idx" class="text-primary">1</span>/@displays.Count
+                                        </span>
+                                    </div>
+                                    <div id="score-text" class="badge bg-success fs-6 shadow-sm px-3 py-2">
+                                        <i class="fas fa-check-circle me-1"></i> Đúng: 0
+                                    </div>
+                                </div>
+
+                                <div class="progress mb-4" style="height: 10px; border-radius: 20px;">
+                                    <div id="quiz-progress" class="progress-bar progress-bar-striped progress-bar-animated"
+                                         role="progressbar" style="width: 0%; background: linear-gradient(45deg, #fd7e14, #ffbc00);"></div>
+                                </div>
+
+                                @if (tongSoDe > 1)
+                                {
+                                    <div class="d-flex align-items-center justify-content-center border bg-light rounded-3 p-2 mb-4">
+                                        <span class="me-3 fw-bold text-muted small text-uppercase"><i class="fas fa-cubes me-1"></i> Chọn bộ đề:</span>
+                                        <nav>
+                                            <ul class="pagination pagination-sm mb-0">
+                                                @for (int d = 1; d <= tongSoDe; d++)
+                                                {
+                                                    <li class="page-item @(currentDeSo == d ? "active" : "")">
+                                                        <a class="page-link fw-bold px-3" href="@Url.Action("ChiTietBaiHoc", "QuanLyDanhSachBaiHoc", new { id = idBaiHoc, loaiId = currentLoaiId, deSo = d })">Đề @d</a>
+                                                    </li>
+                                                }
+                                            </ul>
+                                        </nav>
+                                    </div>
+                                }
+                            </div>
+
+                            @if (currentLoaiId == 2 && poolWords.Any())
+                            {
+                                <div class="word-pool-sticky mb-4 animate__animated animate__fadeInDown">
+                                    <div class="card shadow-sm border-0">
+                                        <div class="card-header bg-warning text-dark fw-bold py-2 text-center">
+                                            <i class="fas fa-th-large me-2"></i> DANH SÁCH TỪ VỰNG GỢI Ý
+                                        </div>
+                                        <div class="card-body bg-light">
+                                            <div class="d-flex flex-wrap gap-2 justify-content-center">
+                                                @{
+                                                    char letterPool = 'A';
+                                                }
+                                                @foreach (var word in poolWords)
+                                                {
+                                                    <div class="pool-item-card px-3 py-2 bg-white border rounded-3 shadow-sm d-flex align-items-center" data-letter="@letterPool">
+                                                        <span class="badge bg-warning text-dark me-2">@letterPool</span>
+                                                        <span class="fw-bold text-chinese">@word</span>
+                                                    </div>
+                                                    letterPool++;
+                                                }
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                            @* 1. Reading Comprehension Passage *@
+                            @if (isReadingComprehension && doanVanObj != null)
+                            {
+                                string tieuDe = doanVanObj.TieuDe?.ToString() ?? doanVanObj.tieuDe?.ToString() ?? "Bài đọc hiểu";
+                                string noiDungHan = doanVanObj.NoiDungHan?.ToString() ?? doanVanObj.noiDungHan?.ToString() ?? "";
+                                string noiDungPinyin = doanVanObj.NoiDungPinyin?.ToString() ?? doanVanObj.noiDungPinyin?.ToString() ?? "";
+                                string noiDungViet = doanVanObj.NoiDungViet?.ToString() ?? doanVanObj.noiDungViet?.ToString() ?? "";
+
+                                <div class="reading-passage-box p-4 mb-4 shadow-sm rounded-4 border-top border-4 border-primary bg-light">
+                                    <h4 class="text-primary d-flex align-items-center mb-3">
+                                        <i class="fas fa-book-open me-2"></i> @tieuDe
+                                    </h4>
+                                    <div class="passage-content">
+                                        <!-- Nội dung Chữ Hán -->
+                                        <div class="text-chinese fw-normal mb-3 p-3 bg-white rounded-3 border" style="font-size: 1.35rem; line-height: 2; letter-spacing: 1px;">
+                                            @noiDungHan
+                                        </div>
+
+                                        <!-- Dịch nghĩa & Pinyin (Ẩn/Hiện khi xem đáp án) -->
+                                        <div id="reading-explanation" style="display: @(isSubmitted ? "block" : "none")">
+                                            <div class="result-explanation mt-3 p-3 border-start border-4 border-info bg-info bg-opacity-10 rounded-end">
+                                                <h6 class="text-info fw-bold"><i class="fas fa-language me-2"></i> Dịch nghĩa & Phiên âm:</h6>
+                                                @if (!string.IsNullOrEmpty(noiDungPinyin))
+                                                {
+                                                    <div class="text-pinyin mb-2 text-muted fst-italic">@noiDungPinyin</div>
+                                                }
+                                                @if (!string.IsNullOrEmpty(noiDungViet))
+                                                {
+                                                    <div class="text-viet text-dark">@noiDungViet</div>
+                                                }
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
+                            <div id="quiz-content">
+                                @for (int i = 0; i < displays.Count; i++)
+                                {
+                                    var q = displays[i];
+                                    int loaiId = (int)(q.idLoai ?? 0);
+
+                                    bool isTracNghiem = loaiId == 1;
+                                    bool isDienKhuyet = loaiId == 2;
+                                    bool isSapXep = loaiId == 3;
+                                    bool isDichTrungViet = loaiId == 4;
+                                    bool isDichVietTrung = loaiId == 5;
+                                    bool isPhienam = loaiId == 1020;
+                                    bool isSuaLoiSai = loaiId == 1021;
+                                    bool isDocHieuTN = loaiId == 1022;
+                                    bool isNoiCau = loaiId == 1023;
+                                    bool isLuyenNgheGhiChep = loaiId == 1002;
+                                    bool isDocHieuDoanVan = loaiId == 1004;
+
+
+
+                                    var (typeClass, typeName) = loaiId switch
+                                    {
+                                        1 => ("type-tracnghiem", "Trắc nghiệm"),
+                                        2 => ("type-dienkhuyet", "Điền vào chỗ trống"),
+                                        3 => ("type-sapxep", "Sắp xếp câu"),
+                                        4 => ("type-dich", "Dịch Trung - Việt"),
+                                        5 => ("type-dich", "Dịch Việt - Trung"),
+                                        1020 => ("type-phienam", "Phiên âm"),
+                                        1021 => ("type-sualoisai", "Sửa lỗi sai"),
+                                        1022 => ("type-dochieu", "Đọc hiểu"),
+                                        1023 => ("type-noicau", "Nối câu"),
+                                        1002 => ("type-luyenghe", "Luyện nghe ghi chép"),
+                                        1004 => ("type-dochieudoanvan", "Đọc hiểu đoạn văn"),
+                                        _ => ("type-default", "Câu hỏi") // Giá trị mặc định nếu không khớp
+                                    };
+
+                                    <div class="@(ViewBag.CurrentLoaiId == 1023 ? "mb-5 animate__animated animate__fadeIn" : "question-container mb-5 border-bottom pb-4 animate__animated animate__fadeIn")"
+                                         id="step-@i"
+                                         data-id-cauhoi="@q.idCauHoi"
+                                         data-type="@loaiId">
+
+                                        @if (loaiId == 1023)
+                                        {
+
+                                        }
+                                        else
+                                        {
+                                            @* Các dạng bài tập khác: Hiển thị từng câu theo số thứ tự bình thường *@
+                                            <div class="d-flex align-items-center mb-4">
+                                                <span class="badge rounded-pill @typeClass me-3 px-3 py-2 shadow-sm fs-6 border border-white border-opacity-25">
+                                                    <i class="fas fa-question-circle me-1"></i> Câu @(i + 1): @typeName
+                                                </span>
+                                                <hr class="flex-grow-1 my-0 opacity-25 border-secondary">
+                                            </div>
+                                        }
+
+                                        <div class="question-box px-2">
+                                            @if (isTracNghiem || isDichTrungViet || isDichVietTrung || isDocHieuTN)
+                                            {
+                                                <h5 class="text-chinese mb-4 lh-base">@q.noiDung</h5>
+                                                <div class="answers-list d-grid gap-3">
+                                                    @if (q.dapAns != null)
+                                                    {
+                                                        foreach (var ans in q.dapAns)
+                                                        {
+                                                            <button class="btn btn-answer btn-outline-dark text-start p-3 rounded-3 d-flex align-items-center shadow-sm transition-all"
+                                                                    data-is-correct="@(ans.laDapAnDung?.ToString()?.ToLower() ?? "false")"
+                                                                    onclick="selectAnswer(this, @i)">
+                                                                <span class="answer-text">@ans.noiDungDapAn</span>
+                                                            </button>
+                                                        }
+                                                    }
+                                                </div>
+                                            }
+                                            else if (isDocHieuDoanVan)
+                                            {
+                                                <h5 class="text-chinese mb-4 lh-base">@q.noiDung</h5>
+                                                <div class="answers-list d-grid gap-3">
+                                                    @if (q.dapAns != null)
+                                                    {
+                                                        foreach (var ans in q.dapAns)
+                                                        {
+                                                            <button class="btn btn-answer btn-outline-dark text-start p-3 rounded-3 d-flex align-items-center shadow-sm transition-all"
+                                                                    data-is-correct="@(ans.laDapAnDung?.ToString()?.ToLower() ?? "false")"
+                                                                    onclick="selectAnswer(this, @i)">
+                                                                <span class="answer-text">@ans.noiDungDapAn</span>
+                                                            </button>
+                                                        }
+                                                    }
+                                                </div>
+                                            }
+                                            else if (isDienKhuyet)
+                                            {
+                                                <div class="question-item-card p-4 rounded-4 bg-white border-dashed">
+                                                    <div class="row g-3 align-items-center">
+                                                        <div class="col-lg-9">
+                                                            <h5 class="text-chinese lh-lg mb-0">@q.noiDung</h5>
+                                                        </div>
+                                                        <div class="col-lg-3">
+                                                            <input type="text" class="form-control border-2 fill-blank-input text-center fw-bold"
+                                                                   id="input-@i"
+                                                                   placeholder="Nhập chữ Hán cần điền..."
+                                                                   data-correct="@(q.dapAns?[0]?.noiDungDapAn ?? "")">
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            }
+                                            else if (isSapXep)
+                                            {
+
+                                                <div class="reorder-box p-4 bg-light rounded-4">
+
+                                                    <h5 class="mb-3 text-primary letter-spacing-1">@q.noiDung</h5>
+                                                    <textarea id="input-@i" class="form-control border-2 fw-bold text-chinese" rows="2"
+                                                              placeholder="Nhập câu hoàn chỉnh bằng tiếng Trung..."
+                                                              data-correct="@(q.dapAns?[0]?.noiDungDapAn ?? "")"></textarea>
+                                                </div>
+                                            }
+                                            else if (isPhienam)
+                                            {
+                                                <div class="reorder-box p-4 bg-light rounded-4">
+
+                                                    <h5 class="mb-3 text-primary letter-spacing-1">@q.noiDung</h5>
+                                                    <textarea id="input-@i" class="form-control border-2 fw-bold text-chinese" rows="2"
+                                                              placeholder="VD: Yīngwén sẽ gõ là ying1wen2 "
+                                                              data-correct="@(q.dapAns?[0]?.noiDungDapAn ?? "")"></textarea>
+                                                </div>
+                                            }
+                                            else if (isSuaLoiSai)
+                                            {
+                                                <div class="reorder-box p-4 bg-light rounded-4">
+                                                    <h6 class="text-muted mb-3">Sửa hoàn thiện từ trong ngoặc:</h6>
+                                                    <h5 class="mb-3 text-primary letter-spacing-1">@q.noiDung</h5>
+                                                    <textarea id="input-@i" class="form-control border-2 fw-bold text-chinese" rows="2"
+                                                              placeholder="gõ từ đã được sửa "
+                                                              data-correct="@(q.dapAns?[0]?.noiDungDapAn ?? "")"></textarea>
+                                                </div>
+                                            }
+                                            else if (isLuyenNgheGhiChep)
+                                            {
+
+                                                <div class="listening-box text-center p-4 bg-light rounded-4 mb-3">
+
+                                                    <div class="d-flex align-items-center justify-content-end gap-3 mb-2">
+                                                        <!-- Chọn Tốc độ -->
+                                                        <div class="d-flex align-items-center">
+                                                            <label for="speed-@i" class="me-2 text-muted" style="font-size: 0.9rem;">Tốc độ:</label>
+                                                            <select id="speed-@i" class="form-select form-select-sm w-auto"
+                                                                    onchange="document.getElementById('audio-@i').playbackRate = parseFloat(this.value)">
+                                                                <option value="0.5">0.5x (Rất chậm)</option>
+                                                                <option value="0.75">0.75x (Chậm)</option>
+                                                                <option value="0.8">0.8x</option>
+                                                                <option value="1.0" selected>1.0x (Chuẩn)</option>
+                                                                <option value="1.25">1.25x (Nhanh)</option>
+                                                            </select>
+                                                        </div>
+
+                                                    </div>
+                                                    @{
+                                                        // Lấy link audio an toàn từ idCauHoiNavigation
+                                                        string audioUrl = q.idCauHoiNavigation?.amThanhPath?.ToString()
+                                                                       ?? q.IdCauHoiNavigation?.AmThanhPath?.ToString()
+                                                                       ?? q.amThanhPath?.ToString()
+                                                                       ?? q.AmThanhPath?.ToString()
+                                                                       ?? "";
+                                                    }
+                                                    <!-- Tự động áp dụng kích âm ngay khi bấm Play bằng onplay -->
+                                                    <audio id="audio-@i" class="w-100 custom-audio-player" controls controlsList="nodownload">
+                                                        <source src="@audioUrl" type="audio/mpeg">
+                                                        Trình duyệt của bạn không hỗ trợ thẻ audio.
+                                                    </audio>
+                                                    <textarea id="input-@i" class="form-control border-2 fw-bold text-chinese" rows="2"
+                                                              placeholder="Nội dung bạn nghe được..."
+                                                              data-correct="@(q.dapAns?[0]?.noiDungDapAn ?? "")"></textarea>
+                                                </div>
+                                            }
+
+                                            else if (isNoiCau)
+                                            {
+                                                // 1. Chuẩn bị dữ liệu Gốc (Lấy thêm trường GiaiThich)
+                                                var dsGoc = displays.Select(x =>
+                                                {
+                                                    var noiDungTrai = (string)(x.noiDung ?? x.NoiDung ?? "");
+                                                    string noiDungPhai = "";
+                                                    string giaiThich = (string)(x.giaiThich ?? x.GiaiThich ?? "");
+
+                                                    var dAns = x.dapAns ?? x.DapAns;
+                                                    if (dAns != null)
+                                                    {
+                                                        foreach (var d in dAns)
+                                                        {
+                                                            bool isCorrect = (d.laDapAnDung ?? d.LaDapAnDung ?? false);
+                                                            if (isCorrect)
+                                                            {
+                                                                noiDungPhai = (string)(d.noiDungDapAn ?? d.NoiDungDapAn ?? "");
+                                                                break;
+                                                            }
+                                                        }
+                                                    }
+                                                    return new { Trai = noiDungTrai, Phai = noiDungPhai, GiaiThich = giaiThich };
+                                                }).Where(x => !string.IsNullOrEmpty(x.Trai) && !string.IsNullOrEmpty(x.Phai)).ToList();
+
+                                                // 2. Xáo trộn ngẫu nhiên danh sách Cột Phải & Cột Trái
+                                                var dsVePhaiXaoTron = dsGoc.Select(x => x.Phai).OrderBy(x => Guid.NewGuid()).ToList();
+                                                var dsVeTraiXaoTron = dsGoc.Select(x => x.Trai).OrderBy(x => Guid.NewGuid()).ToList();
+
+                                                <div class="matching-words-container bg-white p-3 p-md-4 rounded-4 shadow-sm border-0 mb-4" id="matching-quiz-container">
+
+                                                    <!-- Header -->
+                                                    <div class="card-header bg-gradient bg-primary text-white p-3 p-md-4 border-0 mb-4 rounded-4">
+                                                        <div class="d-flex justify-content-between align-items-center">
+                                                            <h5 class="fw-bold mb-0 text-white">
+                                                                <i class="fas fa-link me-2"></i>Nối từ / vế câu phù hợp
+                                                            </h5>
+                                                            <span class="badge bg-white text-primary rounded-pill px-3 py-2 fw-bold shadow-sm">
+                                                                Tổng: @dsGoc.Count cặp nối
+                                                            </span>
+                                                        </div>
+                                                    </div>
+
+                                                    <div>
+                                                        <!-- Hướng dẫn làm bài -->
+                                                        <div class="alert alert-primary bg-opacity-10 border-0 text-primary mb-4 rounded-3 d-flex align-items-center gap-2">
+                                                            <i class="fas fa-lightbulb fs-5"></i>
+                                                            <span class="small fw-semibold">
+                                                                <strong>Hướng dẫn:</strong> Điền số thứ tự <strong>(1, 2, 3...)</strong> của Cột Vế Phải vào ô trống tương ứng bên Cột Vế Trái.
+                                                            </span>
+                                                        </div>
+
+                                                        <div class="row g-4 mb-4">
+                                                            <!-- Cột Vế Trái -->
+                                                            <div class="col-lg-7">
+                                                                <div class="card border rounded-4 bg-light bg-opacity-50 h-100">
+                                                                    <div class="card-header bg-white border-bottom py-3 rounded-top-4 d-flex align-items-center justify-content-between">
+                                                                        <span class="fw-bold text-dark"><i class="fas fa-align-left text-primary me-2"></i>Cột Vế Trái</span>
+                                                                        <span class="text-muted small">Điền số</span>
+                                                                    </div>
+                                                                    <div class="card-body p-2 p-md-3">
+                                                                        <div class="d-flex flex-column gap-2" id="left-column-list">
+                                                                            @for (int idxLeft = 0; idxLeft < dsVeTraiXaoTron.Count; idxLeft++)
+                                                                            {
+                                                                                char kytu = (char)('A' + idxLeft);
+                                                                                string textTrai = dsVeTraiXaoTron[idxLeft];
+
+                                                                                string dapAnDungText = dsGoc.FirstOrDefault(x => x.Trai == textTrai)?.Phai ?? "";
+                                                                                int correctIndexInRight = dsVePhaiXaoTron.IndexOf(dapAnDungText) + 1;
+
+                                                                                <div class="matching-item-left left-item p-3 bg-white rounded-3 border d-flex flex-wrap align-items-center justify-content-between shadow-2xs transition-all" data-content="@textTrai">
+                                                                                    <div class="d-flex align-items-center flex-grow-1 me-3">
+                                                                                        <span class="badge bg-primary bg-opacity-10 text-primary fw-bold me-3 px-2 py-2 rounded-3" style="min-width: 35px; font-size: 1rem;">@kytu</span>
+                                                                                        <span class="fs-6 text-dark text-chinese fw-medium">@Html.Raw(textTrai)</span>
+                                                                                    </div>
+                                                                                    <div class="d-flex align-items-center shrink-0 ms-auto mt-2 mt-sm-0">
+                                                                                        <input type="text"
+                                                                                               class="form-control text-center fw-bold text-primary input-match-number border-2 shadow-2xs"
+                                                                                               maxlength="2"
+                                                                                               placeholder="?"
+                                                                                               autocomplete="off"
+                                                                                               data-label="@kytu"
+                                                                                               data-correct="@correctIndexInRight"
+                                                                                               style="width: 55px; height: 45px; border-radius: 10px; font-size: 1.1rem;" />
+                                                                                        <span class="result-icon ms-2 fs-5"></span>
+                                                                                    </div>
+                                                                                </div>
+                                                                            }
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+
+                                                            <!-- Cột Vế Phải -->
+                                                            <div class="col-lg-5">
+                                                                <div class="card border rounded-4 bg-light bg-opacity-50 h-100">
+                                                                    <div class="card-header bg-white border-bottom py-3 rounded-top-4">
+                                                                        <span class="fw-bold text-dark"><i class="fas fa-list-ol text-success me-2"></i>Cột Vế Phải</span>
+                                                                    </div>
+                                                                    <div class="card-body p-2 p-md-3">
+                                                                        <div class="d-flex flex-column gap-2" id="right-column-list">
+                                                                            @for (int idxRight = 0; idxRight < dsVePhaiXaoTron.Count; idxRight++)
+                                                                            {
+                                                                                string textPhai = dsVePhaiXaoTron[idxRight];
+                                                                                <div class="matching-item-right right-item p-3 bg-white rounded-3 border d-flex align-items-center shadow-2xs" data-index="@(idxRight + 1)" data-content="@textPhai">
+                                                                                    <span class="badge bg-success bg-opacity-10 text-success fw-bold me-3 px-2 py-2 rounded-3" style="min-width: 35px; font-size: 1rem;">@(idxRight + 1)</span>
+                                                                                    <span class="fs-6 text-dark text-chinese fw-medium">@Html.Raw(textPhai)</span>
+                                                                                </div>
+                                                                            }
+                                                                        </div>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+
+                                                        <!-- 1. DỮ LIỆU ẨN ĐỂ CHECK BẰNG JAVASCRIPT -->
+                                                        <div id="matching-raw-data" class="d-none">
+                                                            @foreach (var item in dsGoc)
+                                                            {
+                                                                <div class="raw-pair" data-left="@item.Trai" data-right="@item.Phai" data-explanation="@item.GiaiThich"></div>
+                                                            }
+                                                        </div>
+
+                                                        <!-- 2. NÚT NỘP BÀI -->
+                                                        <div class="text-center mt-4 mb-4" id="submit-action-area">
+                                                            <button type="button" class="btn btn-primary btn-lg rounded-pill px-5 shadow-sm fw-bold" onclick="checkMatchingAnswers()">
+                                                                <i class="fas fa-paper-plane me-2"></i> Chấm Điểm
+                                                            </button>
+                                                        </div>
+
+                                                        <!-- 3. KHUNG HIỂN THỊ ĐÁP ÁN & GIẢI THÍCH TỪ JS (Mặc định ẩn) -->
+                                                        <div id="matching-explanations-wrapper" class="mt-4 p-4 rounded-4 bg-success bg-opacity-10 border border-success border-opacity-25 d-none animate__animated animate__fadeIn">
+                                                            <h5 class="fw-bold text-success mb-3">
+                                                                <i class="fas fa-lightbulb me-2"></i>ĐÁP ÁN CHUẨN &amp; GIẢI THÍCH CHUYÊN SÂU:
+                                                            </h5>
+                                                            <div class="d-flex flex-column gap-3" id="explanations-list-content">
+                                                                <!-- Dữ liệu HTML giải thích sẽ được hàm JS tự động append vào đây -->
+                                                            </div>
+                                                        </div>
+
+                                                    </div>
+                                                </div>
+                                            }
+
+                                                
+                                               
+
+                                                   
+                                            <div class="explanation-box mt-4" id="expl-@i" style="display:none;">
+                                                <div class="p-3 bg-success bg-opacity-10 rounded-3 border-start border-4 border-success">
+                                                    <small class="text-success d-block fw-bold mb-1"><i class="fas fa-lightbulb me-2"></i> ĐÁP ÁN CHUẨN & GIẢI THÍCH CHUYÊN SÂU:</small>
+                                                    @* <div class="small text-dark mb-2 fw-bold text-primary">
+                                                            Đáp án: @(q.dapAns?[0]?.noiDungDapAn ?? "Xem hướng dẫn")
+                                                        </div> *@
+                                                    <div class="small text-muted text-justify" style="white-space: pre-line;">@q.giaiThich</div>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                    </div>
+
+                                    @if (isNoiCau)
+                                    {
+                                        break;
+                                    }
+                                }
+                            </div>
+                            @if (currentLoaiId != 1023)
+                            {
+                                <div class="text-center mt-5 mb-5">
+                                    <button type="button" id="btn-submit-all" onclick="submitFullQuiz()" class="btn btn-primary btn-lg rounded-pill px-5 shadow-lg">
+                                        <i class="fas fa-check-double me-2"></i> HOÀN THÀNH & NỘP BÀI (ĐỀ SỐ @currentDeSo)
+                                    </button>
+                                </div>
+                            }
+
+                                  
+                                
+                            <div id="result-screen" class="text-center p-5 animate__animated animate__zoomIn" style="display:none;">
+                                <div class="result-icon mb-4">
+                                    <div class="trophy-wrapper position-relative d-inline-block">
+                                        <i class="fas fa-trophy text-warning" style="font-size: 6rem;"></i>
+                                        <i class="fas fa-crown position-absolute top-0 start-50 translate-middle-x text-danger" style="font-size: 2rem; margin-top: -15px;"></i>
+                                    </div>
+                                </div>
+                                <h2 class="fw-bold mb-2">Hoàn thành xuất sắc!</h2>
+                                <p class="text-muted mb-4">Bạn đã vượt qua đề luyện tập số @currentDeSo với kết quả:</p>
+                                <div class="display-2 fw-bold text-primary mb-4">
+                                    <span id="final-score">0</span><small class="fs-2 text-muted">/@displays.Count</small>
+                                </div>
+                                <div id="save-status" class="mb-4 alert alert-info py-2 d-inline-block px-4 rounded-pill"></div>
+
+                                <div class="d-flex flex-wrap gap-3 justify-content-center mt-2">
+                                    <button class="btn btn-warning text-white rounded-pill px-4 py-2 shadow" onclick="reviewMyQuiz()">
+                                        <i class="fas fa-search me-2"></i> Xem lại đáp án giải thích
+                                    </button>
+                                    <button class="btn btn-outline-primary rounded-pill px-4 py-2 shadow-sm" onclick="location.reload()">
+                                        <i class="fas fa-redo me-2"></i> Làm lại đề này
+                                    </button>
+                                    @if (currentDeSo < tongSoDe)
+                                    {
+                                        <a href="@Url.Action("ChiTietBaiHoc", "QuanLyDanhSachBaiHoc", new { id = idBaiHoc, loaiId = currentLoaiId, deSo = currentDeSo + 1 })" class="btn btn-success rounded-pill px-4 py-2 shadow">
+                                            Kế tiếp (Đề @(currentDeSo + 1)) <i class="fas fa-arrow-right ms-2"></i>
+                                        </a>
+                                    }
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    <!-- Cấu trúc Modal Bootstrap -->
+    <div class="modal fade" id="hanziModal" tabindex="-1" aria-labelledby="hanziModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="hanziModalLabel">Hướng dẫn viết chữ: <span id="hanziModalWord" class="text-primary fw-bold"></span></h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- Khu vực chứa các chữ cái được tạo động -->
+                    <div id="hanzi-characters-container" class="d-flex flex-wrap justify-content-center gap-3">
+                        <!-- Các ô chữ sẽ được nhúng vào đây bằng JS -->
+                    </div>
+                </div>
+                <div class="modal-footer justify-content-center">
+                    <button type="button" class="btn btn-primary shadow-sm" onclick="replayHanzi()">
+                        <i class="bi bi-arrow-clockwise"></i> Vẽ lại toàn bộ
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="~/js/quanly_baitap/lichsua_luu.js" asp-append-version="true"></script>
+    <script src="~/js/quanly_baitap/BaiTapNoiCau.js" asp-append-version="true"></script>
+    <script src="~/js/quanlytuvung/luyennghetuvung.js" asp-append-version="true"></script>
+    <!-- Gọi thư viện HanziWriter -->
+    <script src="https://cdn.jsdelivr.net/npm/hanzi-writer@3.5/dist/hanzi-writer.min.js"></script>
+
+    <script>
+        let currentWriters = []; // Biến mảng lưu các đối tượng chữ hiện tại để gọi nút Vẽ lại
+
+        function showStrokeOrder(word) {
+            // 1. Cập nhật tiêu đề Modal và hiển thị nó lên
+            document.getElementById('hanziModalWord').innerText = word;
+            var myModal = new bootstrap.Modal(document.getElementById('hanziModal'));
+            myModal.show();
+
+            // 2. Xóa các chữ cũ từ lần bấm trước
+            var container = document.getElementById('hanzi-characters-container');
+            container.innerHTML = '';
+            currentWriters = [];
+
+            // 3. Tách từng ký tự Hán tự để vẽ (Hỗ trợ từ ghép nhiều chữ)
+            // Loại bỏ các ký tự dấu câu, khoảng trắng nếu có
+            let cleanWord = word.replace(/[^\u4e00-\u9fa5]/g, "");
+
+            for (let i = 0; i < cleanWord.length; i++) {
+                let char = cleanWord[i];
+
+                // Tạo the DIV chứa từng chữ
+                let boxId = 'hanzi-char-' + i;
+                let div = document.createElement('div');
+                div.id = boxId;
+                div.className = 'hanzi-box border shadow-sm';
+                container.appendChild(div);
+
+                // Cấu hình vẽ chữ bằng thư viện
+                let writer = HanziWriter.create(boxId, char, {
+                    width: 150,
+                    height: 150,
+                    padding: 5,
+                    strokeColor: '#2b3f63',   // Màu nét vẽ (Xanh Navy)
+                    radicalColor: '#c43c33',  // Màu bộ thủ (Đỏ)
+                    showOutline: true,        // Hiện chữ mờ phía sau để dễ nhìn form
+                    strokeAnimationSpeed: 1,
+                    delayBetweenStrokes: 200,
+                });
+
+                currentWriters.push(writer);
+            }
+
+            // 4. Bắt đầu vẽ sau khi modal đã hiện (delay 300ms để tránh lỗi render SVG bị sai kích thước)
+            setTimeout(() => {
+                replayHanzi();
+            }, 300);
+        }
+
+        function replayHanzi() {
+            // Duyệt qua tất cả các chữ đang có trên Modal và chạy lại animation
+            currentWriters.forEach(writer => {
+                writer.animateCharacter();
+            });
+        }
+    </script>
+    <script>
+        function playAudio(audioUrl, buttonElement) {
+            if (!audioUrl) return;
+
+            // Tạo hiệu ứng nhấp nháy hoặc đổi màu khi đang phát (tùy chọn)
+            buttonElement.style.opacity = "0.5";
+
+            var audio = new Audio(audioUrl);
+            audio.play().catch(function(error) {
+                console.log("Không thể phát âm thanh: ", error);
+            });
+
+            audio.onended = function() {
+                buttonElement.style.opacity = "1";
+            };
+        }
+    </script>
+    <script>
+        // Truyền idBaiHoc từ Razor view (Hoàng Đế kiểm tra lại Model/ViewBag cho phù hợp)
+        const currentIdBaiHoc = @(ViewBag.IdBaiHoc ?? 0);
+
+        let totalItems = 0;
+        let correctIds = [];
+        let isDataSaved = false;
+        const isAuthenticated = @(User.Identity.IsAuthenticated ? "true" : "false");
+        const checkApiUrl = '@Url.Action("KiemTraDapAn", "QuanLyDanhSachTuVung")';
+
+        // URL lấy dữ liệu ôn luyện
+        const loadVocabApiUrl = `/api/quanlybaihoc/on-luyen-bai-hoc?idBaiHoc=${currentIdBaiHoc}`;
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            // 1. Gọi API lấy dữ liệu ngay khi trang tải xong
+            await loadVocabData();
+
+            // 2. Phục hồi dữ liệu nếu vừa đăng nhập xong
+            if (isAuthenticated) {
+                const pendingData = sessionStorage.getItem('pendingCorrectIds');
+                if (pendingData) {
+                    const pendingIds = JSON.parse(pendingData);
+                    if (pendingIds && pendingIds.length > 0) {
+                        sessionStorage.removeItem('pendingCorrectIds');
+                        await handlePendingResultsAfterLogin(pendingIds);
+                    }
+                }
+            }
+
+            // 3. Cảnh báo rời trang nếu chưa lưu kết quả
+            document.querySelectorAll('a').forEach(link => {
+                link.addEventListener('click', function(e) {
+                    if (correctIds.length > 0 && !isDataSaved && !this.href.includes('javascript')) {
+                        e.preventDefault();
+                        const targetUrl = this.href;
+                        Swal.fire({
+                            title: 'Bạn chưa lưu kết quả!',
+                            text: `Đã hoàn thành ${correctIds.length}/${totalItems} từ. Lưu lại trước khi thoát?`,
+                            icon: 'warning',
+                            showDenyButton: true,
+                            showCancelButton: true,
+                            confirmButtonText: 'Lưu và đi tiếp',
+                            denyButtonText: 'Thoát luôn',
+                            cancelButtonText: 'Ở lại'
+                        }).then(async (result) => {
+                            if (result.isConfirmed) {
+                                const saved = await saveResults(true);
+                                if (saved) window.location.href = targetUrl;
+                            } else if (result.isDenied) {
+                                isDataSaved = true;
+                                window.location.href = targetUrl;
+                            }
+                        });
+                    }
+                });
+            });
+        });
+
+        // ================== CÁC HÀM RENDER & EVENT ==================
+
+        async function loadVocabData() {
+            try {
+                const response = await fetch(loadVocabApiUrl);
+                const res = await response.json();
+
+                if (res.success && res.data && res.data.length > 0) {
+                    totalItems = res.data.length;
+                    renderVocabTable(res.data);
+                    attachInputEvents();
+                } else {
+                    document.getElementById('vocabTableBody').innerHTML = `
+                        <tr><td colspan="5" class="text-center text-danger py-4">${res.message || 'Không có dữ liệu.'}</td></tr>
+                    `;
+                }
+            } catch (error) {
+                console.error("Lỗi gọi API OnLuyenBaiHoc:", error);
+                document.getElementById('vocabTableBody').innerHTML = `
+                    <tr><td colspan="5" class="text-center text-danger py-4">Lỗi kết nối máy chủ.</td></tr>
+                `;
+            }
+        }
+
+        function renderVocabTable(dataList) {
+            const tbody = document.getElementById('vocabTableBody');
+            let htmlContent = '';
+
+            dataList.forEach((item, i) => {
+                const isVietToHan = (item.kieuCauHoi === 2);
+
+                const qPrimary = isVietToHan ? item.nghiaViet : item.chuHan;
+                const qPrimaryClass = isVietToHan ? '' : 'text-success';
+                const qSecondary = isVietToHan ? item.loaiTu : `(${item.pinyin})`;
+                const placeholder = isVietToHan ? "Gõ chữ Hán hoặc Pinyin..." : "Gõ nghĩa tiếng Việt...";
+
+                const aPrimary = isVietToHan ? item.chuHan : item.nghiaViet;
+                const aPrimaryClass = isVietToHan ? 'han-tu-display' : '';
+                const aSecondary = isVietToHan ? `(${item.pinyin})` : item.loaiTu;
+
+                htmlContent += `
+                    <tr class="vocab-row" id="row-${i}"
+                        data-id="${item.idTuVung}"
+                        data-han="${item.chuHan}"
+                        data-pinyin="${item.pinyin}"
+                        data-viet="${item.nghiaViet}"
+                        data-amthanh="${item.amThanhPath || ''}"
+                        data-loai="${item.loaiTu}"
+                        data-kieu-hien-tai="${item.kieuCauHoi}">
+
+                        <td class="text-center text-muted">${i + 1}</td>
+
+                        <td>
+                            <div class="question-primary fw-bold fs-5 text-dark ${qPrimaryClass}">${qPrimary}</div>
+                            <div class="question-secondary small text-muted">${qSecondary}</div>
+                        </td>
+
+                        <td>
+                            <div class="input-group">
+                                <input type="text" class="form-control input-practice js-input"
+                                       id="input-${i}" autocomplete="off"
+                                       data-index="${i}"
+                                       placeholder="${placeholder}">
+                                <button class="btn btn-primary" type="button" onclick="triggerCheck(${i})" title="Kiểm tra">
+                                    <i class="bi bi-send"></i>
+                                </button>
+                                <button class="btn-reveal-one ms-2" type="button" onclick="revealOne(${i})" title="Xem đáp án">
+                                    <i class="bi bi-eye"></i>
+                                </button>
+                            </div>
+                        </td>
+
+                        <td>
+                            <div id="result-${i}" class="result-box d-none">
+                                <div class="d-flex align-items-center gap-2">
+                                    <div>
+                                        <div class="answer-primary ${aPrimaryClass}">${aPrimary}</div>
+                                        <div class="answer-secondary small text-muted">${aSecondary}</div>
+                                    </div>
+                                    <button class="btn btn-sm btn-outline-success border-0 rounded-circle d-none btn-audio-trigger"
+                                            id="btn-audio-${i}" type="button" onclick="playVocabAudio(${i})">
+                                        <i class="bi bi-volume-up-fill fs-5"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </td>
+
+                        <td class="text-center">
+                            <div id="status-${i}">
+                                <i class="bi bi-circle text-light fs-4"></i>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            tbody.innerHTML = htmlContent;
+
+            const firstActive = document.querySelector('.js-input:not([readonly])');
+            if (firstActive) firstActive.focus();
+        }
+
+        function attachInputEvents() {
+            document.querySelectorAll('.js-input').forEach(input => {
+                input.addEventListener('input', function() {
+                    const index = this.getAttribute('data-index');
+                    const row = document.getElementById(`row-${index}`);
+                    const kieuCauHoi = parseInt(row.getAttribute('data-kieu-hien-tai'));
+                    const userValue = this.value.trim().toLowerCase();
+
+                    if (!userValue) {
+                        this.classList.remove("is-wrong", "is-correct");
+                        return;
+                    }
+
+                    const han = row.getAttribute('data-han').trim().toLowerCase();
+                    const pinyin = row.getAttribute('data-pinyin').trim().toLowerCase();
+                    const viet = row.getAttribute('data-viet').trim().toLowerCase();
+
+                    let isCorrectClient = false;
+                    if (kieuCauHoi === 1) {
+                        if (userValue === viet) isCorrectClient = true;
+                    } else {
+                        if (userValue === han || userValue === pinyin) isCorrectClient = true;
+                    }
+
+                    if (isCorrectClient) {
+                        handleCorrectUI(index, row);
+                    } else {
+                        this.classList.remove("is-wrong");
+                    }
+                });
+
+                input.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        if (!this.readOnly) triggerCheck(this.getAttribute('data-index'));
+                    }
+                });
+
+                input.addEventListener('blur', function() {
+                    if (this.value.trim() && !this.readOnly) {
+                        triggerCheck(this.getAttribute('data-index'));
+                    }
+                });
+            });
+        }
+
+        // ================== CÁC HÀM LOGIC & TƯƠNG TÁC ==================
+
+        async function triggerCheck(index) {
+            const inputElem = document.getElementById(`input-${index}`);
+            if (inputElem.readOnly) return;
+
+            const userValue = inputElem.value.trim();
+            if (!userValue) return;
+
+            const row = document.getElementById(`row-${index}`);
+            const idTuVung = parseInt(row.getAttribute('data-id'));
+            const kieuCauHoi = parseInt(row.getAttribute('data-kieu-hien-tai'));
+            const statusDiv = document.getElementById(`status-${index}`);
+            const amThanhPath = row.getAttribute('data-amthanh');
+
+            if (statusDiv) {
+                statusDiv.innerHTML = '<div class="spinner-border spinner-border-sm text-primary" role="status"></div>';
+            }
+            inputElem.classList.remove("is-wrong", "is-correct");
+
+            try {
+                const response = await fetch(checkApiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        IdTuVung: idTuVung,
+                        KieuCauHoi: kieuCauHoi,
+                        CauTraLoi: userValue,
+                        AmThanhPath: amThanhPath
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    if (data.isCorrect) {
+                        handleCorrectUI(index, row);
+                    } else {
+                        inputElem.classList.add("is-wrong");
+                        if (statusDiv) {
+                            statusDiv.innerHTML = '<i class="bi bi-x-circle-fill text-danger fs-4 animate__animated animate__shakeX"></i>';
+                        }
+                    }
+                } else {
+                    Swal.fire('Lỗi', data.message || 'Có lỗi xảy ra', 'error');
+                    if (statusDiv) {
+                        statusDiv.innerHTML = '<i class="bi bi-exclamation-circle text-warning fs-4"></i>';
+                    }
+                }
+            } catch (error) {
+                console.error(error);
+                Swal.fire('Lỗi', 'Không thể kết nối đến máy chủ chấm điểm.', 'error');
+                if (statusDiv) statusDiv.innerHTML = '';
+            }
+        }
+
+        function handleCorrectUI(index, row) {
+            const inputElem = document.getElementById(`input-${index}`);
+            const resultBox = document.getElementById(`result-${index}`);
+            const statusDiv = document.getElementById(`status-${index}`);
+            const idTuVung = parseInt(row.getAttribute('data-id'));
+            const amThanhPath = row.getAttribute('data-amthanh');
+
+            inputElem.classList.remove("is-wrong");
+            inputElem.classList.add("is-correct");
+            inputElem.readOnly = true;
+
+            // THAY ĐỔI: Loại bỏ d-none để hiển thị đáp án và add class show cho hiệu ứng mượt mà
+            resultBox.classList.remove("d-none");
+            resultBox.classList.add("show");
+
+            if (statusDiv) {
+                statusDiv.innerHTML = '<i class="bi bi-check-circle-fill text-success fs-4 animate__animated animate__bounceIn"></i>';
+            }
+
+            const btnAudio = document.getElementById(`btn-audio-${index}`);
+            if (btnAudio && amThanhPath && amThanhPath.trim() !== "") {
+                btnAudio.classList.remove('d-none');
+            }
+
+            if (!correctIds.includes(idTuVung)) {
+                correctIds.push(idTuVung);
+                isDataSaved = false;
+                updateProgress();
+                playVocabAudio(index);
+            }
+
+            const nextInput = document.getElementById(`input-${parseInt(index) + 1}`);
+            if (nextInput && !nextInput.readOnly) nextInput.focus();
+
+            if (correctIds.length === totalItems && totalItems > 0) {
+                Swal.fire('Tuyệt vời!', 'Bạn đã hoàn thành tất cả thử thách!', 'success');
+            }
+        }
+
+        function playVocabAudio(index) {
+            const row = document.getElementById(`row-${index}`);
+            const amThanhPath = row.getAttribute('data-amthanh');
+
+            if (amThanhPath && amThanhPath.trim() !== "") {
+                const audioPlayer = document.getElementById('globalAudioPlayer');
+                audioPlayer.src = amThanhPath.startsWith('/') ? amThanhPath : '/' + amThanhPath;
+                audioPlayer.play().catch(err => console.log("Không thể phát âm thanh:", err));
+            }
+        }
+
+        function revealOne(index) {
+            const resultBox = document.getElementById(`result-${index}`);
+            // Sử dụng toggle với 'd-none' để ẩn/hiện danh mục đáp án
+            resultBox.classList.toggle("d-none");
+            resultBox.classList.toggle("show");
+        }
+
+        function revealAll() {
+            Swal.fire({
+                title: 'Hiện tất cả đáp án?',
+                text: "Bạn sẽ không thể rèn luyện tập trung nếu biết trước đáp án.",
+                icon: 'info',
+                showCancelButton: true,
+                confirmButtonText: 'Hiện hết đi!',
+                cancelButtonText: 'Để tôi tự làm'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    document.querySelectorAll('.result-box').forEach(box => {
+                        // Loại bỏ d-none và thêm show cho tất cả các ô đáp án
+                        box.classList.remove("d-none");
+                        box.classList.add("show");
+                    });
+                }
+            });
+        }
+
+        function updateProgress() {
+            if (totalItems === 0) return;
+            const percent = Math.round((correctIds.length / totalItems) * 100);
+
+            const correctCountElem = document.getElementById('correctCount');
+            const percentTextElem = document.getElementById('percentText');
+            const learningProgressElem = document.getElementById('learningProgress');
+            const btnSaveFinal = document.getElementById('btnSaveFinal');
+
+            if (correctCountElem) correctCountElem.innerText = correctIds.length;
+            if (percentTextElem) percentTextElem.innerText = percent + '%';
+            if (learningProgressElem) learningProgressElem.style.width = percent + '%';
+
+            if (correctIds.length > 0 && btnSaveFinal) {
+                btnSaveFinal.classList.remove('d-none');
+            }
+        }
+
+        // ================== CÁC HÀM XỬ LÝ LƯU TRỮ & ĐỒNG BỘ ==================
+
+        async function handlePendingResultsAfterLogin(pendingIds) {
+            try {
+                const response = await fetch('@Url.Content("~/api/QuanLyTuVung/luu-ket-qua-on-luyen")', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(pendingIds)
+                });
+                const data = await response.json();
+
+                if (data.success) {
+                    isDataSaved = true;
+
+                    document.querySelectorAll('.vocab-row').forEach((row) => {
+                        const idTuVung = parseInt(row.getAttribute('data-id'));
+
+                        if (pendingIds.includes(idTuVung)) {
+                            const index = row.id.replace('row-', '');
+                            const inputElem = document.getElementById(`input-${index}`);
+                            const resultBox = document.getElementById(`result-${index}`);
+                            const statusDiv = document.getElementById(`status-${index}`);
+                            const kieuCauHoi = parseInt(row.getAttribute('data-kieu-hien-tai'));
+                            const amThanhPath = row.getAttribute('data-amthanh');
+
+                            if (kieuCauHoi === 1) {
+                                inputElem.value = row.getAttribute('data-viet');
+                            } else {
+                                inputElem.value = row.getAttribute('data-han');
+                            }
+
+                            inputElem.classList.add("is-correct");
+                            inputElem.readOnly = true;
+                            resultBox.classList.add("show");
+
+                            if (statusDiv) {
+                                statusDiv.innerHTML = '<i class="bi bi-check-circle-fill text-success fs-4 animate__animated animate__bounceIn"></i>';
+                            }
+
+                            const btnAudio = document.getElementById(`btn-audio-${index}`);
+                            if (btnAudio && amThanhPath && amThanhPath.trim() !== "") {
+                                btnAudio.classList.remove('d-none');
+                            }
+
+                            if (!correctIds.includes(idTuVung)) {
+                                correctIds.push(idTuVung);
+                            }
+                        }
+                    });
+
+                    updateProgress();
+
+                    Swal.fire({
+                        title: 'Đăng nhập thành công!',
+                        text: `Hệ thống đã khôi phục và đồng bộ thành công ${pendingIds.length} kết quả từ vựng!`,
+                        icon: 'success',
+                        timer: 3500,
+                        showConfirmButton: false
+                    });
+                }
+            } catch (e) {
+                console.error("Lỗi đồng bộ dữ liệu sau đăng nhập:", e);
+            }
+        }
+
+        async function saveResults(isSilent = false) {
+            if (correctIds.length === 0) return false;
+
+            if (!isAuthenticated) {
+                sessionStorage.setItem('pendingCorrectIds', JSON.stringify(correctIds));
+                const currentUrl = window.location.pathname + window.location.search;
+                const returnUrl = encodeURIComponent(currentUrl);
+                const loginUrl = '@Url.Action("DangNhap", "QuanLyTaiKhoan")' + '?returnUrl=' + returnUrl;
+
+                if (!isSilent) {
+                    Swal.fire({
+                        title: 'Yêu cầu đăng nhập',
+                        text: 'Bạn cần đăng nhập để hệ thống ghi nhận và lưu kết quả tiến độ!',
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonColor: '#28a745',
+                        cancelButtonColor: '#6c757d',
+                        confirmButtonText: 'Đăng nhập ngay',
+                        cancelButtonText: 'Ở lại trang này'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            window.location.href = loginUrl;
+                        }
+                    });
+                } else {
+                    window.location.href = loginUrl;
+                }
+                return false;
+            }
+
+            try {
+                const response = await fetch('@Url.Content("~/api/QuanLyTuVung/luu-ket-qua-on-luyen")', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(correctIds)
+                });
+                const data = await response.json();
+                if (data.success) {
+                    isDataSaved = true;
+                    sessionStorage.removeItem('pendingCorrectIds');
+                    if (!isSilent) await Swal.fire('Thành công', 'Đã lưu tiến độ!', 'success');
+                    return true;
+                }
+            } catch (e) {
+                console.error(e);
+                return false;
+            }
+        }
+
+        function confirmExit() {
+            if (correctIds.length > 0 && !isDataSaved) {
+                Swal.fire({
+                    title: 'Bạn chưa lưu kết quả!',
+                    text: 'Lưu lại tiến độ trước khi rời khỏi màn hình ôn luyện?',
+                    icon: 'warning',
+                    showDenyButton: true,
+                    showCancelButton: true,
+                    confirmButtonText: 'Lưu và thoát',
+                    denyButtonText: 'Thoát luôn',
+                    cancelButtonText: 'Ở lại'
+                }).then(async (result) => {
+                    if (result.isConfirmed) {
+                        const saved = await saveResults(true);
+                        window.location.href = '@Url.Action("Index", "Home")';
+                    } else if (result.isDenied) {
+                        window.location.href = '@Url.Action("Index", "Home")';
+                    }
+                });
+            } else {
+                window.location.href = '@Url.Action("Index", "Home")';
+            }
+        }
+    </script>
+    <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                const referrer = document.referrer;
+                const currentOrigin = window.location.origin;
+
+                // Nếu người dùng đến từ trang khác (không chứa '/ChiTiet' hoặc không thuộc URL hiện tại)
+                if (referrer && referrer.includes(currentOrigin) && !referrer.includes(window.location.pathname)) {
+                    sessionStorage.setItem("previousLessonPage", referrer);
+                }
+            });
+
+            function goBackToLessonList() {
+                const backUrl = sessionStorage.getItem("previousLessonPage");
+                if (backUrl) {
+                    window.location.href = backUrl;
+                } else {
+                    // Fallback nếu người dùng vào thẳng bằng URL/Bookmark
+                    window.location.href = "@Url.Action("DanhSachBaiHoc", "QuanLyDanhSachBaiHoc", new { capdo = 1 })";
+                }
+            }
+    </script>
+    <script>
+            // Biến lưu trữ danh sách câu hỏi hiện tại
+            let currentReflexQuestions = [];
+            let currentAudio = null;
+
+            document.addEventListener('DOMContentLoaded', function() {
+                const container = document.getElementById('reflexPracticeContainer');
+                if (container) {
+                    const idBaiHoc = container.getAttribute('data-id-bai-hoc');
+                    if (idBaiHoc) {
+                        loadReflexPractice(idBaiHoc);
+                    }
+                }
+            });
+
+            /**
+             * 1. Tải danh sách 10 câu hỏi luyện nghe phản xạ từ API
+             */
+            async function loadReflexPractice(idBaiHoc) {
+                const tbody = document.getElementById('vocabTableBody');
+                const correctCountSpan = document.getElementById('correctCount');
+                const totalCountSpan = document.getElementById('totalCount');
+
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="5" class="text-center py-5">
+                            <div class="spinner-border text-primary mb-2" role="status"></div>
+                            <div class="text-muted fw-medium">Đang tải câu hỏi luyện nghe phản xạ...</div>
+                        </td>
+                    </tr>`;
+
+                try {
+                    const response = await fetch(`/api/luyen-nghe-phan-xa/bai-hoc/${idBaiHoc}`);
+                    const result = await response.json();
+
+                    if (!response.ok || !result.success) {
+                        tbody.innerHTML = `
+                            <tr>
+                                <td colspan="5" class="text-center py-5 text-muted">
+                                    <i class="fas fa-exclamation-circle fa-3x mb-3 text-warning d-block"></i>
+                                    ${result.message || 'Không thể tải bài luyện tập phản xạ.'}
+                                </td>
+                            </tr>`;
+                        return;
+                    }
+
+                    currentReflexQuestions = result.data || [];
+
+                    if (totalCountSpan) totalCountSpan.innerText = result.total || currentReflexQuestions.length;
+                    if (correctCountSpan) correctCountSpan.innerText = '0';
+
+                    renderReflexTable(currentReflexQuestions);
+
+                } catch (error) {
+                    console.error('Lỗi API:', error);
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="5" class="text-center py-5 text-danger">
+                                <i class="fas fa-wifi fa-3x mb-3 d-block"></i>
+                                Lỗi kết nối máy chủ. Vui lòng thử lại sau!
+                            </td>
+                        </tr>`;
+                }
+            }
+
+            /**
+             * 2. Render danh sách câu hỏi ra giao diện
+             */
+            function renderReflexTable(questions) {
+                const tbody = document.getElementById('vocabTableBody');
+
+                if (!questions || questions.length === 0) {
+                    tbody.innerHTML = `
+                        <tr>
+                            <td colspan="5" class="text-center py-5 text-muted">
+                                <i class="fas fa-inbox fa-3x mb-3 text-secondary opacity-50 d-block"></i>
+                                Chưa có từ vựng nào trong bài học này.
+                            </td>
+                        </tr>`;
+                    return;
+                }
+
+                let html = '';
+                questions.forEach((q, i) => {
+                    html += `
+                    <tr id="row-${i}" class="vocab-row">
+                        <td class="text-center fw-bold text-muted">${i + 1}</td>
+                        <td>
+                            <div class="d-flex align-items-center gap-2 mb-1">
+                                <button class="btn btn-sm btn-outline-primary rounded-circle btn-audio-play"
+                                        onclick="playAudio('${q.audioUrl}', this)"
+                                        title="Nghe phát âm">
+                                    <i class="fas fa-volume-high"></i>
+                                </button>
+                                <span class="fw-semibold text-dark">Nghe audio</span>
+                            </div>
+                            <small class="text-muted fs-7 d-block">${q.goiYPrompt || ''}</small>
+                        </td>
+                        <td>
+                            <input type="text"
+                                   class="form-control rounded-3 vocab-input"
+                                   id="input-${i}"
+                                   data-id-tuvung="${q.idTuVung}"
+                                   data-mode="${q.modeLuyenTap}"
+                                   placeholder="Nhập nghĩa tiếng Việt..."
+                                   onkeydown="handleKeyPress(event, ${i})">
+                        </td>
+                        <td>
+                            <span class="fw-bold text-success fs-6 answer-text d-none" id="answer-${i}">---</span>
+                        </td>
+                        <td class="text-center" id="status-col-${i}">
+                            <span class="badge bg-secondary-subtle text-secondary rounded-pill px-3 py-2 status-badge" id="status-badge-${i}">
+                                <i class="far fa-circle me-1"></i> Chưa làm
+                            </span>
+                        </td>
+                    </tr>`;
+                });
+
+                tbody.innerHTML = html;
+            }
+
+            /**
+             * 3. Tự động chuyển input khi nhấn Enter
+             */
+            function handleKeyPress(event, currentIndex) {
+                if (event.key === 'Enter') {
+                    event.preventDefault();
+                    const nextInput = document.getElementById(`input-${currentIndex + 1}`);
+                    if (nextInput) {
+                        nextInput.focus();
+                    } else {
+                        submitReflexPractice();
+                    }
+                }
+            }
+
+            /**
+             * 4. Nộp bài và gọi API chấm điểm (/api/luyen-nghe-phan-xa/nop-bai)
+             */
+            async function submitReflexPractice() {
+                if (!currentReflexQuestions || currentReflexQuestions.length === 0) return;
+
+                const danhSachDapAn = currentReflexQuestions.map((q, index) => {
+                    const input = document.getElementById(`input-${index}`);
+                    return {
+                        idTuVung: q.idTuVung,
+                        modeLuyenTap: q.modeLuyenTap,
+                        dapAnNguoiDung: input ? input.value.trim() : ""
+                    };
+                });
+
+                const btnNopBai = document.getElementById('btnNopBai');
+                if (btnNopBai) btnNopBai.disabled = true;
+
+                try {
+                    const response = await fetch('/api/luyen-nghe-phan-xa/nop-bai', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ danhSachDapAn })
+                    });
+
+                    const result = await response.json();
+
+                    if (response.ok && result.success) {
+                        const dataKetQua = result.data;
+
+                        // Cập nhật số câu đúng
+                        document.getElementById('correctCount').innerText = dataKetQua.soCauDung;
+
+                        // Cập nhật từng dòng câu hỏi
+                        dataKetQua.chiTiet.forEach((ct, index) => {
+                            const input = document.getElementById(`input-${index}`);
+                            const answerText = document.getElementById(`answer-${index}`);
+                            const statusBadge = document.getElementById(`status-badge-${index}`);
+
+                            if (answerText) {
+                                answerText.innerText = ct.dapAnDungStandard;
+                                answerText.classList.remove('d-none');
+                            }
+
+                            if (statusBadge) {
+                                if (ct.isDung) {
+                                    statusBadge.className = 'badge bg-success-subtle text-success border border-success-subtle rounded-pill px-3 py-2 status-badge';
+                                    statusBadge.innerHTML = '<i class="fas fa-check me-1"></i> Đúng';
+                                    if (input) {
+                                        input.classList.add('is-valid');
+                                        input.classList.remove('is-invalid');
+                                    }
+                                } else {
+                                    statusBadge.className = 'badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill px-3 py-2 status-badge';
+                                    statusBadge.innerHTML = '<i class="fas fa-times me-1"></i> Sai';
+                                    if (input) {
+                                        input.classList.add('is-invalid');
+                                        input.classList.remove('is-valid');
+                                    }
+                                }
+                            }
+                        });
+
+                        if (typeof Swal !== 'undefined') {
+                            Swal.fire({
+                                icon: dataKetQua.diemSo >= 5 ? 'success' : 'warning',
+                                title: `Điểm số: ${dataKetQua.diemSo}/10`,
+                                text: `Bạn đã trả lời đúng ${dataKetQua.soCauDung}/${dataKetQua.tongSoCau} câu.`,
+                                confirmButtonColor: '#0d6efd'
+                            });
+                        }
+                    } else {
+                        alert(result.message || 'Có lỗi xảy ra khi nộp bài!');
+                    }
+                } catch (error) {
+                    console.error('Lỗi khi nộp bài:', error);
+                    alert('Không thể gửi bài nộp. Vui lòng kiểm tra kết nối mạng!');
+                } finally {
+                    if (btnNopBai) btnNopBai.disabled = false;
+                }
+            }
+
+            /**
+             * 5. Làm lại bài luyện tập
+             */
+            function resetReflexPractice() {
+                const container = document.getElementById('reflexPracticeContainer');
+                if (container) {
+                    const idBaiHoc = container.getAttribute('data-id-bai-hoc');
+                    if (idBaiHoc) {
+                        loadReflexPractice(idBaiHoc);
+                    }
+                }
+            }
+
+            /**
+             * 6. Trình phát âm thanh
+             */
+            function playAudio(url, btn) {
+                if (!url) return;
+
+                if (currentAudio) {
+                    currentAudio.pause();
+                    currentAudio.currentTime = 0;
+                }
+
+                currentAudio = new Audio(url);
+                currentAudio.play().catch(err => console.log('Lỗi phát âm thanh:', err));
+            }
+    </script>
+</body>
+</html>

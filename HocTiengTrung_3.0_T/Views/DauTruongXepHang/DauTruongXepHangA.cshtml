@@ -1,0 +1,685 @@
+﻿<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đấu Trường Tiếng Trung - Chế Độ Ngẫu Nhiên</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+            :root {
+                --primary-color: #4f46e5;
+                --primary-hover: #4338ca;
+                --bg-gradient: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+                --card-bg: rgba(255, 255, 255, 0.98);
+            }
+
+            body {
+                background: var(--bg-gradient);
+                color: #1e293b;
+                font-family: 'Outfit', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                min-height: 100vh;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+
+            .arena-card {
+                background: var(--card-bg);
+                backdrop-filter: blur(16px);
+                border: 1px solid rgba(255, 255, 255, 0.8);
+                border-radius: 24px;
+                box-shadow: 0 20px 40px -15px rgba(30, 41, 59, 0.1);
+                transition: all 0.3s ease;
+            }
+
+            /* --- STYLES CÁC NÚT LỰA CHỌN --- */
+            .btn-option {
+                background: #ffffff;
+                border: 2px solid #e2e8f0;
+                color: #334155;
+                padding: 18px 22px;
+                border-radius: 16px;
+                text-align: left;
+                font-size: 1.1rem;
+                transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+                font-weight: 500;
+                cursor: pointer;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+            }
+
+                .btn-option:hover {
+                    background: #f0fdf4;
+                    border-color: #4f46e5;
+                    color: #4f46e5;
+                    transform: translateY(-3px);
+                    box-shadow: 0 8px 20px rgba(79, 70, 229, 0.12);
+                }
+
+                .btn-option.selected {
+                    background: #4f46e5;
+                    border-color: #4338ca;
+                    color: white;
+                }
+
+            /* --- VÒNG TRÒN ĐẾM NGƯỢC --- */
+            .timer-circle {
+                width: 65px;
+                height: 65px;
+                border-radius: 50%;
+                background: #ffffff;
+                border: 4px solid #f59e0b;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 1.4rem;
+                font-weight: 700;
+                color: #d97706;
+                box-shadow: 0 6px 15px rgba(245, 158, 11, 0.2);
+            }
+
+            /* --- HUY HIỆU ĐIỂM --- */
+            .badge-score {
+                background: linear-gradient(135deg, #ec4899 0%, #8b5cf6 100%);
+                padding: 10px 18px;
+                border-radius: 30px;
+                font-weight: 600;
+                color: white;
+                box-shadow: 0 4px 12px rgba(236, 72, 153, 0.25);
+                letter-spacing: 0.3px;
+            }
+
+            /* --- AVATAR & BẢNG XẾP HẠNG --- */
+            .avatar-img {
+                width: 52px;
+                height: 52px;
+                border-radius: 50%;
+                border: 2px solid #4f46e5;
+                background: #e2e8f0;
+                object-fit: cover;
+            }
+
+            .rank-item {
+                background: #ffffff;
+                border: 1px solid #e2e8f0;
+                border-radius: 16px;
+                margin-bottom: 10px;
+                padding: 14px 18px;
+                transition: all 0.2s ease;
+                box-shadow: 0 2px 6px rgba(0,0,0,0.02);
+            }
+
+                .rank-item:hover {
+                    transform: scale(1.01);
+                    box-shadow: 0 6px 15px rgba(0,0,0,0.05);
+                }
+
+                .rank-item.is-me {
+                    background: #eef2ff;
+                    border: 2px solid #4f46e5;
+                    box-shadow: 0 6px 20px rgba(79, 70, 229, 0.12);
+                }
+
+            .rank-1 {
+                color: #f59e0b;
+                font-size: 1.5rem;
+                text-shadow: 0 2px 6px rgba(245, 158, 11, 0.4);
+            }
+
+            .rank-2 {
+                color: #64748b;
+                font-size: 1.3rem;
+            }
+
+            .rank-3 {
+                color: #b45309;
+                font-size: 1.2rem;
+            }
+
+            .progress-bar-timer {
+                height: 8px;
+                border-radius: 4px;
+                background: linear-gradient(90deg, #f59e0b, #ef4444);
+                transition: width 1s linear;
+            }
+
+            /* --- STYLES CHO PHẦN XEM LẠI KẾT QUẢ --- */
+            .review-card {
+                background: #ffffff;
+                border-radius: 20px;
+                box-shadow: 0 10px 25px rgba(0,0,0,0.04);
+                border: 1px solid #e2e8f0;
+                margin-bottom: 24px;
+                transition: transform 0.2s;
+            }
+
+            .answer-correct {
+                background: #f0fdf4 !important;
+                border-color: #22c55e !important;
+                color: #166534 !important;
+                box-shadow: none !important;
+                transform: none !important;
+                cursor: default !important;
+                font-weight: 600;
+            }
+
+            .answer-wrong {
+                background: #fef2f2 !important;
+                border-color: #ef4444 !important;
+                color: #991b1b !important;
+                box-shadow: none !important;
+                transform: none !important;
+                cursor: default !important;
+                font-weight: 600;
+            }
+
+            .answer-disabled {
+                cursor: default !important;
+                pointer-events: none;
+                opacity: 0.8;
+            }
+
+            /* Form Controls Custom */
+            .form-select-lg {
+                border-radius: 14px;
+                border: 2px solid #cbd5e1;
+                padding: 14px 18px;
+                font-weight: 500;
+            }
+
+                .form-select-lg:focus {
+                    border-color: #4f46e5;
+                    box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1);
+                }
+
+            /* Nút bấm chính hiệu ứng chuyển màu */
+            .btn-primary-custom {
+                background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%);
+                border: none;
+                color: white;
+                transition: all 0.3s ease;
+            }
+
+                .btn-primary-custom:hover {
+                    background: linear-gradient(135deg, #4338ca 0%, #3730a3 100%);
+                    transform: translateY(-2px);
+                    box-shadow: 0 10px 20px rgba(79, 70, 229, 0.25);
+                    color: white;
+                }
+    </style>
+</head>
+<body class="p-3">
+
+    <div class="container" style="max-width: 850px;">
+
+        <!-- SCREEN 1: CẤU HÌNH PHÒNG ĐẤU -->
+        <div id="screen-setup" class="arena-card p-4 p-md-5">
+            <div class="text-center mb-4">
+                <div class="d-inline-flex align-items-center justify-content-center bg-warning-subtle text-warning rounded-circle mb-3" style="width: 80px; height: 80px;">
+                    <i class="fa-solid fa-trophy display-5"></i>
+                </div>
+                <h2 class="fw-bold text-dark tracking-tight">ĐẤU TRƯỜNG NGẪU NHIÊN</h2>
+                <p class="text-secondary fs-6">Thử thách 10 câu hỏi ngẫu nhiên cùng các đối thủ ngẫu nhiên</p>
+            </div>
+
+            <div class="row g-3 mb-4">
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold text-dark">Cấp độ </label>
+                    <select id="select-capdo" class="form-select form-select-lg shadow-sm">
+                        <option value="">Tất cả cấp độ</option>
+                        <option value="1">HSK 1</option>
+                        <option value="2">HSK 2</option>
+                        <option value="3">HSK 3</option>
+                        <option value="4">HSK 4</option>
+                        <option value="5">HSK 5</option>
+                        <option value="6">HSK 6</option>
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold text-dark">Loại bài tập</label>
+                    <select id="select-loai" class="form-select form-select-lg shadow-sm">
+                       
+                        <option value="1005">Trắc nghiệm</option>
+                        <option value="1008">Dịch thuật Trung - Việt</option>
+                        <option value="1009">Dịch thuật Việt - Trung</option>
+                    </select>
+                </div>
+            </div>
+
+            <button id="btn-start" class="btn btn-primary-custom btn-lg w-100 py-3 fw-bold rounded-pill shadow-sm">
+                <i class="fa-solid fa-gamepad me-2"></i> BẮT ĐẦU VÀO TRẬN
+            </button>
+        </div>
+
+        <!-- SCREEN 2: MÀN HÌNH THI ĐẤU -->
+        <div id="screen-game" class="arena-card p-4 p-md-5 d-none">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div class="d-flex align-items-center gap-2">
+                    <span class="badge-score"><i class="fa-solid fa-star me-1"></i> +<span id="txt-diem-goc">30</span> Điểm</span>
+                    <span class="text-secondary fw-semibold">| Câu <strong id="txt-cau-hien-tai" class="text-dark">1</strong>/10</span>
+                </div>
+                <div class="d-flex align-items-center gap-3">
+                    <div class="timer-circle" id="txt-timer">40</div>
+                    <!-- NÚT THOÁT TRẬN ĐẤU -->
+                    <button type="button" class="btn btn-outline-danger btn-sm rounded-pill px-3 py-2 fw-semibold" onclick="xacNhanThoat()">
+                        <i class="fa-solid fa-right-from-bracket me-1"></i> Thoát
+                    </button>
+                </div>
+            </div>
+
+            <div class="progress bg-secondary-subtle mb-4" style="height: 8px; border-radius: 4px;">
+                <div id="bar-timer" class="progress-bar-timer w-100"></div>
+            </div>
+
+            <div class="mb-4">
+                <h4 id="txt-noi-dung-cau-hoi" class="fw-bold mb-3 text-dark lh-base">...</h4>
+                <div id="area-audio" class="mb-3 d-none">
+                    <audio id="audio-player" controls class="w-100 shadow-sm rounded-pill"></audio>
+                </div>
+            </div>
+
+            <div id="list-dap-an" class="d-grid gap-3 mb-4"></div>
+
+            <div class="d-flex justify-content-between align-items-center text-secondary small fw-semibold bg-light p-3 rounded-4">
+                <span><i class="fa-solid fa-users text-primary me-1"></i> Số đối thủ: <strong id="txt-so-bot" class="text-dark">0</strong></span>
+                <span><i class="fa-solid fa-clock text-danger me-1"></i> Tổng thời gian: <strong id="txt-tong-thoi-gian" class="text-dark">0s</strong></span>
+            </div>
+        </div>
+
+        <!-- SCREEN 3: XEM LẠI CHI TIẾT BÀI LÀM -->
+        <div id="screen-review" class="arena-card p-4 p-md-5 d-none">
+            <div class="text-center mb-4">
+                <div class="d-inline-flex align-items-center justify-content-center bg-success-subtle text-success rounded-circle mb-3" style="width: 70px; height: 70px;">
+                    <i class="fa-solid fa-clipboard-check display-6"></i>
+                </div>
+                <h2 class="fw-bold text-dark">CHI TIẾT BÀI LÀM</h2>
+                <div class="bg-light rounded-pill d-inline-block px-4 py-2 mt-2 border shadow-sm">
+                    <span id="txt-review-summary" class="fs-6 fw-semibold text-secondary"></span>
+                </div>
+            </div>
+
+            <!-- Danh sách câu hỏi chi tiết sẽ được render ở đây -->
+            <div id="list-review-items"></div>
+
+            <div class="mt-4">
+                <button class="btn btn-primary-custom btn-lg w-100 py-3 rounded-pill fw-bold shadow-sm" onclick="location.reload()">
+                    <i class="fa-solid fa-rotate-right me-1"></i> Chơi Lại Trận Khác
+                </button>
+            </div>
+        </div>
+
+        <!-- MODAL: BẢNG XẾP HẠNG -->
+        <div class="modal fade" id="modal-result" data-bs-backdrop="static" tabindex="-1">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content arena-card text-dark border-0 shadow-lg p-2">
+                    <div class="modal-header border-0 text-center d-block pb-0">
+                        <div class="d-inline-flex align-items-center justify-content-center bg-warning-subtle text-warning rounded-circle mb-2 shadow-sm" style="width: 75px; height: 75px;">
+                            <i class="fa-solid fa-trophy fs-3"></i>
+                        </div>
+                        <h3 class="modal-title fw-bold text-dark">BẢNG XẾP HẠNG</h3>
+                        <p class="text-muted small">Kết quả chung cuộc của các đấu sĩ</p>
+                    </div>
+                    <div class="modal-body" style="max-height: 400px; overflow-y: auto;">
+                        <div id="list-leaderboard"></div>
+                    </div>
+                    <div class="modal-footer border-0 d-block pt-0">
+                        <button class="btn btn-outline-primary w-100 py-3 mb-2 rounded-pill fw-bold shadow-sm" onclick="xemLaiChiTiet()">
+                            <i class="fa-solid fa-eye me-1"></i> Xem Lại Chi Tiết Bài Làm
+                        </button>
+                        <button class="btn btn-primary-custom w-100 py-3 rounded-pill fw-bold shadow-sm" onclick="location.reload()">
+                            <i class="fa-solid fa-rotate-right me-1"></i> Chơi Lại Trận Khác
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- MODAL: XÁC NHẬN THOÁT TRẬN -->
+        <div class="modal fade" id="modal-confirm-exit" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content arena-card text-dark border-0 shadow-lg p-3 text-center">
+                    <div class="modal-body py-4">
+                        <div class="d-inline-flex align-items-center justify-content-center bg-danger-subtle text-danger rounded-circle mb-3" style="width: 70px; height: 70px;">
+                            <i class="fa-solid fa-triangle-exclamation fs-2"></i>
+                        </div>
+                        <h4 class="fw-bold mb-2">Thoát trận đấu?</h4>
+                        <p class="text-secondary small mb-0">Bạn có chắc chắn muốn rời trận không? Kết quả trận đấu hiện tại sẽ không được lưu.</p>
+                    </div>
+                    <div class="modal-footer border-0 d-flex justify-content-center gap-2 pt-0">
+                        <button type="button" class="btn btn-light rounded-pill px-4 py-2 fw-semibold" data-bs-dismiss="modal">Ở lại</button>
+                        <button type="button" id="btn-agree-exit" class="btn btn-danger rounded-pill px-4 py-2 fw-bold">Xác nhận thoát</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Bootstrap 5 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+            // TRẠNG THÁI TRẬN ĐẤU (STATE)
+            let gameState = {
+                danhSachCauHoi: [],
+                danhSachBot: [],
+                currentIndex: 0,
+                chiTietLamBai: [],
+                currentQuestionTimeSpent: 0,
+                totalTimeSpent: 0,
+                timerQuestionInterval: null,
+                timerTotalInterval: null,
+                isPlaying: false // Đánh dấu trạng thái đang làm bài
+            };
+
+            const modalResult = new bootstrap.Modal(document.getElementById('modal-result'));
+            const modalExit = new bootstrap.Modal(document.getElementById('modal-confirm-exit'));
+
+            // HÀM HIỂN THỊ MODAL THOÁT TRẬN
+            function xacNhanThoat() {
+                modalExit.show();
+            }
+
+            // XỬ LÝ SỰ KIỆN XÁC NHẬN THOÁT TRONG MODAL
+            document.getElementById('btn-agree-exit').addEventListener('click', () => {
+                modalExit.hide();
+                gameState.isPlaying = false;
+                clearInterval(gameState.timerQuestionInterval);
+                clearInterval(gameState.timerTotalInterval);
+                location.reload();
+            });
+
+            // BẮT SỰ KIỆN KHI NGƯỜI DÙNG CỐ TÌNH ĐÓNG TAB / TẢI LẠI TRANG KHI ĐANG ĐẤU
+            window.addEventListener('beforeunload', (e) => {
+                if (gameState.isPlaying) {
+                    e.preventDefault();
+                    e.returnValue = ''; // Bắt buộc cho trình duyệt hiển thị thông báo mặc định
+                }
+            });
+
+            // 1. KHỞI TẠO TRẬN ĐẤU
+            document.getElementById('btn-start').addEventListener('click', async () => {
+                const capDo = document.getElementById('select-capdo').value;
+                const loai = document.getElementById('select-loai').value;
+
+                const payload = {
+                    idCapDo: capDo ? parseInt(capDo) : null,
+                    idLoai: loai ? parseInt(loai) : null
+                };
+
+                try {
+                    const res = await fetch('/api/dau-truong/khoi-tao-th1', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    const data = await res.json();
+                    if (!res.ok) throw new Error(data.message || 'Không thể tạo phòng đấu');
+
+                    gameState.danhSachCauHoi = data.danhSachCauHoi;
+                    gameState.danhSachBot = data.danhSachBot;
+                    gameState.currentIndex = 0;
+                    gameState.chiTietLamBai = [];
+                    gameState.totalTimeSpent = 0;
+                    gameState.isPlaying = true; // Đánh dấu đã bắt đầu vào trận
+
+                    document.getElementById('screen-setup').classList.add('d-none');
+                    document.getElementById('screen-game').classList.remove('d-none');
+                    document.getElementById('txt-so-bot').innerText = gameState.danhSachBot.length;
+
+                    startTotalTimer();
+                    loadQuestion(0);
+
+                } catch (err) {
+                    alert(err.message);
+                }
+            });
+
+            // 2. HIỂN THỊ CÂU HỎI
+            function loadQuestion(index) {
+                if (index >= gameState.danhSachCauHoi.length) {
+                    finishGame();
+                    return;
+                }
+
+                const q = gameState.danhSachCauHoi[index];
+                gameState.currentIndex = index;
+                gameState.currentQuestionTimeSpent = 0;
+
+                document.getElementById('txt-cau-hien-tai').innerText = index + 1;
+                document.getElementById('txt-diem-goc').innerText = q.diemGoc;
+                document.getElementById('txt-noi-dung-cau-hoi').innerText = q.noiDung;
+
+                const areaAudio = document.getElementById('area-audio');
+                if (q.amThanhPath) {
+                    areaAudio.classList.remove('d-none');
+                    document.getElementById('audio-player').src = q.amThanhPath;
+                } else {
+                    areaAudio.classList.add('d-none');
+                }
+
+                const listDapAnContainer = document.getElementById('list-dap-an');
+                listDapAnContainer.innerHTML = '';
+
+                q.dapAns.forEach(d => {
+                    const btn = document.createElement('button');
+                    btn.className = 'btn btn-option shadow-sm';
+                    btn.innerText = d.noiDung;
+                    btn.onclick = () => selectAnswer(q.idCauHoi, d.idDapAn, q.diemGoc);
+                    listDapAnContainer.appendChild(btn);
+                });
+
+                startQuestionTimer(q.idCauHoi, q.diemGoc);
+            }
+
+            // 3. ĐẾM THỜI GIAN CÂU HỎI
+            function startQuestionTimer(idCauHoi, diemGoc) {
+                clearInterval(gameState.timerQuestionInterval);
+                let timeLeft = 40;
+                updateTimerUI(timeLeft);
+
+                gameState.timerQuestionInterval = setInterval(() => {
+                    timeLeft--;
+                    gameState.currentQuestionTimeSpent++;
+                    updateTimerUI(timeLeft);
+
+                    if (timeLeft <= 0) {
+                        clearInterval(gameState.timerQuestionInterval);
+                        saveAnswerAndNext(idCauHoi, null, 40, diemGoc);
+                    }
+                }, 1000);
+            }
+
+            function updateTimerUI(timeLeft) {
+                document.getElementById('txt-timer').innerText = timeLeft;
+                const percent = (timeLeft / 40) * 100;
+                document.getElementById('bar-timer').style.width = percent + '%';
+            }
+
+            // 4. ĐẾM TỔNG THỜI GIAN
+            function startTotalTimer() {
+                clearInterval(gameState.timerTotalInterval);
+                gameState.timerTotalInterval = setInterval(() => {
+                    gameState.totalTimeSpent++;
+                    document.getElementById('txt-tong-thoi-gian').innerText = gameState.totalTimeSpent + 's';
+
+                    if (gameState.totalTimeSpent >= 460) {
+                        finishGame();
+                    }
+                }, 1000);
+            }
+
+            // 5. CHỌN ĐÁP ÁN
+            function selectAnswer(idCauHoi, idDapAn, diemGoc) {
+                clearInterval(gameState.timerQuestionInterval);
+                saveAnswerAndNext(idCauHoi, idDapAn, gameState.currentQuestionTimeSpent, diemGoc);
+            }
+
+            function saveAnswerAndNext(idCauHoi, idDapAnChon, thoiGianTraLoiGiay, diemGoc) {
+                gameState.chiTietLamBai.push({
+                    idCauHoi: idCauHoi,
+                    idDapAnChon: idDapAnChon,
+                    thoiGianTraLoiGiay: thoiGianTraLoiGiay,
+                    diemGoc: diemGoc
+                });
+                loadQuestion(gameState.currentIndex + 1);
+            }
+
+            // 6. KẾT THÚC & XẾP HẠNG
+            async function finishGame() {
+                gameState.isPlaying = false; // Tắt trạng thái đang chơi
+                clearInterval(gameState.timerQuestionInterval);
+                clearInterval(gameState.timerTotalInterval);
+
+                const payload = {
+                    tongThoiGianThucHien: gameState.totalTimeSpent,
+                    chiTietLamBai: gameState.chiTietLamBai,
+                    danhSachBot: gameState.danhSachBot
+                };
+
+                try {
+                    const res = await fetch('/api/dau-truong/nop-bai-th1', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+
+                    const data = await res.json();
+                    if (!res.ok) throw new Error(data.message || 'Lỗi khi kết thúc trận đấu');
+
+                    renderLeaderboard(data.bangXepHang);
+                    modalResult.show();
+                } catch (err) {
+                    alert(err.message);
+                }
+            }
+
+            function renderLeaderboard(bangXepHang) {
+                const container = document.getElementById('list-leaderboard');
+                container.innerHTML = '';
+
+                bangXepHang.forEach(item => {
+                    let rankIcon = `#${item.hang}`;
+                    if (item.hang === 1) rankIcon = '<i class="fa-solid fa-crown rank-1"></i>';
+                    else if (item.hang === 2) rankIcon = '<i class="fa-solid fa-medal rank-2"></i>';
+                    else if (item.hang === 3) rankIcon = '<i class="fa-solid fa-medal rank-3"></i>';
+
+                    const html = `
+                                            <div class="rank-item d-flex align-items-center justify-content-between ${!item.isBot ? 'is-me' : ''}">
+                                                <div class="d-flex align-items-center gap-3">
+                                                    <div style="width: 30px;" class="text-center fw-bold text-dark">${rankIcon}</div>
+                                                    <img src="${item.avatar}" class="avatar-img shadow-sm" alt="avatar">
+                                                    <div>
+                                                        <div class="fw-bold text-dark">${item.tenNguoiChoi} ${!item.isBot ? '<span class="badge bg-primary ms-1">Bạn</span>' : ''}</div>
+                                                        <small class="text-secondary"><i class="fa-solid fa-clock me-1"></i>${item.tongThoiGianGiay}s</small>
+                                                    </div>
+                                                </div>
+                                                <div class="text-end">
+                                                    <span class="fw-bold fs-5 text-warning" style="text-shadow: 0 1px 2px rgba(0,0,0,0.1);">${item.tongDiem}</span>
+                                                    <small class="text-secondary d-block fw-semibold">điểm</small>
+                                                </div>
+                                            </div>
+                                        `;
+                    container.innerHTML += html;
+                });
+            }
+
+            // 7. XEM LẠI CHI TIẾT BÀI LÀM (GỌI API)
+            async function xemLaiChiTiet() {
+                modalResult.hide();
+                document.getElementById('screen-game').classList.add('d-none');
+                const reviewScreen = document.getElementById('screen-review');
+                reviewScreen.classList.remove('d-none');
+
+                document.getElementById('list-review-items').innerHTML = '<div class="text-center my-5"><div class="spinner-border text-primary" role="status"></div></div>';
+
+                try {
+                    const res = await fetch('/api/dau-truong/xem-lai-ket-qua-th1', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ chiTietLamBai: gameState.chiTietLamBai })
+                    });
+
+                    const data = await res.json();
+                    if (!res.ok) throw new Error(data.message || 'Lỗi khi lấy kết quả chi tiết');
+
+                    // Render Tổng quan
+                    document.getElementById('txt-review-summary').innerHTML = `
+                                            Đúng: <strong class="text-success">${data.soCauDung}/${data.tongSoCau}</strong> câu
+                                            <span class="mx-2">|</span>
+                                            Điểm nhận được: <strong class="text-warning fs-4">+${data.tongDiemCong}</strong>
+                                        `;
+
+                    // Render Chi tiết từng câu
+                    let html = '';
+                    data.chiTietBaiLam.forEach((item, index) => {
+                        let answersHtml = '';
+
+                        item.danhSachDapAn.forEach(ans => {
+                            let btnClass = "btn-option answer-disabled";
+                            let icon = "";
+
+                            if (ans.idDapAn === item.idDapAnDung) {
+                                btnClass += " answer-correct"; // Màu xanh cho đáp án chuẩn
+                                icon = '<i class="fa-solid fa-circle-check float-end mt-1 fs-5"></i>';
+                            } else if (ans.idDapAn === item.idDapAnChon && !item.isDung) {
+                                btnClass += " answer-wrong"; // Màu đỏ nếu chọn sai
+                                icon = '<i class="fa-solid fa-circle-xmark float-end mt-1 fs-5"></i>';
+                            }
+
+                            answersHtml += `
+                                                    <div class="${btnClass} w-100 mb-2 p-3 rounded">
+                                                        ${ans.noiDung} ${icon}
+                                                    </div>
+                                                `;
+                        });
+
+                        const audioHtml = item.amThanhPath ? `<audio controls src="${item.amThanhPath}" class="w-100 mb-3 shadow-sm rounded-pill"></audio>` : '';
+
+                        const badgeClass = item.isDung ? 'bg-success' : 'bg-danger';
+                        const textResult = item.isDung ? 'Đúng' : 'Sai';
+
+                        html += `
+                                                <div class="review-card p-4">
+                                                    <div class="d-flex justify-content-between align-items-center mb-3 border-bottom pb-3">
+                                                        <span class="badge ${badgeClass} px-3 py-2 fs-6">
+                                                            Câu ${index + 1}: ${textResult}
+                                                        </span>
+                                                        <div class="text-end">
+                                                            <span class="text-warning fw-bold fs-5">+${item.diemCong}</span><small class="text-muted fw-semibold"> / ${item.diemGoc} điểm gốc</small>
+                                                        </div>
+                                                    </div>
+                                                    <h5 class="fw-bold mb-3 text-dark">${item.noiDungCauHoi}</h5>
+                                                    ${audioHtml}
+
+                                                    <div class="mb-4">
+                                                        ${answersHtml}
+                                                    </div>
+
+                                                    <div class="bg-primary-subtle p-3 rounded-4 border border-primary-subtle small">
+                                                        <strong class="text-primary-emphasis d-block mb-1"><i class="fa-solid fa-lightbulb text-warning me-1"></i>Giải thích ngữ pháp/từ vựng:</strong>
+                                                        <span class="text-dark">${item.giaiThich}</span>
+                                                    </div>
+
+                                                    <div class="text-end text-muted small mt-3 fw-semibold">
+                                                        <i class="fa-solid fa-stopwatch me-1"></i> Thời gian trả lời: ${item.thoiGianTraLoiGiay} giây
+                                                    </div>
+                                                </div>
+                                            `;
+                    });
+
+                    document.getElementById('list-review-items').innerHTML = html;
+
+                } catch (err) {
+                    alert(err.message);
+                    document.getElementById('list-review-items').innerHTML = '<div class="alert alert-danger">Không thể tải kết quả.</div>';
+                }
+            }
+    </script>
+</body>
+</html>

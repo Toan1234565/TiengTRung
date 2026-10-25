@@ -1,0 +1,368 @@
+﻿@using HocTiengTrung_3._0_T.Models12.QuanLyDeThi
+@using Newtonsoft.Json
+@model ApiResponseKetQuaToanBo
+
+@{
+    ViewData["Title"] = "Chi tiết kết quả thi";
+    var info = Model.Info;
+}
+
+<div class="container py-5">
+    @* Nút quay lại *@
+    <div class="mb-4">
+        <a href="@Url.Action("LichSuaDeThi", "QuanLyDeThi")" class="btn btn-link text-decoration-none text-muted p-0">
+            <i class="bi bi-arrow-left-circle-fill fs-5 me-2"></i>Quay lại lịch sử làm đề
+        </a>
+    </div>
+
+    @* Header: Thẻ tóm tắt kết quả *@
+    <div class="card shadow-sm border-0 mb-5 overflow-hidden result-header-card animate-fade-in">
+        <div class="card-body p-0">
+            <div class="row g-0">
+                <div class="col-md-8 p-4 p-lg-5 bg-white">
+                    <h2 class="fw-bold text-dark mb-1">Kết quả bài thi: <span class="text-primary">@info.HoTen</span></h2>
+                    <p class="text-muted mb-4"><i class="bi bi-calendar3 me-2"></i>Hoàn thành lúc: @info.ThoiGianHoanThanh?.ToString("dd/MM/yyyy HH:mm")</p>
+
+                    <div class="row g-3 mt-2">
+                        <div class="col-6 col-sm-4">
+                            <div class="p-3 border rounded-3 bg-light">
+                                <span class="d-block text-muted small text-uppercase fw-semibold">Số câu đúng</span>
+                                <span class="fw-bold fs-4 text-success">@info.SoCauDung <small class="text-muted">/ @info.TongSoCau</small></span>
+                            </div>
+                        </div>
+                        <div class="col-6 col-sm-4">
+                            <div class="p-3 border rounded-3 bg-light h-100">
+                                <span class="d-block text-muted small text-uppercase fw-semibold">Tỷ lệ chính xác</span>
+                                <span class="fw-bold fs-4 text-info">@((info.SoCauDung * 100) / info.TongSoCau)%</span>
+                                <div class="progress mt-2" style="height: 6px;">
+                                    <div class="progress-bar bg-info" role="progressbar" style="width: @((info.SoCauDung * 100) / info.TongSoCau)%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                @* Phần điểm số rực rỡ *@
+                <div class="col-md-4 d-flex flex-column justify-content-center align-items-center bg-primary text-white p-4">
+                    <div class="score-display text-center">
+                        <div class="score-label text-uppercase opacity-75 small fw-bold">Tổng điểm</div>
+                        <div class="display-1 fw-bold line-height-1">@info.DiemSo</div>
+                        <div class="mt-3">
+                            @if (info.DiemSo >= 180)
+                            {
+                                <span class="badge rounded-pill bg-white text-success px-4 py-2 fs-6 shadow">
+                                    <i class="bi bi-trophy-fill me-2"></i>ĐẠT HSK
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="badge rounded-pill bg-white text-danger px-4 py-2 fs-6 shadow">
+                                    <i class="bi bi-exclamation-triangle-fill me-2"></i>CHƯA ĐẠT
+                                </span>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @* Bộ lọc kết quả (Đã được nâng cấp) *@
+    <div class="row mb-4 align-items-center">
+        <div class="col-xl-3 col-lg-12 mb-3 mb-xl-0">
+            <h4 class="fw-bold m-0 text-dark"><i class="bi bi-journal-check me-2 text-primary"></i>Chi tiết câu hỏi</h4>
+        </div>
+        <div class="col-xl-9 col-lg-12 text-xl-end">
+            <div class="d-flex flex-wrap gap-2 justify-content-xl-end">
+                <!-- Lọc theo kỹ năng -->
+                <div class="btn-group shadow-sm border rounded-pill overflow-hidden" role="group">
+                    <input type="radio" class="btn-check" name="filterSkill" id="skillAll" value="all" checked onchange="applyFilters()">
+                    <label class="btn btn-white px-3 border-0" for="skillAll">Mọi kỹ năng</label>
+
+                    <input type="radio" class="btn-check" name="filterSkill" id="skillListen" value="1" onchange="applyFilters()">
+                    <label class="btn btn-white px-3 border-0 text-primary" for="skillListen">Nghe</label>
+
+                    <input type="radio" class="btn-check" name="filterSkill" id="skillRead" value="2" onchange="applyFilters()">
+                    <label class="btn btn-white px-3 border-0 text-info" for="skillRead">Đọc</label>
+
+                    <input type="radio" class="btn-check" name="filterSkill" id="skillWrite" value="3" onchange="applyFilters()">
+                    <label class="btn btn-white px-3 border-0 text-warning" for="skillWrite">Viết</label>
+                </div>
+
+                <!-- Lọc theo kết quả Đúng/Sai -->
+                <div class="btn-group shadow-sm border rounded-pill overflow-hidden" role="group">
+                    <input type="radio" class="btn-check" name="filterStatus" id="statusAll" value="all" checked onchange="applyFilters()">
+                    <label class="btn btn-white px-3 border-0" for="statusAll">Tất cả</label>
+
+                    <input type="radio" class="btn-check" name="filterStatus" id="statusCorrect" value="correct" onchange="applyFilters()">
+                    <label class="btn btn-white px-3 border-0 text-success" for="statusCorrect">Đúng</label>
+
+                    <input type="radio" class="btn-check" name="filterStatus" id="statusWrong" value="wrong" onchange="applyFilters()">
+                    <label class="btn btn-white px-3 border-0 text-danger" for="statusWrong">Sai</label>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @* Danh sách câu hỏi *@
+    <div class="question-container">
+        @foreach (var item in Model.Details)
+        {
+            dynamic qContent = JsonConvert.DeserializeObject(item.NoiDungJson);
+            var statusClass = item.LaDapAnDung ? "correct" : "wrong";
+
+            @* Xác định icon và màu sắc theo kỹ năng *@
+            var skillIcon = item.KyNang == 1 ? "bi-headphones" : item.KyNang == 2 ? "bi-book" : "bi-pencil-square";
+            var skillColor = item.KyNang == 1 ? "bg-primary" : item.KyNang == 2 ? "bg-info" : "bg-warning text-dark";
+
+            <!-- Thêm data-status và data-skill để JS dễ lọc -->
+            <div class="card mb-4 item-question border-0 shadow-sm border-start border-5 @(item.LaDapAnDung ? "border-success" : "border-danger")"
+                 data-status="@statusClass"
+                 data-skill="@item.KyNang">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <span class="badge @skillColor py-2 px-3 shadow-sm">
+                            <i class="bi @skillIcon me-2"></i>Câu @item.ThuTu - @(item.KyNang == 1 ? "Nghe" : item.KyNang == 2 ? "Đọc" : "Viết")
+                        </span>
+                        <div class="d-flex align-items-center">
+                            @if (item.LaDapAnDung)
+                            {
+                                <span class="text-success fw-bold me-2"><i class="bi bi-check-circle-fill me-1"></i>Chính xác</span>
+                            }
+                            else
+                            {
+                                <span class="text-danger fw-bold me-2"><i class="bi bi-x-circle-fill me-1"></i>Sai rồi</span>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="row g-4">
+                        <div class="col-md-@(!string.IsNullOrEmpty(item.HinhAnh) ? "8" : "12")">
+                            @* Audio *@
+                            @if (!string.IsNullOrEmpty(item.AmThanh))
+                            {
+                                <div class="audio-player mb-4 p-3 bg-light rounded-pill border d-flex align-items-center shadow-sm">
+                                    <i class="bi bi-play-circle-fill text-primary fs-3 me-3"></i>
+                                    <audio controls class="flex-grow-1" style="height: 35px;">
+                                        <source src="@item.AmThanh.Replace("\\", "/")" type="audio/mpeg">
+                                    </audio>
+                                </div>
+                            }
+
+                            @* Nội dung câu hỏi *@
+                            <div class="question-content mb-4">
+                                @if (qContent.CauHoi != null)
+                                {
+                                    <h5 class="fw-bold text-dark lh-base">@qContent.CauHoi</h5>
+                                }
+                                @if (qContent.Context != null)
+                                {
+                                    <div class="p-3 bg-light rounded border-start border-4 border-primary mb-3">
+                                        <p class="mb-0 fs-5 italic">@qContent.Context</p>
+                                    </div>
+                                }
+                                @if (qContent.Words != null)
+                                {
+                                    <div class="d-flex flex-wrap gap-2 mb-3">
+                                        @foreach (var word in qContent.Words)
+                                        {
+                                            <span class="badge bg-white text-dark border py-2 px-3 shadow-sm fw-normal fs-6">@word</span>
+                                        }
+                                    </div>
+                                }
+                            </div>
+
+                            @* Options *@
+                            @if (qContent.Options != null)
+                            {
+                                <div class="options-list row g-3 mb-4">
+                                    @foreach (var opt in qContent.Options)
+                                    {
+                                        if (!string.IsNullOrEmpty(opt.Value?.ToString()))
+                                        {
+                                            <div class="col-md-6">
+                                                <div class="p-2 px-3 border rounded bg-white shadow-sm d-flex align-items-baseline">
+                                                    <span class="fw-bold text-primary me-2">@opt.Name.</span>
+                                                    <span>@opt.Value</span>
+                                                </div>
+                                            </div>
+                                        }
+                                    }
+                                </div>
+                            }
+                        </div>
+
+                        @* Hình ảnh minh họa *@
+                        @if (!string.IsNullOrEmpty(item.HinhAnh))
+                        {
+                            <div class="col-md-4">
+                                <div class="image-wrapper rounded border bg-white p-2 shadow-sm text-center">
+                                    <img src="@item.HinhAnh.Replace("\\", "/")" class="img-fluid rounded shadow-sm" style="max-height: 220px;" />
+                                </div>
+                            </div>
+                        }
+                    </div>
+
+                    @* Kết quả so sánh *@
+                    <div class="row g-3 mt-2 pt-3 border-top">
+                        <div class="col-sm-6">
+                            <div class="p-3 rounded-3 @(item.LaDapAnDung ? "bg-success-subtle border border-success" : "bg-danger-subtle border border-danger") h-100">
+                                <small class="d-block text-muted text-uppercase fw-bold mb-1" style="font-size: 0.7rem;">Câu trả lời của bạn</small>
+                                <strong class="fs-5 @(item.LaDapAnDung ? "text-success" : "text-danger")">
+                                    <i class="bi @(item.LaDapAnDung ? "bi-check-lg" : "bi-x-lg") me-2"></i>@(string.IsNullOrEmpty(item.DapAnChon) ? "Không có câu trả lời" : item.DapAnChon)
+                                </strong>
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="p-3 rounded-3 bg-light border border-secondary border-opacity-25 h-100">
+                                <small class="d-block text-muted text-uppercase fw-bold mb-1" style="font-size: 0.7rem;">Đáp án đúng</small>
+                                <strong class="fs-5 text-dark">
+                                    <i class="bi bi-lightbulb-fill text-warning me-2"></i>@item.DapAnDung
+                                </strong>
+                            </div>
+                        </div>
+                    </div>
+
+                    @* Giải thích/Script *@
+                    @if (!string.IsNullOrEmpty(item.GiaiThich))
+                    {
+                        <div class="mt-4 p-4 bg-warning-subtle rounded-3 border-start border-5 border-warning animate-fade-in shadow-sm">
+                            <div class="d-flex align-items-center mb-2">
+                                <div class="bg-warning text-white rounded-circle p-1 me-2" style="width: 24px; height: 24px; display: flex; align-items: center; justify-content: center;">
+                                    <i class="bi bi-info-circle-fill" style="font-size: 0.8rem;"></i>
+                                </div>
+                                <h6 class="fw-bold mb-0 text-primary">Giải thích & Transcript:</h6>
+                            </div>
+                            <div class="small lh-lg text-dark fw-normal" style="white-space: pre-line;">@item.GiaiThich</div>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+
+    @* Nút Quay Lại Đầu Trang *@
+    <div class="text-center mt-5 mb-2">
+        <button onclick="window.scrollTo({ top: 0, behavior: 'smooth' });" class="btn btn-primary rounded-pill px-4 py-2 shadow-sm animate-fade-in">
+            <i class="bi bi-arrow-up-circle-fill me-2"></i>Quay lại đầu trang
+        </button>
+    </div>
+</div>
+
+<style>
+    :root {
+        --bs-success-subtle: #e8f5e9;
+        --bs-danger-subtle: #ffebee;
+        --bs-warning-subtle: #fffdf0;
+        --bs-primary: #4361ee;
+    }
+
+    body {
+        background-color: #f8fafc;
+        font-family: 'Inter', sans-serif;
+    }
+
+    /* Header */
+    .result-header-card {
+        border-radius: 24px;
+        background: linear-gradient(to right, #ffffff, #f8f9fa);
+    }
+
+    .line-height-1 {
+        line-height: 1;
+    }
+
+    /* Question Cards */
+    .item-question {
+        border-radius: 20px;
+        transition: all 0.3s ease;
+    }
+
+        .item-question:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 30px rgba(0,0,0,0.08) !important;
+        }
+
+    /* Audio Custom */
+    .audio-player {
+        background: #f1f5f9;
+        border: 1px solid #e2e8f0;
+    }
+
+    /* Filter Buttons */
+    .btn-check:checked + .btn-white {
+        background-color: var(--bs-primary) !important;
+        color: white !important;
+        font-weight: bold;
+    }
+
+    /* Helpers */
+    .bg-success-subtle {
+        background-color: var(--bs-success-subtle) !important;
+    }
+
+    .bg-danger-subtle {
+        background-color: var(--bs-danger-subtle) !important;
+    }
+
+    .bg-warning-subtle {
+        background-color: var(--bs-warning-subtle) !important;
+    }
+
+    .image-wrapper img {
+        transition: transform 0.4s;
+        cursor: zoom-in;
+    }
+
+        .image-wrapper img:hover {
+            transform: scale(1.03);
+        }
+
+    /* Animations */
+    .animate-fade-in {
+        animation: fadeIn 0.6s both;
+    }
+
+    @@keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+</style>
+
+<script>
+    function applyFilters() {
+        // Lấy giá trị của 2 bộ lọc
+        const statusFilter = document.querySelector('input[name="filterStatus"]:checked').value;
+        const skillFilter = document.querySelector('input[name="filterSkill"]:checked').value;
+
+        const allItems = document.querySelectorAll('.item-question');
+
+        allItems.forEach((item) => {
+            // Lấy data attribute của từng item
+            const itemStatus = item.getAttribute('data-status');
+            const itemSkill = item.getAttribute('data-skill');
+
+            // Kiểm tra điều kiện thỏa mãn
+            const matchStatus = (statusFilter === 'all') || (itemStatus === statusFilter);
+            const matchSkill = (skillFilter === 'all') || (itemSkill === skillFilter);
+
+            // Ẩn/hiện dựa vào kết quả kết hợp
+            if (matchStatus && matchSkill) {
+                item.style.display = 'block';
+                // Thêm hiệu ứng fade-in mượt
+                item.style.animation = 'none';
+                item.offsetHeight; /* trigger reflow */
+                item.style.animation = null;
+            } else {
+                item.style.display = 'none';
+            }
+        });
+    }
+</script>

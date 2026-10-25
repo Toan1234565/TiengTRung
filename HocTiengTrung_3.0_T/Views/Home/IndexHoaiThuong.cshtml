@@ -1,0 +1,399 @@
+﻿@using HocTiengTrung_3._0_T.Services
+@using Microsoft.AspNetCore.Http
+@using System.Security.Claims
+@inject ITrungTamService TrungTamService
+@inject IHttpContextAccessor HttpContextAccessor
+
+@{
+    var httpContext = HttpContextAccessor.HttpContext;
+    var user = httpContext?.User;
+    var session = httpContext?.Session;
+
+    var idTrungTam = user?.FindFirst("IdTrungTam")?.Value
+                     ?? session?.GetString("IdTrungTam")
+                     ?? "0";
+
+    var maTrungTam = user?.FindFirst("MaTrungTam")?.Value
+                     ?? session?.GetString("MaTrungTam")
+                     ?? "";
+
+    int.TryParse(idTrungTam, out int currentIdTrungTam);
+
+    // MẶC ĐỊNH ĐỒNG BỘ VỚI LOGO HOÀI PHƯƠNG
+    string tenCoSoHienThi = "Tiếng Trung Hoài Phương";
+    string logoCoSoHienThi = Url.Content("~/images/logo_HoaiThuong.jpg");
+    string subBadgeHienThi = "HOAI PHUONG HSK 汉语中心";
+
+    if (currentIdTrungTam > 0)
+    {
+        var ttInfo = await TrungTamService.GetThongTinTrungTamAsync(currentIdTrungTam);
+        if (!string.IsNullOrWhiteSpace(ttInfo.TenTrungTam))
+        {
+            tenCoSoHienThi = ttInfo.TenTrungTam;
+            subBadgeHienThi = $"{ttInfo.TenTrungTam} • HSK 3.0";
+        }
+        if (!string.IsNullOrWhiteSpace(ttInfo.Logo))
+        {
+            logoCoSoHienThi = ttInfo.Logo;
+        }
+    }
+
+    ViewData["Title"] = $"{tenCoSoHienThi} - Hệ Thống Đào Tạo Chuẩn HSK 3.0";
+
+    var currentUserName = session?.GetString("HoTenNhanVien")
+                              ?? user?.FindFirst(ClaimTypes.Name)?.Value
+                              ?? (user?.Identity?.IsAuthenticated == true ? user.Identity.Name : "Học viên");
+}
+
+<style>
+    :root {
+        /* Bảng màu Hoài Phương */
+        --hp-green: #008744;
+        --hp-orange: #F25C05;
+        --bg-color: #f0f4f8;
+        --glass-bg: rgba(255, 255, 255, 0.65);
+        --glass-border: rgba(255, 255, 255, 0.8);
+        --glass-shadow: 0 8px 32px 0 rgba(0, 135, 68, 0.05);
+    }
+
+    /* 1. Môi trường Background (Ambient Orbs) */
+    .ambient-background {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        z-index: -1;
+        background-color: var(--bg-color);
+        overflow: hidden;
+    }
+
+    .ambient-orb-1 {
+        position: absolute;
+        top: -10%;
+        right: -5%;
+        width: 600px;
+        height: 600px;
+        background: radial-gradient(circle, rgba(0,135,68,0.15) 0%, rgba(255,255,255,0) 70%);
+        border-radius: 50%;
+        filter: blur(60px);
+    }
+
+    .ambient-orb-2 {
+        position: absolute;
+        bottom: -20%;
+        left: -10%;
+        width: 800px;
+        height: 800px;
+        background: radial-gradient(circle, rgba(242,92,5,0.1) 0%, rgba(255,255,255,0) 70%);
+        border-radius: 50%;
+        filter: blur(80px);
+    }
+
+    /* 2. Glassmorphism Utilities */
+    .glass-panel {
+        background: var(--glass-bg);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border: 1px solid var(--glass-border);
+        box-shadow: var(--glass-shadow);
+        border-radius: 24px;
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s ease;
+    }
+
+        .glass-panel:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px 0 rgba(0, 135, 68, 0.12);
+            border-color: rgba(255, 255, 255, 1);
+        }
+
+    /* 3. Hero Section Mới (Không Box, Typo Lớn) */
+    .ultra-hero {
+        padding: 60px 0 40px;
+        position: relative;
+    }
+
+    .brand-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 12px;
+        padding: 8px 24px 8px 8px;
+        background: white;
+        border-radius: 50px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        margin-bottom: 30px;
+        font-weight: 700;
+        color: var(--hp-green);
+        letter-spacing: 0.5px;
+    }
+
+        .brand-pill img {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            object-fit: cover;
+        }
+
+    .mega-title {
+        font-size: 3.5rem;
+        font-weight: 900;
+        color: #111827;
+        line-height: 1.1;
+        letter-spacing: -1px;
+    }
+
+        .mega-title span {
+            background: linear-gradient(120deg, var(--hp-orange), var(--hp-green));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+    /* 4. Quick Actions (Hệ thống thẻ nổi) */
+    .action-circle-btn {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        padding: 20px;
+        text-decoration: none !important;
+        color: #1f2937;
+    }
+
+    .icon-glass-wrapper {
+        width: 54px;
+        height: 54px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.4rem;
+        background: white;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.04);
+        color: var(--hp-green);
+        flex-shrink: 0;
+    }
+
+    /* 5. HSK Track (Cuộn ngang) */
+    .hsk-track-wrapper {
+        display: flex;
+        gap: 20px;
+        overflow-x: auto;
+        padding: 10px 0 20px;
+        scroll-snap-type: x mandatory;
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+    }
+
+        .hsk-track-wrapper::-webkit-scrollbar {
+            display: none;
+        }
+
+    .hsk-card {
+        min-width: 160px;
+        scroll-snap-align: start;
+        padding: 25px 20px;
+        text-align: center;
+        text-decoration: none !important;
+        position: relative;
+        overflow: hidden;
+    }
+
+        .hsk-card::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: var(--hp-orange);
+            transform: scaleX(0);
+            transform-origin: left;
+            transition: transform 0.3s ease;
+        }
+
+        .hsk-card:hover::before {
+            transform: scaleX(1);
+        }
+
+    .hsk-number {
+        font-size: 2.5rem;
+        font-weight: 900;
+        color: var(--hp-green);
+        line-height: 1;
+        margin-bottom: 8px;
+    }
+
+    /* 6. Modules Grid (Masonry feel) */
+    .module-content-box {
+        padding: 30px;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        text-decoration: none !important;
+        color: inherit;
+    }
+
+    .module-tag {
+        display: inline-block;
+        padding: 6px 12px;
+        border-radius: 8px;
+        font-size: 0.75rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-bottom: 20px;
+    }
+
+    .tag-green {
+        background: rgba(0, 135, 68, 0.1);
+        color: var(--hp-green);
+    }
+
+    .tag-orange {
+        background: rgba(242, 92, 5, 0.1);
+        color: var(--hp-orange);
+    }
+
+    .module-title {
+        font-size: 1.3rem;
+        font-weight: 800;
+        margin-bottom: 12px;
+        color: #111827;
+    }
+</style>
+
+<!-- NỀN HOẠT HỌA AMBIENT -->
+<div class="ambient-background">
+    <div class="ambient-orb-1"></div>
+    <div class="ambient-orb-2"></div>
+</div>
+
+<div class="container pb-5 position-relative" style="z-index: 1;">
+
+    <!-- 1. HERO TYPOGRAPHY MỚI -->
+    <div class="row ultra-hero align-items-center">
+        <div class="col-lg-7">
+            <div class="brand-pill">
+                @if (!string.IsNullOrEmpty(logoCoSoHienThi))
+                {
+                    <img src="@logoCoSoHienThi" alt="@tenCoSoHienThi" onerror="this.style.display='none'" />
+                }
+                @subBadgeHienThi
+            </div>
+            <h1 class="mega-title mb-4">
+                Hán Ngữ Chuẩn <br />
+                <span>Kiến Tạo Tương Lai.</span>
+            </h1>
+            <p class="fs-5 text-secondary mb-5" style="max-width: 500px; line-height: 1.6;">
+                Chào mừng <strong class="text-dark">@currentUserName</strong>. Bắt đầu hành trình chinh phục HSK 3.0 với hệ sinh thái học tập đa chiều hoàn toàn mới.
+            </p>
+            <div class="d-flex gap-3">
+                <a href="/QuanLyDeThi/DanhSachCapDo" class="btn text-white px-5 py-3 rounded-pill fw-bold" style="background: var(--hp-green); box-shadow: 0 10px 20px rgba(0,135,68,0.2);">
+                    <i class="fa-solid fa-play me-2"></i> Phòng Thi Số
+                </a>
+            </div>
+        </div>
+
+        <div class="col-lg-5 mt-5 mt-lg-0">
+            <div class="d-flex flex-column gap-3">
+                <a href="/QuanLyDanhSachTuVung/DanhSachTuVung" class="glass-panel action-circle-btn">
+                    <div class="icon-glass-wrapper"><i class="fa-solid fa-book-open"></i></div>
+                    <div>
+                        <h6 class="fw-bold mb-1">Từ vựng toàn diện</h6>
+                        <small class="text-muted">Kho 5.000+ từ HSK cốt lõi</small>
+                    </div>
+                </a>
+                <a href="/QuanLyDanhSachNguPhap/DanhSachNguPhap" class="glass-panel action-circle-btn">
+                    <div class="icon-glass-wrapper" style="color: var(--hp-orange);"><i class="fa-solid fa-pen-ruler"></i></div>
+                    <div>
+                        <h6 class="fw-bold mb-1">Ngữ pháp ứng dụng</h6>
+                        <small class="text-muted">Cấu trúc thực chiến 6 cấp độ</small>
+                    </div>
+                </a>
+                <a href="@Url.Action("DauTruongXepHangA", "DauTruongXepHang")" class="glass-panel action-circle-btn">
+                    <div class="icon-glass-wrapper" style="color: #6366f1;"><i class="fa-solid fa-trophy"></i></div>
+                    <div>
+                        <h6 class="fw-bold mb-1">Đấu trường thi đấu</h6>
+                        <small class="text-muted">Bảng vàng xếp hạng online</small>
+                    </div>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. HSK HORIZONTAL TRACK -->
+    <div class="mt-5 mb-5">
+        <h4 class="fw-bold mb-4" style="color: var(--hp-green-dark);">Lộ Trình Đào Tạo HSK</h4>
+        <div class="hsk-track-wrapper">
+            @{
+                var hskLevels = new string[] { "Sơ cấp 1", "Sơ cấp 2", "Trung cấp 1", "Trung cấp 2", "Cao cấp 1", "Cao cấp 2" };
+            }
+            @for (int i = 1; i <= 6; i++)
+            {
+                <a href="/QuanLyDanhSachTuVung/DanhSachTuVung?capDo=@i" class="glass-panel hsk-card">
+                    <div class="hsk-number">@i</div>
+                    <div class="fw-bold text-dark">HSK @i</div>
+                    <small class="text-muted">@hskLevels[i - 1]</small>
+                </a>
+            }
+        </div>
+    </div>
+
+    <!-- 3. MODULES NEO-GRID -->
+    <div class="mt-5">
+        <h4 class="fw-bold mb-4" style="color: var(--hp-green-dark);">Kho Chuyên Đề Mở Rộng</h4>
+        <div class="row g-4">
+
+            <div class="col-md-6 col-lg-4">
+                <a href="@Url.Action("PhanTichChuHan", "PhanTichCauTaoChuHan")" class="glass-panel module-content-box">
+                    <span class="module-tag tag-green">Nền Tảng</span>
+                    <h3 class="module-title">Chiết Tự & 214 Bộ Thủ</h3>
+                    <p class="text-secondary small mb-0 flex-grow-1">Nắm vững nguồn gốc, ý nghĩa tượng hình và quy tắc bút thuận để ghi nhớ chữ Hán vĩnh viễn.</p>
+                    <div class="mt-4 text-end text-muted"><i class="fa-solid fa-arrow-right-long"></i></div>
+                </a>
+            </div>
+
+            <div class="col-md-6 col-lg-4">
+                <a href="@Url.Action("OnLuyenNgauNhien", "QuanLyDanhSachTuVung")" class="glass-panel module-content-box">
+                    <span class="module-tag tag-orange">Ghi Nhớ</span>
+                    <h3 class="module-title">Thuật Toán Spaced Repetition</h3>
+                    <p class="text-secondary small mb-0 flex-grow-1">Hệ thống ôn tập ngắt quãng thông minh tự động nhắc lại từ vựng vào thời điểm não bộ chuẩn bị quên.</p>
+                    <div class="mt-4 text-end text-muted"><i class="fa-solid fa-arrow-right-long"></i></div>
+                </a>
+            </div>
+
+            <div class="col-md-6 col-lg-4">
+                <a href="@Url.Action("ChiTietLuyenNgheHA", "LuyenNgheHinhAnh", new { capdo = 1, page = 1 })" class="glass-panel module-content-box">
+                    <span class="module-tag tag-green">Phản Xạ</span>
+                    <h3 class="module-title">Nghe Hiểu Trực Quan</h3>
+                    <p class="text-secondary small mb-0 flex-grow-1">Phá vỡ thói quen dịch nhẩm thông qua hình ảnh minh họa sinh động và âm thanh chuẩn bản địa.</p>
+                    <div class="mt-4 text-end text-muted"><i class="fa-solid fa-arrow-right-long"></i></div>
+                </a>
+            </div>
+
+            <div class="col-md-6 col-lg-4">
+                <a href="@Url.Action("TuVungChuyenNganh", "QuanLyDanhSachTuVung")" class="glass-panel module-content-box">
+                    <span class="module-tag tag-orange">Ứng Dụng</span>
+                    <h3 class="module-title">Thương Mại & Chuyên Ngành</h3>
+                    <p class="text-secondary small mb-0 flex-grow-1">Tài liệu độc quyền về thuật ngữ công xưởng, đàm phán kinh doanh và xuất nhập khẩu.</p>
+                    <div class="mt-4 text-end text-muted"><i class="fa-solid fa-arrow-right-long"></i></div>
+                </a>
+            </div>
+
+            <div class="col-lg-8">
+                <div class="glass-panel p-4 h-100 d-flex flex-column flex-lg-row align-items-center gap-4 text-decoration-none">
+                    <div class="flex-grow-1">
+                        <span class="module-tag tag-green">Thực Chiến</span>
+                        <h3 class="module-title mb-2">Kho Đề Thi & Bài Tập Trắc Nghiệm</h3>
+                        <p class="text-secondary small mb-0" style="max-width: 500px;">
+                            Hàng nghìn bài tập điền từ, sửa câu sai và bài đọc hiểu. Cập nhật cấu trúc form đề thi HSK mới nhất liên tục.
+                        </p>
+                    </div>
+                    <a href="@Url.Action("DanhSachLoaiBaiTap", "QuanLyDanhSachBaiTap", new { capdo = 1, chuongTrinh = 3 })" class="btn text-white rounded-pill px-4 py-2 fw-bold flex-shrink-0" style="background: var(--hp-orange);">
+                        Vào luyện đề
+                    </a>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>

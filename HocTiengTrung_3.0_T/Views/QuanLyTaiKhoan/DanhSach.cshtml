@@ -1,0 +1,535 @@
+﻿@model IEnumerable<HocTiengTrung_3._0_T.Models12.QuanLyTaiKhoan.NguoiDungModels>
+
+
+<style>
+    .table-hover tbody tr:hover {
+        background-color: #f8f9fa;
+        transition: all 0.2s ease-in-out;
+    }
+
+    .badge-vip {
+        background: linear-gradient(45deg, #ffd700, #ff8c00);
+        color: white;
+        border-radius: 20px;
+        padding: 5px 12px;
+        font-weight: 600;
+        box-shadow: 0 2px 4px rgba(255, 140, 0, 0.3);
+    }
+
+    .badge-normal {
+        background-color: #6c757d;
+        color: white;
+        border-radius: 20px;
+        padding: 5px 12px;
+        font-weight: 500;
+    }
+
+    .avatar-circle {
+        width: 45px;
+        height: 45px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 2px solid #e9ecef;
+    }
+
+    .card-custom {
+        border: none;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    }
+</style>
+<div class="container-fluid mt-4">
+    <div class="card card-custom mb-4">
+        <div class="card-body d-flex flex-wrap justify-content-between align-items-center">
+            <h4 class="mb-0 text-primary fw-bold">
+                <i class="fas fa-users-cog me-2"></i> Danh Sách Người Dùng
+            </h4>
+
+            <form method="get" action="@Url.Action("DanhSach", "QuanLyTaiKhoan")" class="d-flex flex-wrap align-items-center gap-2 mt-2 mt-md-0">
+
+                <div class="input-group input-group-sm shadow-sm" style="width: 260px;">
+                    <span class="input-group-text bg-white border-end-0 text-muted">
+                        <i class="fas fa-search"></i>
+                    </span>
+                    <input type="text" name="searchTerm" class="form-control border-start-0 ps-0"
+                           placeholder="Tìm tên, email, tài khoản..." value="@ViewBag.SearchTerm" />
+
+                    @if (!string.IsNullOrEmpty(ViewBag.SearchTerm as string))
+                    {
+                        <a href="@Url.Action("DanhSach", "QuanLyTaiKhoan", new { isVip = ViewBag.IsVip })"
+                           class="btn btn-outline-secondary border-start-0 d-flex align-items-center bg-white text-muted px-2">
+                            <i class="fas fa-times"></i>
+                        </a>
+                    }
+                </div>
+
+                <div class="d-flex align-items-center ms-md-2">
+                    <label class="me-2 text-muted fw-bold mb-0 text-nowrap">Trạng thái:</label>
+                    <select name="isVip" class="form-select form-select-sm w-auto shadow-sm fw-semibold" onchange="this.form.submit()">
+                        <option value="">-- Tất cả người dùng --</option>
+                        @if (ViewBag.IsVip == true)
+                        {
+                            <option value="true" selected>💎 Chỉ tài khoản VIP</option>
+                            <option value="false">Tài khoản Thường</option>
+                        }
+                        else if (ViewBag.IsVip == false)
+                        {
+                            <option value="true">💎 Chỉ tài khoản VIP</option>
+                            <option value="false" selected>Tài khoản Thường</option>
+                        }
+                        else
+                        {
+                            <option value="true">💎 Chỉ tài khoản VIP</option>
+                            <option value="false">Tài khoản Thường</option>
+                        }
+                    </select>
+                </div>
+
+                <button type="submit" class="btn btn-sm btn-primary rounded shadow-sm px-3 fw-bold">
+                    Tìm
+                </button>
+                <button type="button" class="btn btn-warning shadow-sm btn-sm fw-bold" data-bs-toggle="modal" data-bs-target="#bangGiaModal" onclick="loadBangGia()">
+                    <i class="fas fa-money-check-alt me-1"></i> Quản lý bảng giá
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <div class="card card-custom">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light text-muted">
+                        <tr>
+                            <th class="ps-4">Người dùng</th>
+                            <th>Tên đăng nhập</th>
+                            <th>Liên hệ</th>
+                            <th>Ngày tham gia</th>
+                            <th class="text-center">Loại thẻ</th>
+                            <th class="text-end pe-4">Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model != null && Model.Any())
+                        {
+                            foreach (var item in Model)
+                            {
+                                <tr>
+                                    <td class="ps-4">
+                                        <div class="d-flex align-items-center">
+                                            <img src="@(string.IsNullOrEmpty(item.AnhDaiDien) ? "/images/default-avatar.png" : item.AnhDaiDien)"
+                                                 alt="Avatar" class="avatar-circle me-3" style="width: 40px; height: 40px; object-fit: cover; border-radius: 50%;"
+                                                 onerror="this.src='https://ui-avatars.com/api/?name=@Uri.EscapeDataString(item.HoTen ?? "User")&background=random'" />
+                                            <div>
+                                                <h6 class="mb-0 fw-bold text-dark">@(item.HoTen ?? "Chưa cập nhật")</h6>
+                                                <small class="text-muted">ID: #@item.IdUser</small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="fw-semibold">
+                                            @(item.IdTaiKhoanNavigation?.TenDangNhap ?? "Chưa có tài khoản")
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div class="small">
+                                            <div><i class="fas fa-envelope text-secondary me-1"></i> @(item.Email ?? "---")</div>
+                                            <div class="mt-1"><i class="fas fa-phone-alt text-secondary me-1"></i> @(item.SoDienThoai ?? "---")</div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        @(item.IdTaiKhoanNavigation?.NgayTao?.ToString("dd/MM/yyyy") ?? "---")
+                                    </td>
+                                    <td class="text-center">
+                                        @if (item.IdTaiKhoanNavigation?.IsVip == true)
+                                        {
+                                            <span class="badge bg-warning text-dark"><i class="fas fa-gem me-1"></i> VIP</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-secondary">Thường</span>
+                                        }
+                                    </td>
+                                    <td class="text-end pe-4">
+                                        <a href="@Url.Action("ChiTiet", "QuanLyTaiKhoan", new { id = item.IdTaiKhoanNavigation?.IdTaiKhoan })"
+                                           class="btn btn-sm btn-outline-primary rounded-pill px-3 shadow-sm">
+                                            <i class="fas fa-eye me-1"></i> Chi tiết
+                                        </a>
+                                        @if (item.IdTaiKhoanNavigation != null)
+                                        {
+                                            <button type="button" class="btn btn-sm btn-outline-danger rounded-pill px-3 shadow-sm ms-1"
+                                                    onclick="moModalCapLaiMatKhau(@item.IdTaiKhoanNavigation.IdTaiKhoan, '@item.IdTaiKhoanNavigation.TenDangNhap')">
+                                                <i class="fas fa-key me-1"></i> Cấp lại MK
+                                            </button>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="6" class="text-center py-5 text-muted">
+                                    <i class="fas fa-box-open fs-1 mb-3 text-light"></i>
+                                    <h5>Không tìm thấy dữ liệu</h5>
+                                    <p>Thử thay đổi bộ lọc hoặc chưa có tài khoản nào phù hợp.</p>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="card-footer bg-light border-top p-3 d-flex flex-wrap justify-content-between align-items-center">
+            <small class="text-muted fw-semibold">
+                Hiển thị trang @(ViewBag.CurrentPage ?? 1) / @(ViewBag.TotalPages ?? 1)
+                <span class="badge bg-secondary ms-1">Tổng: @(ViewBag.TotalItems ?? 0) tài khoản</span>
+            </small>
+
+            @if (ViewBag.TotalPages > 1)
+            {
+                int currentPage = ViewBag.CurrentPage;
+                int totalPages = ViewBag.TotalPages;
+                int delta = 2; // Số trang hiển thị xung quanh trang hiện tại
+
+                <nav aria-label="Page navigation" class="mt-3">
+                    <ul class="pagination pagination-sm justify-content-center shadow-sm">
+            
+                        @* Nút Previous *@
+                        <li class="page-item @(currentPage <= 1 ? "disabled" : "")">
+                            <a class="page-link" href="@Url.Action("DanhSach", new { page = currentPage - 1, isVip = ViewBag.IsVip, searchTerm = ViewBag.SearchTerm })">
+                                <i class="fas fa-chevron-left"></i>
+                            </a>
+                        </li>
+
+                        @* Hiển thị trang đầu *@
+                        @if (currentPage > delta + 1)
+                        {
+                            <li class="page-item"><a class="page-link" href="@Url.Action("DanhSach", new { page = 1, isVip = ViewBag.IsVip, searchTerm = ViewBag.SearchTerm })">1</a></li>
+                            <li class="page-item disabled"><span class="page-link">...</span></li>
+                        }
+
+                        @* Hiển thị các trang ở giữa *@
+                        @for (int i = Math.Max(1, currentPage - delta); i <= Math.Min(totalPages, currentPage + delta); i++)
+                        {
+                            <li class="page-item @(currentPage == i ? "active" : "")">
+                                <a class="page-link" href="@Url.Action("DanhSach", new { page = i, isVip = ViewBag.IsVip, searchTerm = ViewBag.SearchTerm })">@i</a>
+                            </li>
+                        }
+
+                        @* Hiển thị trang cuối *@
+                        @if (currentPage < totalPages - delta)
+                        {
+                            <li class="page-item disabled"><span class="page-link">...</span></li>
+                            <li class="page-item"><a class="page-link" href="@Url.Action("DanhSach", new { page = totalPages, isVip = ViewBag.IsVip, searchTerm = ViewBag.SearchTerm })">@totalPages</a></li>
+                        }
+
+                        @* Nút Next *@
+                        <li class="page-item @(currentPage >= totalPages ? "disabled" : "")">
+                            <a class="page-link" href="@Url.Action("DanhSach", new { page = currentPage + 1, isVip = ViewBag.IsVip, searchTerm = ViewBag.SearchTerm })">
+                                <i class="fas fa-chevron-right"></i>
+                            </a>
+                        </li>
+                    </ul>
+                </nav>
+            }
+        </div>
+    </div>
+
+    <div class="modal fade" id="bangGiaModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title fw-bold"><i class="fas fa-tags me-2"></i>Quản Lý Bảng Giá Dịch Vụ</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <!-- Form Thêm Gói Mới -->
+                    <div class="card mb-4 border-primary border-opacity-25 bg-light shadow-sm">
+                        <div class="card-header bg-primary bg-opacity-10 fw-bold text-primary">
+                            <i class="fas fa-plus-circle me-1"></i> Thêm Gói Đăng Ký Mới
+                        </div>
+                        <div class="card-body">
+                            <form id="formThemGoi" onsubmit="event.preventDefault(); themGoiMoi();">
+                                <div class="row g-3">
+                                    <div class="col-md-3">
+                                        <label class="form-label small fw-bold">Tên Gói <span class="text-danger">*</span></label>
+                                        <input type="text" id="addTenGoi" class="form-control form-control-sm" placeholder="VD: Gói 6 Tháng" required />
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label class="form-label small fw-bold">Số Tháng <span class="text-danger">*</span></label>
+                                        <input type="number" id="addSoThang" class="form-control form-control-sm" min="1" placeholder="VD: 6" required />
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label class="form-label small fw-bold">Số Tiền (VNĐ) <span class="text-danger">*</span></label>
+                                        <input type="number" id="addSoTien" class="form-control form-control-sm" min="0" placeholder="VD: 500000" required />
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label class="form-label small fw-bold">Mô Tả</label>
+                                        <input type="text" id="addMoTa" class="form-control form-control-sm" placeholder="VD: Tiết kiệm 20%" />
+                                    </div>
+                                </div>
+                                <div class="text-end mt-3">
+                                    <button type="submit" class="btn btn-sm btn-success fw-bold px-3">
+                                        <i class="fas fa-plus me-1"></i> Tạo Gói Mới
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
+                    <!-- Bảng Danh Sách Gói Giá -->
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-hover align-middle mb-0">
+                            <thead class="table-light text-muted">
+                                <tr>
+                                    <th>Tên Gói</th>
+                                    <th style="width: 110px;">Số Tháng</th>
+                                    <th style="width: 160px;">Số Tiền</th>
+                                    <th>Mô Tả</th>
+                                    <th style="width: 110px;">Trạng Thái</th>
+                                    <th style="width: 150px;" class="text-center">Thao tác</th>
+                                </tr>
+                            </thead>
+                            <tbody id="bangGiaBody">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="resetPasswordModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title fw-bold"><i class="fas fa-unlock-alt me-2"></i>Cấp lại mật khẩu thành công</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body text-center py-4">
+                    <i class="fas fa-check-circle text-success fs-1 mb-3"></i>
+                    <p class="text-muted mb-2">Mật khẩu mới cho tài khoản <strong id="resetUsername" class="text-primary fs-5"></strong> là:</p>
+
+                    <div class="bg-light p-3 rounded border border-2 border-danger mb-3">
+                        <h3 id="newPasswordDisplay" class="fw-bold text-danger mb-0 user-select-all" style="letter-spacing: 3px; font-family: monospace;"></h3>
+                    </div>
+
+                    <p class="small text-danger mb-0">
+                        <i class="fas fa-exclamation-triangle me-1"></i>Ngài hãy bôi đen copy để gửi cho người dùng. Vì đã băm BCrypt nên không thể xem lại lần thứ 2!
+                    </p>
+                </div>
+                <div class="modal-footer justify-content-center bg-light">
+                    <button type="button" class="btn btn-secondary px-4 fw-bold" data-bs-dismiss="modal">Đã sao chép & Đóng</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+
+<script>
+
+    let cacheBangGiaData = [];
+
+    // 1. Tải danh sách bảng giá từ API
+    async function loadBangGia() {
+        const tbody = document.getElementById('bangGiaBody');
+        tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4"><i class="fas fa-spinner fa-spin me-2"></i>Đang tải dữ liệu...</td></tr>';
+
+        try {
+            const response = await fetch('/api/quanlytaikhoannguoidung/danh-sach-bang-gia');
+            if (!response.ok) throw new Error('Không thể tải dữ liệu');
+
+            cacheBangGiaData = await response.json();
+            renderBangGiaTable();
+        } catch (err) {
+            console.error(err);
+            tbody.innerHTML = '<tr><td colspan="6" class="text-center text-danger py-4">Lỗi tải bảng giá! Vui lòng thử lại.</td></tr>';
+        }
+    }
+
+    // 2. Render dữ liệu bảng giá
+    function renderBangGiaTable() {
+        const tbody = document.getElementById('bangGiaBody');
+        tbody.innerHTML = '';
+
+        if (!cacheBangGiaData || cacheBangGiaData.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-3">Chưa có gói đăng ký nào.</td></tr>';
+            return;
+        }
+
+        cacheBangGiaData.forEach(item => {
+            tbody.innerHTML += `
+                    <tr id="row-bg-${item.idGoi}">
+                        <td class="fw-bold text-primary">${item.tenGoi}</td>
+                        <td class="fw-semibold text-center">${item.soThang} tháng</td>
+                        <td class="fw-bold text-success">${item.soTien.toLocaleString('vi-VN')} đ</td>
+                        <td class="small text-muted">${item.moTa || '---'}</td>
+                        <td>${item.trangThai ? '<span class="badge bg-success">Đang dùng</span>' : '<span class="badge bg-secondary">Cũ</span>'}</td>
+                        <td class="text-center">
+                            ${item.trangThai ? `<button class="btn btn-sm btn-outline-primary fw-bold" onclick="switchToEditMode(${item.idGoi})"><i class="fas fa-edit me-1"></i>Sửa</button>` : '-'}
+                        </td>
+                    </tr>
+                `;
+        });
+    }
+
+    // 3. Chức năng THÊM GÓI MỚI
+    async function themGoiMoi() {
+        const tenGoi = document.getElementById('addTenGoi').value.trim();
+        const soThang = parseInt(document.getElementById('addSoThang').value);
+        const soTien = parseFloat(document.getElementById('addSoTien').value);
+        const moTa = document.getElementById('addMoTa').value.trim();
+
+        if (!tenGoi || isNaN(soThang) || isNaN(soTien)) {
+            alert('Vui lòng nhập đầy đủ các trường bắt buộc!');
+            return;
+        }
+
+        const payload = { tenGoi, soThang, soTien, moTa };
+
+        try {
+            const response = await fetch('/api/quanlytaikhoannguoidung/them-goi', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                alert(data.message || 'Thêm gói mới thành công!');
+                document.getElementById('formThemGoi').reset();
+                loadBangGia();
+            } else {
+                alert(data.message || 'Thêm thất bại!');
+            }
+        } catch (err) {
+            console.error(err);
+            alert('Lỗi kết nối đến máy chủ.');
+        }
+    }
+
+    // 4. Chuyển dòng dữ liệu thành Form chỉnh sửa toàn bộ
+    function switchToEditMode(idGoi) {
+        const item = cacheBangGiaData.find(x => x.idGoi === idGoi);
+        if (!item) return;
+
+        const row = document.getElementById(`row-bg-${idGoi}`);
+        row.innerHTML = `
+                <td>
+                    <input type="text" id="edit-ten-${idGoi}" class="form-control form-control-sm fw-bold" value="${item.tenGoi}">
+                </td>
+                <td>
+                    <input type="number" id="edit-thang-${idGoi}" class="form-control form-control-sm text-center" min="1" value="${item.soThang}">
+                </td>
+                <td>
+                    <input type="number" id="edit-tien-${idGoi}" class="form-control form-control-sm text-success fw-bold" min="0" value="${item.soTien}">
+                </td>
+                <td>
+                    <input type="text" id="edit-mota-${idGoi}" class="form-control form-control-sm" value="${item.moTa || ''}">
+                </td>
+                <td><span class="badge bg-warning text-dark">Sửa đổi</span></td>
+                <td class="text-center">
+                    <button class="btn btn-sm btn-success me-1" onclick="saveGoiCapNhat(${idGoi})"><i class="fas fa-check"></i> Lưu</button>
+                    <button class="btn btn-sm btn-light border" onclick="renderBangGiaTable()"><i class="fas fa-times"></i> Hủy</button>
+                </td>
+            `;
+    }
+
+    // 5. Cập nhật gói đăng ký (Lưu vết phiên bản mới)
+    async function saveGoiCapNhat(idGoi) {
+        const tenGoi = document.getElementById(`edit-ten-${idGoi}`).value.trim();
+        const soThang = parseInt(document.getElementById(`edit-thang-${idGoi}`).value);
+        const soTien = parseFloat(document.getElementById(`edit-tien-${idGoi}`).value);
+        const moTa = document.getElementById(`edit-mota-${idGoi}`).value.trim();
+
+        if (!tenGoi || isNaN(soThang) || isNaN(soTien) || soThang <= 0 || soTien < 0) {
+            alert('Thông tin nhập vào không hợp lệ!');
+            return;
+        }
+
+        if (!confirm('Hệ thống sẽ vô hiệu hóa gói cũ và tạo bản ghi mới để lưu vết lịch sử. Xác nhận cập nhật?')) return;
+
+        const payload = { idGoi, tenGoi, soThang, soTien, moTa };
+
+        try {
+            const res = await fetch('/api/quanlytaikhoannguoidung/cap-nhat-goi', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            const data = await res.json();
+
+            if (res.ok) {
+                alert(data.message || 'Cập nhật thành công!');
+                loadBangGia();
+            } else {
+                alert(data.message || 'Lỗi khi cập nhật!');
+            }
+        } catch (err) {
+            console.error(err);
+            alert('Không thể kết nối đến máy chủ.');
+        }
+    }
+
+    // Hàm phụ hỗ trợ hiển thị lỗi nhanh
+    function showInputError(inputEl, errorEl, message) {
+        inputEl.classList.add('is-invalid');
+        errorEl.textContent = message;
+        errorEl.classList.remove('d-none');
+        inputEl.focus();
+    }
+
+   
+    function generateRandomPassword() {   
+        const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!" + "\u0040" + "\u0023";
+        let pass = "";
+        for (let i = 0; i < 8; i++) {
+            pass += chars.charAt(Math.floor(Math.random() * chars.length));
+        }
+        return pass;
+    }
+    // Hàm xử lý khi bấm nút Cấp lại MK
+    async function moModalCapLaiMatKhau(idTaiKhoan, tenDangNhap) {
+        if (!confirm(`Ngài có chắc chắn muốn ép đổi mật khẩu của tài khoản: ${tenDangNhap}?`)) return;
+
+        // 1. Sinh mật khẩu mới ngay tại Frontend
+        const matKhauMoi = generateRandomPassword();
+
+        // 2. Đóng gói dữ liệu gửi lên API AdminCapLaiMatKhau
+        const payload = {
+            idTaiKhoan: idTaiKhoan,
+            matKhauMoi: matKhauMoi
+        };
+
+        try {
+            // LƯU Ý: Hoàng Đế vui lòng điều chỉnh lại đường dẫn URL này cho khớp chuẩn với Route API trong Controller của ngài
+            const response = await fetch('/api/quanlytaikhoannguoidung/admin/cap-lai-mat-khau', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            if (response.ok) {
+                // 3. Thành công: Gắn dữ liệu vào Modal và hiển thị
+                document.getElementById('resetUsername').innerText = tenDangNhap;
+                document.getElementById('newPasswordDisplay').innerText = matKhauMoi;
+            
+                const modal = new bootstrap.Modal(document.getElementById('resetPasswordModal'));
+                modal.show();
+            } else {
+                const errorData = await response.json();
+                alert('Lỗi khi cấp lại mật khẩu: ' + (errorData.message || 'Lỗi hệ thống'));
+            }
+        } catch (err) {
+            console.error(err);
+            alert('Không thể kết nối đến máy chủ.');
+        }
+    }
+</script>

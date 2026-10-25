@@ -1,0 +1,316 @@
+﻿@model dynamic
+@{
+    ViewData["Title"] = "Quản lý Chương Trình Giáo Trình";
+    int currentPage = ViewBag.CurrentPage ?? 1;
+    int pageSize = ViewBag.PageSize ?? 10;
+
+    // Kiểm tra và lấy thông tin phân trang từ Model dynamic (hỗ trợ cả camelCase và PascalCase)
+    int totalPages = 1;
+    int totalItems = 0;
+
+    if (Model != null)
+    {
+        totalPages = Model.TotalPages ?? Model.totalPages ?? 1;
+        totalItems = Model.TotalItems ?? Model.totalItems ?? 0;
+    }
+
+    // Tự động nhận diện danh sách data (camelCase hoặc PascalCase)
+    var items = Model?.Data ?? Model?.data;
+}
+
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h3 class="fw-bold text-primary mb-1">
+                <i class="fa-solid fa-book-journal-whills me-2"></i>Quản Lý Chương Trình Giáo Trình
+            </h3>
+            <p class="text-muted mb-0">Quản lý danh mục giáo trình và chương trình giảng dạy tiếng Trung</p>
+        </div>
+        <button class="btn btn-primary rounded-pill px-4 shadow-sm" onclick="openAddModal()">
+            <i class="fa-solid fa-plus me-2"></i>Thêm chương trình mới
+        </button>
+    </div>
+
+    <!-- Card Bảng Dữ Liệu -->
+    <div class="card border-0 shadow-sm rounded-4">
+        <div class="card-body p-4">
+
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="text-center" style="width: 80px;">ID</th>
+                            <th>Tên Chương Trình</th>
+                            <th>Tên Giáo Trình</th>
+                            <th>Mô Tả</th>
+                            <th class="text-center" style="width: 140px;">Trạng Thái</th>
+                            <th class="text-center" style="width: 150px;">Thao Tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (items != null && items.Count > 0)
+                        {
+                            foreach (var item in items)
+                            {
+                                int id = item.idGiaoTrinh ?? item.IdGiaoTrinh ?? 0;
+                                string tenCT = item.tenChuongTrinh ?? item.TenChuongTrinh ?? "";
+                                string tenGT = item.tenGiaoTrinh ?? item.TenGiaoTrinh ?? "";
+                                string moTa = item.moTa ?? item.MoTa ?? "";
+                                bool trangThai = item.trangThai ?? item.TrangThai ?? true;
+
+                                <tr>
+                                    <td class="text-center fw-bold text-muted">#@id</td>
+                                    <td>
+                                        <span class="fw-bold text-dark">@tenCT</span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-info-subtle text-info fw-semibold px-3 py-2 rounded-pill">
+                                            @tenGT
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div class="text-muted text-truncate" style="max-width: 300px;" title="@moTa">
+                                            @(string.IsNullOrWhiteSpace(moTa) ? "—" : moTa)
+                                        </div>
+                                    </td>
+                                    <td class="text-center">
+                                        @if (trangThai)
+                                        {
+                                            <span class="badge bg-success-subtle text-success fw-bold px-3 py-2 rounded-pill">
+                                                <i class="fa-solid fa-circle-check me-1"></i>Hoạt động
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-danger-subtle text-danger fw-bold px-3 py-2 rounded-pill">
+                                                <i class="fa-solid fa-circle-xmark me-1"></i>Đã khóa
+                                            </span>
+                                        }
+                                    </td>
+                                    <td class="text-center">
+                                        <button class="btn btn-sm btn-outline-warning rounded-circle me-1 btn-edit"
+                                                title="Sửa"
+                                                data-id="@id"
+                                                data-tenct="@tenCT"
+                                                data-tengt="@tenGT"
+                                                data-mota="@moTa"
+                                                data-trangthai="@(trangThai ? "true" : "false")">
+                                            <i class="fa-solid fa-pen"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-danger rounded-circle btn-delete"
+                                                title="Xóa"
+                                                data-id="@id"
+                                                data-tenct="@tenCT">
+                                            <i class="fa-solid fa-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="6" class="text-center py-5 text-muted">
+                                    <i class="fa-regular fa-folder-open fa-3x mb-3 d-block opacity-50"></i>
+                                    Chưa có dữ liệu chương trình giáo trình nào.
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Phân Trang -->
+            @if (totalPages > 1)
+            {
+                <div class="d-flex justify-content-between align-items-center pt-3 border-top mt-3">
+                    <span class="text-muted small">
+                        Hiển thị trang <b>@currentPage</b> / <b>@totalPages</b> (Tổng <b>@totalItems</b> chương trình)
+                    </span>
+                    <nav>
+                        <ul class="pagination pagination-sm mb-0">
+                            <li class="page-item @(currentPage <= 1 ? "disabled" : "")">
+                                <a class="page-link rounded-circle mx-1" href="@Url.Action("DanhSachChuongTrinh", new { page = currentPage - 1, pageSize = pageSize })">
+                                    <i class="fa-solid fa-chevron-left"></i>
+                                </a>
+                            </li>
+
+                            @for (int i = 1; i <= totalPages; i++)
+                            {
+                                <li class="page-item @(i == currentPage ? "active" : "")">
+                                    <a class="page-link rounded-circle mx-1" href="@Url.Action("DanhSachChuongTrinh", new { page = i, pageSize = pageSize })">@i</a>
+                                </li>
+                            }
+
+                            <li class="page-item @(currentPage >= totalPages ? "disabled" : "")">
+                                <a class="page-link rounded-circle mx-1" href="@Url.Action("DanhSachChuongTrinh", new { page = currentPage + 1, pageSize = pageSize })">
+                                    <i class="fa-solid fa-chevron-right"></i>
+                                </a>
+                            </li>
+                        </ul>
+                    </nav>
+                </div>
+            }
+
+        </div>
+    </div>
+</div>
+
+<!-- Modal Thêm / Sửa Chương Trình -->
+<div class="modal fade" id="chuongTrinhModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow rounded-4">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold text-primary" id="modalTitle">Thêm Chương Trình Mới</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <form id="chuongTrinhForm">
+                    <input type="hidden" id="idGiaoTrinh" value="0" />
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Tên Chương Trình <span class="text-danger">*</span></label>
+                        <input type="text" id="tenChuongTrinh" class="form-control rounded-3" placeholder="Nhập tên chương trình..." required />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Tên Giáo Trình <span class="text-danger">*</span></label>
+                        <input type="text" id="tenGiaoTrinh" class="form-control rounded-3" placeholder="Nhập tên giáo trình..." required />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Mô Tả</label>
+                        <textarea id="moTa" class="form-control rounded-3" rows="3" placeholder="Nhập mô tả ngắn..."></textarea>
+                    </div>
+
+                    <div class="form-check form-switch mb-3">
+                        <input class="form-check-input" type="checkbox" id="trangThai" checked>
+                        <label class="form-check-label fw-semibold" for="trangThai">Trạng thái hoạt động</label>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer border-0 pt-0">
+                <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Hủy</button>
+                <button type="button" class="btn btn-primary rounded-pill px-4" onclick="saveChuongTrinh()">
+                    <i class="fa-solid fa-floppy-disk me-1"></i>Lưu lại
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        const API_BASE_URL = "/api/quanlybaihoc";
+
+        function openAddModal() {
+            document.getElementById("modalTitle").innerText = "Thêm Chương Trình Mới";
+            document.getElementById("idGiaoTrinh").value = "0";
+            document.getElementById("tenChuongTrinh").value = "";
+            document.getElementById("tenGiaoTrinh").value = "";
+            document.getElementById("moTa").value = "";
+            document.getElementById("trangThai").checked = true;
+
+            const modal = new bootstrap.Modal(document.getElementById('chuongTrinhModal'));
+            modal.show();
+        }
+
+        document.addEventListener("DOMContentLoaded", function() {
+            // Sự kiện nút Sửa
+            document.querySelectorAll(".btn-edit").forEach(btn => {
+                btn.addEventListener("click", function() {
+                    const id = this.dataset.id;
+                    const tenCT = this.dataset.tenct;
+                    const tenGT = this.dataset.tengt;
+                    const moTa = this.dataset.mota;
+                    const trangThai = this.dataset.trangthai === "true";
+
+                    document.getElementById("modalTitle").innerText = "Cập Nhật Chương Trình";
+                    document.getElementById("idGiaoTrinh").value = id;
+                    document.getElementById("tenChuongTrinh").value = tenCT;
+                    document.getElementById("tenGiaoTrinh").value = tenGT;
+                    document.getElementById("moTa").value = moTa || '';
+                    document.getElementById("trangThai").checked = trangThai;
+
+                    const modal = new bootstrap.Modal(document.getElementById('chuongTrinhModal'));
+                    modal.show();
+                });
+            });
+
+            // Sự kiện nút Xóa
+            document.querySelectorAll(".btn-delete").forEach(btn => {
+                btn.addEventListener("click", function() {
+                    const id = this.dataset.id;
+                    const name = this.dataset.tenct;
+                    deleteChuongTrinh(id, name);
+                });
+            });
+        });
+
+        async function saveChuongTrinh() {
+            const id = parseInt(document.getElementById("idGiaoTrinh").value);
+            const tenChuongTrinh = document.getElementById("tenChuongTrinh").value.trim();
+            const tenGiaoTrinh = document.getElementById("tenGiaoTrinh").value.trim();
+            const moTa = document.getElementById("moTa").value.trim();
+            const trangThai = document.getElementById("trangThai").checked;
+
+            if (!tenChuongTrinh || !tenGiaoTrinh) {
+                alert("Vui lòng nhập Tên chương trình và Tên giáo trình!");
+                return;
+            }
+
+            const payload = {
+                idGiaoTrinh: id,
+                tenChuongTrinh: tenChuongTrinh,
+                tenGiaoTrinh: tenGiaoTrinh,
+                moTa: moTa,
+                trangThai: trangThai
+            };
+
+            const isEdit = id > 0;
+            const url = isEdit ? `/api/quanlybaihoc/sua-chuongtrinh/${id}` : `/api/quanlybaihoc/them-chuongtrinh`;
+            const method = isEdit ? "PUT" : "POST";
+
+            try {
+                const response = await fetch(url, {
+                    method: method,
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload)
+                });
+
+                if (response.ok) {
+                    alert(isEdit ? "Cập nhật thành công!" : "Thêm mới thành công!");
+                    location.reload();
+                } else {
+                    const err = await response.json();
+                    alert(err.message || "Đã xảy ra lỗi khi lưu dữ liệu.");
+                }
+            } catch (error) {
+                console.error("Lỗi:", error);
+                alert("Không thể kết nối tới máy chủ.");
+            }
+        }
+
+        async function deleteChuongTrinh(id, name) {
+            if (!confirm(`Bạn có chắc chắn muốn xóa chương trình "${name}"?`)) return;
+
+            try {
+                const response = await fetch(`/api/quanlybaihoc/xoa-chuongtrinh/${id}`, {
+                    method: "DELETE"
+                });
+
+                if (response.ok) {
+                    alert("Xóa chương trình thành công!");
+                    location.reload();
+                } else {
+                    const result = await response.json();
+                    alert(result.message || "Xóa thất bại!");
+                }
+            } catch (error) {
+                console.error("Lỗi:", error);
+                alert("Không thể kết nối tới máy chủ.");
+            }
+        }
+    </script>
+}

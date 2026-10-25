@@ -1,0 +1,585 @@
+﻿@model HocTiengTrung_3._0_T.Models12.QuanLyTaiKhoan.NguoiDungModels
+@{
+    ViewData["Title"] = "Chi tiết người dùng - " + (Model?.HoTen ?? "Hồ sơ");
+    var taiKhoan = Model?.IdTaiKhoanNavigation;
+
+    // Lấy thông tin vai trò và ID của tài khoản đang đăng nhập
+    string currentVaiTro = User.FindFirst("TenVaiTro")?.Value
+                           ?? Context.Session.GetString("TenVaiTro")
+                           ?? "";
+
+    string currentIdTaiKhoanStr = User.FindFirst("IdTaiKhoan")?.Value 
+                                  ?? Context.Session.GetString("IdTaiKhoan") 
+                                  ?? "0";
+    int.TryParse(currentIdTaiKhoanStr, out int currentIdTaiKhoan);
+
+    string vaiTroClean = currentVaiTro.Trim().ToLower();
+
+    // Kiểm tra quyền Quản lý trung tâm
+    bool isQuanLyTrungTam = vaiTroClean.Contains("quản lý trung tâm") || vaiTroClean.Contains("quan ly trung tam");
+    
+   
+    // Kiểm tra xem có đang xem chính tài khoản của mình hay không
+    bool isSelfAccount = (taiKhoan != null && taiKhoan.IdTaiKhoan == currentIdTaiKhoan);
+    bool isAccountActive = taiKhoan?.TrangThai ?? true;
+}
+
+@* Anti-Forgery Token cho bảo mật request *@
+<div class="d-none">@Html.AntiForgeryToken()</div>
+
+<style>
+    .card-custom {
+        border: none;
+        border-radius: 16px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+        background-color: #fff;
+    }
+
+    .profile-avatar {
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 4px solid #fff;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    }
+
+    .badge-status {
+        border-radius: 20px;
+        padding: 6px 14px;
+        font-size: 0.8rem;
+        font-weight: 600;
+    }
+
+    .info-label {
+        color: #6c757d;
+        font-size: 0.8rem;
+        font-weight: 500;
+        margin-bottom: 2px;
+        display: block;
+    }
+
+    .info-value {
+        font-weight: 600;
+        color: #212529;
+        font-size: 0.95rem;
+    }
+</style>
+
+<div class="container-fluid mt-4 mb-5">
+    <!-- Nút điều hướng quay lại -->
+    <div class="mb-3 d-flex justify-content-between align-items-center">
+        <a href="javascript:history.back()" class="btn btn-sm btn-light text-secondary rounded-pill shadow-sm px-3">
+            <i class="fas fa-arrow-left me-2"></i>Quay lại
+        </a>
+        <span class="badge bg-light text-dark border">
+            Mã định danh tài khoản: <strong>#@(taiKhoan?.IdTaiKhoan ?? 0)</strong>
+        </span>
+    </div>
+
+    <div class="row g-4">
+        <!-- Cột trái: Thẻ đại diện & Hành động quản trị -->
+        <div class="col-lg-4">
+            <div class="card card-custom text-center p-4 mb-4">
+                <div class="position-relative d-inline-block mx-auto mb-3">
+                    <img src="@(string.IsNullOrEmpty(Model?.AnhDaiDien) || Model.AnhDaiDien == "default_avatar.png"
+                                ? "https://ui-avatars.com/api/?name=" + Uri.EscapeDataString(Model?.HoTen ?? "User") + "&background=random"
+                                : Model.AnhDaiDien)"
+                         alt="Avatar" class="profile-avatar" />
+                    <span class="position-absolute bottom-0 end-0 p-2 bg-@(isAccountActive ? "success" : "danger") border border-white rounded-circle"
+                          title="@(isAccountActive ? "Đang hoạt động" : "Đã khóa")"></span>
+                </div>
+
+                <h5 class="fw-bold mb-1 text-dark">@(Model?.HoTen ?? "Chưa cập nhật họ tên")</h5>
+                <p class="text-muted small mb-2 font-monospace">@@@(taiKhoan?.TenDangNhap ?? "---")</p>
+
+                <div class="d-flex justify-content-center gap-2 mb-3">
+                    <span class="badge bg-primary-subtle text-primary border badge-status">
+                        <i class="fa-solid fa-user-shield me-1">@taiKhoan.TenVaiTro</i>
+                    </span>
+                    <span id="badgeTrangThai" class="badge @(isAccountActive ? "bg-success-subtle text-success" : "bg-danger-subtle text-danger") border badge-status">
+                        @(isAccountActive ? "Hoạt động" : "Đã khóa")
+                    </span>
+                </div>
+
+                <hr class="text-muted opacity-25" />
+
+                <!-- Thao tác quản trị tài khoản -->
+                <div class="text-start">
+                    <label class="info-label text-uppercase mb-2">Thao tác tài khoản</label>
+                    @if (isQuanLyTrungTam)
+                    {
+                        <div class="d-flex flex-column gap-2">
+                            <!-- NÚT CẤP LẠI MẬT KHẨU -->
+                            <button type="button" class="btn btn-outline-warning w-100 fw-bold d-flex align-items-center justify-content-center gap-2 shadow-sm"
+                                    id="btnMoModalCapLaiMatKhau"
+                                    data-id="@taiKhoan?.IdTaiKhoan"
+                                    data-username="@taiKhoan?.TenDangNhap">
+                                <i class="fa-solid fa-key"></i> Cấp lại mật khẩu
+                            </button>
+
+                            <!-- NÚT KHÓA / MỞ KHÓA TÀI KHOẢN -->
+                            @if (!isSelfAccount)
+                            {
+                                <button type="button" 
+                                        class="btn @(isAccountActive ? "btn-outline-danger" : "btn-outline-success") w-100 fw-bold d-flex align-items-center justify-content-center gap-2 shadow-sm"
+                                        id="btnToggleKhoa"
+                                        onclick="xuLyToggleKhoaTaiKhoan(@(taiKhoan?.IdTaiKhoan ?? 0), '@(taiKhoan?.TenDangNhap ?? "")', @(isAccountActive ? "true" : "false"))">
+                                    <i class="fa-solid @(isAccountActive ? "fa-user-slash" : "fa-user-check")"></i> 
+                                    @(isAccountActive ? "Khóa tài khoản" : "Mở khóa tài khoản")
+                                </button>
+                            }
+                            else
+                            {
+                                <small class="text-muted fst-italic text-center d-block">
+                                    <i class="fa-solid fa-circle-info me-1"></i>Bạn đang xem tài khoản của chính mình.
+                                </small>
+                            }
+                            <!-- NÚT GÁN VAI TRÒ HỆ THỐNG -->
+                            <button type="button"
+                                    class="btn btn-outline-primary w-100 fw-bold d-flex align-items-center justify-content-center gap-2 shadow-sm"
+                                    id="btnMoModalGanVaiTro"
+                                    data-id="@taiKhoan?.IdTaiKhoan"
+                                    data-idvaitro="@taiKhoan?.MaVaiTro"
+                                    data-tenvaitro="@taiKhoan?.TenVaiTro"
+                                    data-hoten="@(Model?.HoTen ?? taiKhoan?.TenDangNhap)">
+                                <i class="fa-solid fa-user-gear"></i> Gán vai trò hệ thống
+                            </button>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="alert alert-light border small text-muted mb-0 d-flex align-items-center gap-2">
+                            <i class="fa-solid fa-lock text-secondary"></i>
+                            <span>Chỉ <strong>Quản lý trung tâm</strong> mới có quyền quản trị tài khoản này.</span>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Cột phải: Chi tiết thông tin hồ sơ & cơ sở -->
+        <div class="col-lg-8">
+            <div class="card card-custom p-4 mb-4">
+                <h5 class="fw-bold text-primary mb-4 pb-2 border-bottom">
+                    <i class="fas fa-id-card me-2"></i>Thông tin hồ sơ nhân sự
+                </h5>
+                <div class="row g-4">
+                    <div class="col-md-6">
+                        <span class="info-label">Tên đăng nhập</span>
+                        <span class="info-value text-primary font-monospace">@(taiKhoan?.TenDangNhap ?? "---")</span>
+                    </div>
+
+                    <div class="col-md-6">
+                        <span class="info-label">Họ và tên đầy đủ</span>
+                        <span class="info-value">@(Model?.HoTen ?? "---")</span>
+                    </div>
+
+                    <div class="col-md-6">
+                        <span class="info-label">Địa chỉ Email</span>
+                        <span class="info-value">
+                            @if (!string.IsNullOrEmpty(Model?.Email))
+                            {
+                                <a href="mailto:@Model.Email" class="text-decoration-none">@Model.Email</a>
+                            }
+                            else
+                            {
+                                <span class="text-muted">Chưa cập nhật</span>
+                            }
+                        </span>
+                    </div>
+
+                    <div class="col-md-6">
+                        <span class="info-label">Số điện thoại</span>
+                        <span class="info-value">
+                            @if (!string.IsNullOrEmpty(Model?.SoDienThoai))
+                            {
+                                <a href="tel:@Model.SoDienThoai" class="text-decoration-none">@Model.SoDienThoai</a>
+                            }
+                            else
+                            {
+                                <span class="text-muted">Chưa cập nhật</span>
+                            }
+                        </span>
+                    </div>
+
+                    <div class="col-md-6">
+                        <span class="info-label">Cơ sở / Trung tâm đào tạo</span>
+                        <span class="info-value">
+                            @taiKhoan.TenTrungTam
+
+                        </span>
+                    </div>
+
+                    <div class="col-md-6">
+                        <span class="info-label">Vai trò hệ thống</span>
+                        <span class="info-value text-success">
+                            @taiKhoan.TenVaiTro
+                        </span>
+                    </div>
+
+                    <div class="col-md-6">
+                        <span class="info-label">Ngày khởi tạo tài khoản</span>
+                        <span class="info-value text-muted font-monospace">
+                            @(taiKhoan?.NgayTao?.ToString("dd/MM/yyyy HH:mm") ?? "---")
+                        </span>
+                    </div>
+
+                    <div class="col-md-6">
+                        <span class="info-label">Ngày sinh</span>
+                        <span class="info-value">
+                            @(Model?.NgaySinh?.ToString("dd/MM/yyyy") ?? "---")
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@if (isQuanLyTrungTam)
+{
+    <!-- MODAL CẤP LẠI MẬT KHẨU -->
+    <div class="modal fade" id="modalCapLaiMatKhau" tabindex="-1" aria-labelledby="modalCapLaiMatKhauTitle" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header bg-warning-subtle text-warning-emphasis">
+                    <h5 class="modal-title fw-bold" id="modalCapLaiMatKhauTitle">
+                        <i class="fa-solid fa-key me-2"></i>Cấp lại mật khẩu tài khoản
+                    </h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <form id="formCapLaiMatKhau" onsubmit="xuLyCapLaiMatKhau(event)">
+                    <div class="modal-body p-4">
+                        <input type="hidden" id="resetIdTaiKhoan" value="@(taiKhoan?.IdTaiKhoan ?? 0)" />
+
+                        <div class="alert alert-light border small text-muted mb-3">
+                            Đang thực hiện đổi mật khẩu cho tài khoản:
+                            <strong class="text-dark font-monospace" id="txtResetTenDangNhap">@(taiKhoan?.TenDangNhap ?? "")</strong>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label small fw-semibold">Mật khẩu mới <span class="text-danger">*</span></label>
+                            <div class="input-group">
+                                <input type="password" class="form-control" id="txtMatKhauMoi" required minlength="6" placeholder="Nhập mật khẩu mới (tối thiểu 6 ký tự)">
+                                <button class="btn btn-outline-secondary" type="button" onclick="togglePasswordVisibility('txtMatKhauMoi')">
+                                    <i class="fa-regular fa-eye" id="iconEye"></i>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label small fw-semibold">Xác nhận mật khẩu mới <span class="text-danger">*</span></label>
+                            <input type="password" class="form-control" id="txtXacNhanMatKhauMoi" required minlength="6" placeholder="Nhập lại mật khẩu mới">
+                            <div class="invalid-feedback" id="feedbackPasswordMatch">Mật khẩu xác nhận không trùng khớp!</div>
+                        </div>
+                    </div>
+                    <div class="modal-footer bg-light">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                        <button type="submit" id="btnSubmitResetPassword" class="btn btn-warning fw-bold px-4">
+                            <i class="fa-solid fa-check me-1"></i> Xác nhận cấp lại
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+}
+<!-- MODAL GÁN VAI TRÒ -->
+<div class="modal fade" id="modalGanVaiTro" tabindex="-1" aria-labelledby="modalGanVaiTroTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-primary-subtle text-primary-emphasis">
+                <h5 class="modal-title fw-bold" id="modalGanVaiTroTitle">
+                    <i class="fa-solid fa-user-gear me-2"></i>Gán vai trò cho tài khoản
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="formGanVaiTro" onsubmit="xuLyGanVaiTro(event)">
+                <div class="modal-body p-4">
+                    <input type="hidden" id="assignIdTaiKhoan" value="@(taiKhoan?.IdTaiKhoan ?? 0)" />
+
+                    <div class="alert alert-light border small text-muted mb-3">
+                        Thao tác phân quyền cho người dùng:
+                        <strong class="text-dark" id="txtAssignHoTen">@(Model?.HoTen ?? taiKhoan?.TenDangNhap)</strong>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Vai trò hiện tại</label>
+                        <input type="text" class="form-control bg-light" id="txtVaiTroHienTai" readonly value="@taiKhoan?.TenVaiTro" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Chọn vai trò mới <span class="text-danger">*</span></label>
+                        <select class="form-select" id="selectVaiTroMoi" required>
+                            <option value="">-- Đang nạp danh sách vai trò... --</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                    <button type="submit" id="btnSubmitGanVaiTro" class="btn btn-primary fw-bold px-4">
+                        <i class="fa-solid fa-check me-1"></i> Lưu thay đổi
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <script>
+        const API_RESET_PASSWORD = '/api/quanlytaikhoannguoidung/admin/cap-lai-mat-khau';
+        const API_TOGGLE_KHOA_BASE = '/api/quanlytaikhoannguoidung/toggle-khoa-tai-khoan';
+        const API_GAN_VAI_TRO = '/api/quanlyvaitro/gan-vaitro';
+        const API_LAY_DANH_SACH_VAI_TRO = '/api/quanlyvaitro/getallvaitro';
+        let modalResetInstance = null;
+        let modalGanVaiTroInstance = null;
+        let danhSachVaiTroCache = [];
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const modalEl = document.getElementById('modalCapLaiMatKhau');
+            if (modalEl) {
+                modalResetInstance = new bootstrap.Modal(modalEl);
+            }
+
+            $('#btnMoModalCapLaiMatKhau').on('click', function() {
+                const id = $(this).data('id');
+                const username = $(this).data('username');
+
+                if (!id || id <= 0) {
+                    Swal.fire('Lỗi', 'ID tài khoản không hợp lệ!', 'error');
+                    return;
+                }
+
+                $('#resetIdTaiKhoan').val(id);
+                $('#txtResetTenDangNhap').text(username);
+                $('#formCapLaiMatKhau')[0].reset();
+                $('#txtXacNhanMatKhauMoi').removeClass('is-invalid');
+
+                if (modalResetInstance) modalResetInstance.show();
+            });
+        });
+        document.addEventListener('DOMContentLoaded', function() {
+            const modalGanVaiTroEl = document.getElementById('modalGanVaiTro');
+            if (modalGanVaiTroEl) {
+                modalGanVaiTroInstance = new bootstrap.Modal(modalGanVaiTroEl);
+            }
+
+            // Nút mở modal gán vai trò
+            $('#btnMoModalGanVaiTro').on('click', function() {
+                const idTaiKhoan = $(this).data('id');
+                const idVaiTroHienTai = $(this).data('idvaitro');
+                const tenVaiTroHienTai = $(this).data('tenvaitro');
+                const hoTen = $(this).data('hoten');
+
+                $('#assignIdTaiKhoan').val(idTaiKhoan);
+                $('#txtAssignHoTen').text(hoTen);
+                $('#txtVaiTroHienTai').val(tenVaiTroHienTai || 'Chưa gán vai trò');
+
+                loadDanhSachVaiTro(idVaiTroHienTai);
+
+                if (modalGanVaiTroInstance) modalGanVaiTroInstance.show();
+            });
+        });
+        // Ẩn / hiện mật khẩu
+        function togglePasswordVisibility(inputId) {
+            const input = document.getElementById(inputId);
+            const icon = document.getElementById('iconEye');
+            if (input.type === "password") {
+                input.type = "text";
+                icon.classList.remove('fa-eye');
+                icon.classList.add('fa-eye-slash');
+            } else {
+                input.type = "password";
+                icon.classList.remove('fa-eye-slash');
+                icon.classList.add('fa-eye');
+            }
+        }
+
+        // Xử lý gửi Form gọi API đổi mật khẩu
+        function xuLyCapLaiMatKhau(e) {
+            e.preventDefault();
+
+            const idTaiKhoan = parseInt($('#resetIdTaiKhoan').val()) || 0;
+            const matKhauMoi = $('#txtMatKhauMoi').val().trim();
+            const xacNhan = $('#txtXacNhanMatKhauMoi').val().trim();
+            const token = $('input[name="__RequestVerificationToken"]').val();
+
+            if (matKhauMoi !== xacNhan) {
+                $('#txtXacNhanMatKhauMoi').addClass('is-invalid');
+                return;
+            }
+            $('#txtXacNhanMatKhauMoi').removeClass('is-invalid');
+
+            const $btn =$('#btnSubmitResetPassword');
+            $btn.prop('disabled', true).html('<i class="fa-solid fa-spinner fa-spin me-1"></i> Đang xử lý...');
+
+            const postData = {
+                IdTaiKhoan: idTaiKhoan,
+                MatKhauMoi: matKhauMoi
+            };
+
+            $.ajax({
+                url: API_RESET_PASSWORD,
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(postData),
+                headers: {
+                    'RequestVerificationToken': token
+                },
+                xhrFields: {
+                    withCredentials: true
+                },
+                success: function(res) {
+                    if (modalResetInstance) modalResetInstance.hide();
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Thành công!',
+                        text: res.message || 'Cấp lại mật khẩu thành công!',
+                        confirmButtonText: 'Đóng'
+                    });
+                },
+                error: function(xhr) {
+                    const msg = xhr.responseJSON?.message || 'Có lỗi xảy ra khi thực hiện cấp lại mật khẩu.';
+                    Swal.fire('Thất bại', msg, 'error');
+                },
+                complete: function() {
+                    $btn.prop('disabled', false).html('<i class="fa-solid fa-check me-1"></i> Xác nhận cấp lại');
+                }
+            });
+        }
+
+        // Xử lý Khóa / Mở khóa tài khoản
+        function xuLyToggleKhoaTaiKhoan(idTaiKhoan, tenDangNhap, trangThaiHienTai) {
+            const hanhDong = trangThaiHienTai ? "KHÓA" : "MỞ KHÓA";
+            const confirmColor = trangThaiHienTai ? "#dc3545" : "#198754";
+
+            Swal.fire({
+                title: `Xác nhận ${hanhDong}?`,
+                text: `Bạn có chắc chắn muốn ${hanhDong.toLowerCase()} tài khoản [${tenDangNhap}] không?`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: confirmColor,
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: `Đồng ý ${hanhDong.toLowerCase()}`,
+                cancelButtonText: 'Hủy'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $.ajax({
+                        url: `${API_TOGGLE_KHOA_BASE}/${idTaiKhoan}`,
+                        type: 'POST',
+                        xhrFields: { withCredentials: true },
+                        success: function (res) {
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Thành công!',
+                                text: res.message,
+                                timer: 1500,
+                                showConfirmButton: false
+                            }).then(() => {
+                                location.reload();
+                            });
+                        },
+                        error: function (xhr) {
+                            const msg = xhr.responseJSON?.message || 'Không thể thay đổi trạng thái tài khoản.';
+                            Swal.fire('Thất bại', msg, 'error');
+                        }
+                    });
+                }
+            });
+        }
+        // Nạp danh sách vai trò vào dropdown
+        function loadDanhSachVaiTro(idVaiTroSelected) {
+            const $select = $('#selectVaiTroMoi');
+
+            if (danhSachVaiTroCache.length > 0) {
+                renderDropdownVaiTro(danhSachVaiTroCache, idVaiTroSelected);
+                return;
+            }
+
+            $select.html('<option value="">-- Đang nạp danh sách vai trò... --</option>').prop('disabled', true);
+
+            $.ajax({
+                url: API_LAY_DANH_SACH_VAI_TRO,
+                type: 'GET',
+                xhrFields: { withCredentials: true },
+                success: function(res) {
+                    if (res.success && res.data) {
+                        danhSachVaiTroCache = res.data;
+                        renderDropdownVaiTro(res.data, idVaiTroSelected);
+                    } else {
+                        $select.html('<option value="">-- Không thể tải vai trò --</option>');
+                    }
+                },
+                error: function() {
+                    $select.html('<option value="">-- Lỗi kết nối danh sách vai trò --</option>');
+                },
+                complete: function() {
+                    $select.prop('disabled', false);
+                }
+            });
+        }
+
+        function renderDropdownVaiTro(list, idSelected) {
+            const $select = $('#selectVaiTroMoi');
+            let html = '<option value="">-- Chọn vai trò mới --</option>';
+
+            list.forEach(v => {
+                const selected = (v.idVaiTro == idSelected) ? 'selected' : '';
+                html += `<option value="${v.idVaiTro}" ${selected}>${v.tenVaiTro}</option>`;
+            });
+
+            $select.html(html);
+        }
+
+        // Gửi request gán vai trò
+        function xuLyGanVaiTro(e) {
+            e.preventDefault();
+
+            const idTaiKhoan = parseInt($('#assignIdTaiKhoan').val()) || 0;
+            const idVaiTro = parseInt($('#selectVaiTroMoi').val()) || 0;
+
+            if (!idVaiTro) {
+                Swal.fire('Cảnh báo', 'Vui lòng chọn một vai trò mới!', 'warning');
+                return;
+            }
+
+            const $btn = $('#btnSubmitGanVaiTro');
+            $btn.prop('disabled', true).html('<i class="fa-solid fa-spinner fa-spin me-1"></i> Đang gán...');
+
+            const postData = {
+                IdTaiKhoan: idTaiKhoan,
+                IdVaiTro: idVaiTro
+            };
+
+            $.ajax({
+                url: API_GAN_VAI_TRO,
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(postData),
+                xhrFields: { withCredentials: true },
+                success: function(res) {
+                    if (modalGanVaiTroInstance) modalGanVaiTroInstance.hide();
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Thành công!',
+                        text: res.message || 'Gán vai trò thành công!',
+                        timer: 1500,
+                        showConfirmButton: false
+                    }).then(() => {
+                        location.reload();
+                    });
+                },
+                error: function(xhr) {
+                    const msg = xhr.responseJSON?.message || 'Có lỗi xảy ra khi gán vai trò.';
+                    Swal.fire('Thất bại', msg, 'error');
+                },
+                complete: function() {
+                    $btn.prop('disabled', false).html('<i class="fa-solid fa-check me-1"></i> Lưu thay đổi');
+                }
+            });
+        }
+    </script>
+}

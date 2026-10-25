@@ -1,0 +1,116 @@
+﻿:root {
+    --hsk-orange: #ff9800;
+    --hsk-success: #4caf50;
+    --hsk-danger: #f44336;
+    --hsk-blue: #2196f3;
+}
+
+.quiz-container {
+    max-width: 850px;
+    margin: 30px auto;
+    background: #fff;
+    border-radius: 25px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+    padding: 40px;
+}
+
+/* Style cho bài trắc nghiệm A B C D */
+.btn-answer {
+    transition: all 0.3s;
+    border: 2px solid #eee;
+    position: relative;
+    padding-left: 55px !important;
+}
+
+.answer-prefix {
+    position: absolute;
+    left: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 30px;
+    height: 30px;
+    background: #f0f0f0;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    color: #666;
+}
+
+.btn-answer:hover:not(:disabled) {
+    border-color: var(--hsk-orange);
+    background: #fff8f0;
+}
+
+/* Style cho bài sắp xếp & dịch thuật */
+.word-pool {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 12px;
+    border: 1px solid #dee2e6;
+}
+
+.word-hint {
+    display: inline-block;
+    padding: 8px 16px;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    margin: 5px;
+    cursor: pointer;
+    transition: 0.2s;
+    font-weight: 500;
+    user-select: none;
+}
+
+    .word-hint:hover {
+        background: #fff3e0;
+        border-color: var(--hsk-orange);
+    }
+
+.reorder-input {
+    width: 100%;
+    min-height: 100px;
+    padding: 15px;
+    border: 2px dashed #ccc;
+    border-radius: 15px;
+    font-size: 1.2rem;
+    margin-top: 20px;
+    outline: none;
+    transition: 0.3s;
+}
+
+    .reorder-input:focus {
+        border-color: var(--hsk-orange);
+        background: #fffdfa;
+    }
+
+.type-indicator {
+    padding: 5px 15px;
+    border-radius: 50px;
+    font-size: 0.85rem;
+    font-weight: bold;
+    margin-bottom: 15px;
+    display: inline-block;
+}
+
+.type-sapxep {
+    background: #f3e5f5;
+    color: #7b1fa2;
+}
+
+.type-tracnghiem {
+    background: #e3f2fd;
+    color: #1976d2;
+}
+
+.type-dich {
+    background: #e8f5e9;
+    color: #2e7d32;
+}
+
+.explanation-box {
+    display: none;
+    margin-top: 20px;
+}

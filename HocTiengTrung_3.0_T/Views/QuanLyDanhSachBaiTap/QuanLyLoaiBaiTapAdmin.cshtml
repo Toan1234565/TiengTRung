@@ -1,0 +1,286 @@
+﻿@model List<HocTiengTrung_3._0_T.Models12.BaiTap.LoaiBaiTapModel>
+
+<div class="container-fluid px-4 py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4 bg-white p-3 rounded shadow-sm">
+        <div>
+            <h4 class="mb-1 text-primary fw-bold"><i class="bi bi-list-task me-2"></i>QUẢN LÝ LOẠI BÀI TẬP</h4>
+            <small class="text-muted">Cấu hình các danh mục bài tập và chương trình học HSK 3.0</small>
+        </div>
+        <button class="btn btn-success fw-bold px-3 py-2" data-bs-toggle="modal" data-bs-target="#modalThemLoai">
+            <i class="bi bi-plus-circle me-2"></i>Thêm Loại Mới
+        </button>
+    </div>
+
+    <div class="card shadow-sm border-0 rounded">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0 text-center">
+                    <thead class="table-light text-uppercase fs-7 text-muted">
+                        <tr>
+                            <th style="width: 10%">ID</th>
+                            <th class="text-start" style="width: 45%">Tên Loại Bài Tập</th>
+                            <th style="width: 25%">Chương Trình Học</th>
+                            <th style="width: 20%">Hành Động</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model != null && Model.Any())
+                        {
+                            foreach (var item in Model)
+                            {
+                                <tr>
+                                    <td><span class="fw-bold text-secondary">#@item.IdLoai</span></td>
+                                    <td class="text-start fw-semibold text-dark">@item.TenLoai</td>
+                                    <td>
+                                        <span class="badge bg-info text-dark px-3 py-2 rounded-pill fw-bold">
+                                            <i class="bi bi-book-half me-1"></i> HSK @item.ChuongTrinh
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <button class="btn btn-outline-warning btn-sm me-2 btn-edit fw-medium"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#modalSuaLoai"
+                                                data-id="@item.IdLoai"
+                                                data-ten="@item.TenLoai"
+                                                data-chuongtrinh="@item.ChuongTrinh"
+                                                onclick="truyenDuLieuSua(this)">
+                                            <i class="bi bi-pencil-square me-1"></i>Sửa
+                                        </button>
+                                        <button class="btn btn-outline-danger btn-sm btn-delete fw-medium"
+                                                data-id="@item.IdLoai"
+                                                data-ten="@item.TenLoai"
+                                                onclick="actionXoaLoai(this)">
+                                            <i class="bi bi-trash3 me-1"></i>Xóa
+                                        </button>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                        else
+                        {
+                            <tr>
+                                <td colspan="4" class="text-center py-5 text-muted">
+                                    <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+                                    Chưa có dữ liệu loại bài tập nào được tạo.
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalThemLoai" data-bs-backdrop="static" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title fw-bold"><i class="bi bi-plus-circle me-2"></i>Thêm Loại Bài Tập</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <form id="formThemLoai" onsubmit="event.preventDefault(); actionThemLoai();">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold text-secondary">Tên loại bài tập <span class="text-danger">*</span></label>
+                        <input type="text" id="addTenLoai" class="form-control form-control-lg" placeholder="Ví dụ: Luyện dịch câu, Chọn từ đúng..." required />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold text-secondary">Cấp độ chương trình (HSK)</label>
+                        <input type="number" id="addChuongTrinh" class="form-control form-control-lg" step="0.1" placeholder="Ví dụ: 1, 3, 5.5..." />
+                    </div>
+                    <div class="text-end mt-4">
+                        <button type="button" class="btn btn-light fw-medium px-4 me-2" data-bs-dismiss="modal">Hủy</button>
+                        <button type="submit" class="btn btn-success fw-bold px-4">Lưu lại</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalSuaLoai" data-bs-backdrop="static" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-warning text-dark">
+                <h5 class="modal-title fw-bold"><i class="bi bi-pencil-square me-2"></i>Chỉnh Sửa Loại Bài Tập</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <form id="formSuaLoai" onsubmit="event.preventDefault(); actionSuaLoai();">
+                    <input type="hidden" id="editIdLoai" />
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold text-secondary">Tên loại bài tập <span class="text-danger">*</span></label>
+                        <input type="text" id="editTenLoai" class="form-control form-control-lg" required />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold text-secondary">Cấp độ chương trình (HSK)</label>
+                        <input type="number" id="editChuongTrinh" class="form-control form-control-lg" step="0.1" />
+                    </div>
+                    <div class="text-end mt-4">
+                        <button type="button" class="btn btn-light fw-medium px-4 me-2" data-bs-dismiss="modal">Hủy</button>
+                        <button type="submit" class="btn btn-warning fw-bold px-4 text-dark">Cập nhật</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+    // 1. ĐẨY DỮ LIỆU DÒNG CHỌN VÀO INPUT MODAL SỬA
+    function truyenDuLieuSua(button) {
+        const id = button.getAttribute('data-id');
+        const ten = button.getAttribute('data-ten');
+        const chuongTrinh = button.getAttribute('data-chuongtrinh');
+
+        document.getElementById('editIdLoai').value = id;
+        document.getElementById('editTenLoai').value = ten;
+        document.getElementById('editChuongTrinh').value = chuongTrinh || '';
+    }
+
+    // 2. HÀM GỌI API THÊM MỚI (FETCH API)
+    function actionThemLoai() {
+        const tenLoai = document.getElementById('addTenLoai').value.trim();
+        const chuongTrinh = document.getElementById('addChuongTrinh').value;
+
+        if (!tenLoai) {
+            Swal.fire('Cảnh báo', 'Vui lòng nhập tên loại bài tập!', 'warning');
+            return;
+        }
+
+        const dataJson = {
+            TenLoai: tenLoai,
+            ChuongTrinh: chuongTrinh ? parseFloat(chuongTrinh) : null
+        };
+
+        fetch('/api/quanlybaitap/admin/them-loaibaitap', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(dataJson)
+        })
+        .then(response => response.json())
+        .then(res => {
+            if (res.success) {
+                // Đóng modal thủ công bằng thuộc tính Bootstrap dữ liệu gốc
+                const modal = bootstrap.Modal.getInstance(document.getElementById('modalThemLoai'));
+                if(modal) modal.hide();
+
+                document.getElementById('formThemLoai').reset();
+                Swal.fire('Thành công', res.message || 'Đã thêm loại bài tập mới.', 'success').then(() => {
+                    location.reload();
+                });
+            } else {
+                Swal.fire('Thất bại', res.message || 'Có lỗi xảy ra từ máy chủ.', 'error');
+            }
+        })
+        .catch(() => {
+            Swal.fire('Lỗi', 'Không thể kết nối đến máy chủ API.', 'error');
+        });
+    }
+
+    // 3. HÀM GỌI API CHỈNH SỬA (FETCH API)
+    function actionSuaLoai() {
+        const id = document.getElementById('editIdLoai').value;
+        const tenLoai = document.getElementById('editTenLoai').value.trim();
+        const chuongTrinh = document.getElementById('editChuongTrinh').value;
+
+        if (!tenLoai) {
+            Swal.fire('Cảnh báo', 'Tên loại bài tập không được bỏ trống!', 'warning');
+            return;
+        }
+
+        const dataJson = {
+            TenLoai: tenLoai,
+            ChuongTrinh: chuongTrinh ? parseFloat(chuongTrinh) : null
+        };
+
+        fetch(`/api/quanlybaitap/admin/sua-loaibaitap/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(dataJson)
+        })
+        .then(response => response.json())
+        .then(res => {
+            if (res.success) {
+                const modal = bootstrap.Modal.getInstance(document.getElementById('modalSuaLoai'));
+                if(modal) modal.hide();
+
+                Swal.fire('Thành công', res.message || 'Cập nhật thành công.', 'success').then(() => {
+                    location.reload();
+                });
+            } else {
+                Swal.fire('Thất bại', res.message || 'Cập nhật không thành công.', 'error');
+            }
+        })
+        .catch(() => {
+            Swal.fire('Lỗi', 'Không thể kết nối đến máy chủ API để chỉnh sửa.', 'error');
+        });
+    }
+
+    // 4. HÀM GỌI API XÓA PHẦN TỬ (FETCH API)
+    function actionXoaLoai(button) {
+        const id = button.getAttribute('data-id');
+        const ten = button.getAttribute('data-ten');
+
+        Swal.fire({
+            title: 'Bạn có chắc chắn?',
+            text: `Loại bài tập "${ten}" sẽ bị xóa vĩnh viễn khỏi hệ thống!`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#dc3545',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Đồng ý xóa!',
+            cancelButtonText: 'Hủy'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                fetch(`/api/quanlybaitap/admin/xoa-loaibaitap/${id}`, {
+                    method: 'DELETE'
+                })
+                .then(response => response.json())
+                .then(res => {
+                    if (res.success) {
+                        Swal.fire('Đã xóa!', res.message || 'Xóa loại bài tập thành công.', 'success').then(() => {
+                            location.reload();
+                        });
+                    } else {
+                        Swal.fire('Thất bại', res.message || 'Không thể xóa danh mục này.', 'error');
+                    }
+                })
+                .catch(() => {
+                    Swal.fire('Lỗi', 'Kết nối thất bại. Vui lòng kiểm tra lại quyền hạn hoặc hệ thống API.', 'error');
+                });
+            }
+        });
+    }
+</script>
+
+<style>
+    .fs-7 {
+        font-size: 0.85rem;
+    }
+
+    .table-hover tbody tr:hover {
+        background-color: rgba(13, 110, 253, 0.04);
+        transition: background-color 0.2s ease-in-out;
+    }
+
+    .modal-content {
+        border-radius: 12px;
+    }
+
+    .form-control:focus {
+        border-color: #198754;
+        box-shadow: 0 0 0 0.25rem rgba(25, 135, 84, 0.25);
+    }
+
+    #modalSuaLoai .form-control:focus {
+        border-color: #ffc107;
+        box-shadow: 0 0 0 0.25rem rgba(255, 193, 7, 0.25);
+    }
+
+    .badge {
+        letter-spacing: 0.3px;
+    }
+</style>

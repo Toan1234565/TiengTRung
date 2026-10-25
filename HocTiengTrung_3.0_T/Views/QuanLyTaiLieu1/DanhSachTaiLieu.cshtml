@@ -1,0 +1,429 @@
+﻿@model IEnumerable<HocTiengTrung_3._0_T.Models12.QuanLyTaiLieu.TaiLieuModels>
+@{
+    ViewData["Title"] = "Quản Lý Tài Liệu";
+}
+
+@functions {
+    // Helper xác định Icon theo đuôi file
+    public string GetFileIcon(string url)
+    {
+        if (string.IsNullOrEmpty(url)) return "bi-file-earmark-text text-secondary";
+        var ext = System.IO.Path.GetExtension(url).ToLower();
+        return ext switch
+        {
+            ".pdf" => "bi-file-earmark-pdf-fill text-danger",
+            ".doc" or ".docx" => "bi-file-earmark-word-fill text-primary",
+            ".xls" or ".xlsx" => "bi-file-earmark-excel-fill text-success",
+            ".zip" or ".rar" => "bi-file-earmark-zip-fill text-warning",
+            _ => "bi-file-earmark-text-fill text-info"
+        };
+    }
+
+    // Helper tạo Link Xem Trực Tuyến
+    public string GetPreviewUrl(string url)
+    {
+        if (string.IsNullOrEmpty(url)) return "#";
+        var ext = System.IO.Path.GetExtension(url).ToLower();
+        if (ext == ".docx" || ext == ".doc" || ext == ".xlsx" || ext == ".xls")
+        {
+            return $"https://view.officeapps.live.com/op/view.aspx?src={System.Uri.EscapeDataString(url)}";
+        }
+        return url;
+    }
+}
+
+<!-- Nhúng thư viện SweetAlert2 & Bootstrap Icons -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+
+<div class="container-fluid mt-4 mb-5">
+    <div class="card shadow border-0 rounded-3">
+        <!-- Header của Card -->
+        <div class="card-header bg-primary bg-gradient text-white d-flex justify-content-between align-items-center py-3 rounded-top-3">
+            <h5 class="mb-0 fw-bold"><i class="bi bi-journal-bookmark-fill me-2"></i>Danh Sách Tài Liệu HSK</h5>
+            <button class="btn btn-light btn-sm text-primary fw-bold px-3 shadow-sm rounded-pill" onclick="openAddModal()">
+                <i class="bi bi-plus-circle-fill me-1"></i> Thêm Mới
+            </button>
+        </div>
+
+        <!-- BỘ LỌC TÌM KIẾM -->
+        <div class="card-body bg-light border-bottom">
+            <form method="get" class="row g-3 align-items-center">
+                <div class="col-12 col-md-4">
+                    <div class="input-group shadow-sm rounded">
+                        <span class="input-group-text bg-white border-end-0 text-muted"><i class="bi bi-search"></i></span>
+                        <input type="text" name="search" class="form-control border-start-0" placeholder="Tìm tên tài liệu..." value="@Context.Request.Query["search"]" autocomplete="off">
+                    </div>
+                </div>
+                <div class="col-12 col-md-3">
+                    <select name="trangThai" class="form-select shadow-sm">
+                        <option value="">-- Tất cả trạng thái --</option>
+                        <option value="true" selected="@(Context.Request.Query["trangThai"] == "true")">Đang hiển thị</option>
+                        <option value="false" selected="@(Context.Request.Query["trangThai"] == "false")">Đã ẩn</option>
+                    </select>
+                </div>
+                <div class="col-12 col-md-3">
+                    <input type="number" name="capdo" class="form-control shadow-sm" placeholder="Nhập Cấp độ (1-6)..." value="@Context.Request.Query["capdo"]">
+                </div>
+                <div class="col-12 col-md-2 d-flex gap-2">
+                    <button type="submit" class="btn btn-primary w-100 shadow-sm"><i class="bi bi-funnel-fill me-1"></i> Lọc</button>
+                    <a href="javascript:void(0)" onclick="window.location.href = window.location.pathname;" class="btn btn-outline-secondary bg-white shadow-sm" title="Làm mới bộ lọc">
+                        <i class="bi bi-arrow-clockwise"></i>
+                    </a>
+                </div>
+            </form>
+        </div>
+
+        <!-- DANH SÁCH DỮ LIỆU -->
+        <div class="card-body p-4 bg-light">
+            @if (Model != null && Model.Any())
+            {
+                <div class="row g-3">
+                    @foreach (var item in Model)
+                    {
+                        var previewUrl = GetPreviewUrl(item.DuongLink);
+                        var fileIconClass = GetFileIcon(item.DuongLink);
+
+                        <div class="col-12">
+                            <div class="card shadow-sm border-0 h-100 hover-shadow transition">
+                                <div class="card-body p-3 d-flex flex-column flex-md-row align-items-center gap-3">
+
+                                    <!-- 1. Hình Ảnh Bìa / Icon -->
+                                    <div class="flex-shrink-0 text-center">
+                                        @if (!string.IsNullOrEmpty(item.HinhAnh))
+                                        {
+                                            <img src="@item.HinhAnh" alt="@item.TenTaiLieu" class="rounded object-fit-cover border shadow-sm" style="width: 110px; height: 110px;" onerror="this.onerror=null; this.src='https://via.placeholder.com/110?text=No+Cover';" />
+                                        }
+                                        else
+                                        {
+                                            <div class="bg-white rounded border shadow-sm d-flex align-items-center justify-content-center" style="width: 110px; height: 110px;">
+                                                <i class="bi @fileIconClass fs-1"></i>
+                                            </div>
+                                        }
+                                    </div>
+
+                                    <!-- 2. Thông tin Tài Liệu -->
+                                    <div class="flex-grow-1 text-center text-md-start">
+                                        <h5 class="mb-1 fw-bold">
+                                            <a href="@previewUrl" target="_blank" class="text-decoration-none text-dark hover-primary" title="Mở xem tài liệu">
+                                                <i class="bi @fileIconClass me-1 fs-6"></i> @item.TenTaiLieu
+                                            </a>
+                                        </h5>
+                                        <p class="text-muted mb-2 small text-truncate-2" style="max-width: 650px;">
+                                            @(string.IsNullOrEmpty(item.MoTa) ? "Chưa có mô tả cho tài liệu này." : item.MoTa)
+                                        </p>
+                                        <div class="d-flex flex-wrap gap-2 justify-content-center justify-content-md-start align-items-center">
+                                            <span class="badge bg-info bg-opacity-10 text-info border border-info rounded-pill px-3 fw-bold">
+                                                HSK Level @item.IdCapDo
+                                            </span>
+                                            <span class="text-muted small">
+                                                <i class="bi bi-calendar-event me-1"></i> @item.NgayTao?.ToString("dd/MM/yyyy")
+                                            </span>
+                                            @if (item.TrangThai)
+                                            {
+                                                <span class="badge bg-success bg-opacity-10 text-success border border-success rounded-pill px-2">Hiển thị</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-secondary bg-opacity-10 text-secondary border border-secondary rounded-pill px-2">Đã ẩn</span>
+                                            }
+                                        </div>
+                                    </div>
+
+                                    <!-- 3. Nút Thao Tác -->
+                                    <div class="flex-shrink-0 d-flex flex-row flex-md-column gap-2 mt-3 mt-md-0 w-100 w-md-auto justify-content-center">
+                                        <!-- Mở xem trực tuyến -->
+                                        <a href="@previewUrl" target="_blank" class="btn btn-outline-primary btn-sm rounded-pill px-3 fw-medium shadow-sm">
+                                            <i class="bi bi-eye-fill me-1"></i> Xem File
+                                        </a>
+
+                                        <!-- Gọi qua API Download Backend -->
+                                        <a href="/api/quanlytailieu/download-tai-lieu/@item.IdTaiLieu" class="btn btn-success btn-sm rounded-pill px-3 fw-medium shadow-sm">
+                                            <i class="bi bi-cloud-arrow-down-fill me-1"></i> Tải Về
+                                        </a>
+
+                                        <!-- Sửa -->
+                                        <button class="btn btn-sm btn-outline-warning rounded-pill px-3 fw-medium"
+                                                data-id="@item.IdTaiLieu"
+                                                data-ten="@item.TenTaiLieu"
+                                                data-mota="@item.MoTa"
+                                                data-link="@item.DuongLink"
+                                                data-hinhanh="@item.HinhAnh"
+                                                data-capdo="@item.IdCapDo"
+                                                data-trangthai="@(item.TrangThai ? "true" : "false")"
+                                                onclick="handleEdit(this)">
+                                            <i class="bi bi-pencil-square me-1"></i> Sửa
+                                        </button>
+
+                                        <!-- Xóa -->
+                                        <button class="btn btn-sm btn-outline-danger rounded-pill px-3 fw-medium" onclick="deleteTaiLieu(@item.IdTaiLieu)">
+                                            <i class="bi bi-trash-fill me-1"></i> Xóa
+                                        </button>
+                                    </div>
+
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="text-center py-5">
+                    <i class="bi bi-inbox fs-1 text-muted d-block mb-2"></i>
+                    <p class="text-muted mb-0">Không tìm thấy tài liệu nào phù hợp.</p>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- MODAL THÊM / SỬA TÀI LIỆU -->
+<div class="modal fade" id="modalTaiLieu" tabindex="-1" aria-hidden="true" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title fw-bold" id="modalTitle"><i class="bi bi-plus-circle me-2"></i>Thêm Mới Tài Liệu</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="formTaiLieu" onsubmit="saveTaiLieu(event)">
+                <div class="modal-body p-4">
+                    <input type="hidden" id="idTaiLieu" name="IdTaiLieu" value="0" />
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Tên Tài Liệu <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control shadow-sm" id="tenTaiLieu" name="TenTaiLieu" required placeholder="Nhập tên tài liệu...">
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Cấp Độ (HSK 3.0 Standard) <span class="text-danger">*</span></label>
+                            <select class="form-select shadow-sm" id="idCapDo" name="IdCapDo" required>
+                                <option value="">-- Chọn Cấp Độ --</option>
+                                <option value="1">HSK Level 1</option>
+                                <option value="2">HSK Level 2</option>
+                                <option value="3">HSK Level 3</option>
+                                <option value="4">HSK Level 4</option>
+                                <option value="5">HSK Level 5</option>
+                                <option value="6">HSK Level 6</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Trạng Thái</label>
+                            <select class="form-select shadow-sm" id="trangThaiModal" name="TrangThai">
+                                <option value="true">Hiển thị</option>
+                                <option value="false">Ẩn</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Mô Tả</label>
+                        <textarea class="form-control shadow-sm" id="moTa" name="MoTa" rows="3" placeholder="Nhập mô tả chi tiết nội dung tài liệu..."></textarea>
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">File Tài Liệu (.pdf, .docx, .xlsx...)</label>
+                            <input type="file" class="form-control shadow-sm" id="fileTaiLieu" name="FileTaiLieu">
+                            <small class="text-primary d-block mt-1 fw-medium" id="linkTaiLieuHienTai"></small>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Ảnh Bìa Tài Liệu</label>
+                            <input type="file" class="form-control shadow-sm" id="fileHinhAnh" name="FileHinhAnh" accept="image/*">
+                            <small class="text-primary d-block mt-1 fw-medium" id="linkHinhAnhHienTai"></small>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light py-2">
+                    <button type="button" class="btn btn-secondary px-3" data-bs-dismiss="modal">Hủy Bỏ</button>
+                    <button type="submit" class="btn btn-primary px-4 shadow-sm" id="btnSave">
+                        <i class="bi bi-save me-1"></i> Lưu Dữ Liệu
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- JAVASCRIPT XỬ LÝ AJAX -->
+<script>
+    const API_URL = "/api/quanlytailieu";
+    let modalInstance = null;
+
+    document.addEventListener("DOMContentLoaded", function() {
+        modalInstance = new bootstrap.Modal(document.getElementById('modalTaiLieu'));
+    });
+
+    // Mở modal thêm mới
+    function openAddModal() {
+        document.getElementById("formTaiLieu").reset();
+        document.getElementById("idTaiLieu").value = "0";
+        document.getElementById("modalTitle").innerHTML = `<i class="bi bi-plus-circle me-2"></i>Thêm Mới Tài Liệu`;
+        document.getElementById("linkTaiLieuHienTai").innerHTML = "";
+        document.getElementById("linkHinhAnhHienTai").innerHTML = "";
+        document.getElementById("fileTaiLieu").required = true;
+        modalInstance.show();
+    }
+
+    // Mở modal chỉnh sửa từ data attributes
+    function handleEdit(btn) {
+        document.getElementById("formTaiLieu").reset();
+
+        const id = btn.getAttribute("data-id");
+        const ten = btn.getAttribute("data-ten");
+        const mota = btn.getAttribute("data-mota");
+        const link = btn.getAttribute("data-link");
+        const hinhanh = btn.getAttribute("data-hinhanh");
+        const capdo = btn.getAttribute("data-capdo");
+        const trangthai = btn.getAttribute("data-trangthai");
+
+        document.getElementById("idTaiLieu").value = id;
+        document.getElementById("tenTaiLieu").value = ten || "";
+        document.getElementById("moTa").value = mota || "";
+        document.getElementById("idCapDo").value = capdo || "";
+        document.getElementById("trangThaiModal").value = trangthai;
+
+        document.getElementById("modalTitle").innerHTML = `<i class="bi bi-pencil-square me-2"></i>Cập Nhật Tài Liệu #${id}`;
+        document.getElementById("fileTaiLieu").required = false;
+
+        if (link) {
+            document.getElementById("linkTaiLieuHienTai").innerHTML = `<i class="bi bi-file-earmark-check me-1"></i>File hiện tại: <a href="${link}" target="_blank" class="text-decoration-underline">Xem File</a>`;
+        } else {
+            document.getElementById("linkTaiLieuHienTai").innerHTML = "";
+        }
+
+        if (hinhanh) {
+            document.getElementById("linkHinhAnhHienTai").innerHTML = `<i class="bi bi-image me-1"></i>Ảnh hiện tại: <a href="${hinhanh}" target="_blank" class="text-decoration-underline">Xem Ảnh</a>`;
+        } else {
+            document.getElementById("linkHinhAnhHienTai").innerHTML = "";
+        }
+
+        modalInstance.show();
+    }
+
+    // Gọi API Lưu (Thêm/Sửa)
+    async function saveTaiLieu(event) {
+        event.preventDefault();
+
+        const id = document.getElementById("idTaiLieu").value;
+        const isEdit = id !== "0" && id !== 0;
+        const form = document.getElementById("formTaiLieu");
+        const formData = new FormData(form);
+
+        const btnSave = document.getElementById("btnSave");
+        btnSave.disabled = true;
+        btnSave.innerHTML = `<span class="spinner-border spinner-border-sm me-1"></span> Đang xử lý...`;
+
+        try {
+            const url = isEdit ? `${API_URL}/updatetailieu/${id}` : `${API_URL}/addtailieu`;
+            const method = isEdit ? "PUT" : "POST";
+
+            const response = await fetch(url, {
+                method: method,
+                body: formData
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Thành công!',
+                    text: result.message || 'Lưu dữ liệu thành công!',
+                    timer: 1500,
+                    showConfirmButton: false
+                }).then(() => {
+                    modalInstance.hide();
+                    window.location.reload();
+                });
+            } else {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Lỗi xử lý!',
+                    text: result.message || 'Có lỗi xảy ra, vui lòng kiểm tra lại thông tin.'
+                });
+            }
+        } catch (error) {
+            console.error("Error:", error);
+            Swal.fire({
+                icon: 'error',
+                title: 'Lỗi hệ thống!',
+                text: 'Không thể kết nối đến máy chủ.'
+            });
+        } finally {
+            btnSave.disabled = false;
+            btnSave.innerHTML = `<i class="bi bi-save me-1"></i> Lưu Dữ Liệu`;
+        }
+    }
+
+    // Gọi API Xóa tài liệu
+    function deleteTaiLieu(id) {
+        Swal.fire({
+            title: 'Xác nhận xóa?',
+            text: "Tài liệu bị xóa sẽ không thể phục hồi lại được!",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmColor: '#d33',
+            cancelColor: '#6c757d',
+            confirmButtonText: 'Đồng ý xóa',
+            cancelButtonText: 'Hủy bỏ'
+        }).then(async (result) => {
+            if (result.isConfirmed) {
+                try {
+                    const response = await fetch(`${API_URL}/deletetailieu/${id}`, {
+                        method: 'DELETE'
+                    });
+
+                    const resData = await response.json();
+
+                    if (response.ok) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Đã xóa!',
+                            text: resData.message || 'Đã xóa tài liệu thành công!',
+                            timer: 1500,
+                            showConfirmButton: false
+                        }).then(() => {
+                            window.location.reload();
+                        });
+                    } else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Thất bại!',
+                            text: resData.message || 'Không thể xóa tài liệu này.'
+                        });
+                    }
+                } catch (error) {
+                    console.error("Error:", error);
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Lỗi hệ thống!',
+                        text: 'Không thể kết nối tới server.'
+                    });
+                }
+            }
+        });
+    }
+</script>
+
+<style>
+    .text-truncate-2 {
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    .hover-shadow:hover {
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+    }
+
+    .transition {
+        transition: all 0.2s ease-in-out;
+    }
+
+    .hover-primary:hover {
+        color: var(--bs-primary) !important;
+    }
+</style>

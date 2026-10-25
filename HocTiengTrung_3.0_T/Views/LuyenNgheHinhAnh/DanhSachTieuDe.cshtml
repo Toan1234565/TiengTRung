@@ -1,0 +1,356 @@
+﻿@{
+    ViewData["Title"] = $"Luyện Nghe Hình Ảnh - Cấp Độ {ViewBag.IdCapDo}";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+
+    int idCapDo = ViewBag.IdCapDo ?? 1;
+    int currentPage = ViewBag.CurrentPage ?? 1;
+    int totalPages = ViewBag.TotalPages ?? 0;
+    int totalItems = ViewBag.TotalItems ?? 0;
+}
+@{
+    // Khai báo danh sách tên hiển thị cho 21 cấp độ
+    string[] tenCapDo = new string[]
+    {
+        // 6 cái đầu: HSK 1 -> 6 (Lvl 1 - 6)
+        "HSK 1", "HSK 2", "HSK 3", "HSK 4", "HSK 5", "HSK 6",
+
+        // 9 cái tiếp theo: HSK 3.0 Cấp 1 -> 9 (Lvl 7 - 15)
+        "HSK 3.0 - Cấp 1", "HSK 3.0 - Cấp 2", "HSK 3.0 - Cấp 3",
+        "HSK 3.0 - Cấp 4", "HSK 3.0 - Cấp 5", "HSK 3.0 - Cấp 6",
+        "HSK 3.0 - Cấp 7", "HSK 3.0 - Cấp 8", "HSK 3.0 - Cấp 9",
+
+        // 6 cái tiếp theo: Giáo trình Sơ - Trung - Cao cấp (Lvl 16 - 21)
+        "Sơ cấp 1", "Sơ cấp 2",
+        "Trung cấp 1", "Trung cấp 2",
+        "Cao cấp 1", "Cao cấp 2"
+    };
+}
+<div class="container py-4">
+    <!-- Header & Breadcrumb -->
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+        <div>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-1">
+                    <li class="breadcrumb-item"><a href="/" class="text-decoration-none">Trang chủ</a></li>
+                    <li class="breadcrumb-item"><a href="/LuyenNgheHinhAnh" class="text-decoration-none">Luyện nghe hình ảnh</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Cấp độ @idCapDo</li>
+                </ol>
+            </nav>
+            <h2 class="fw-bold text-primary mb-0">
+                <i class="bi bi-headphones me-2"></i>Danh Sách Bài Học - Cấp Độ @idCapDo
+            </h2>
+        </div>
+        <div class="d-flex gap-2">
+            <button class="btn btn-success" onclick="openAddModal()">
+                <i class="bi bi-plus-circle me-1"></i>Thêm bài học mới
+            </button>
+            <a href="javascript:history.back()" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left me-1"></i>Quay lại
+            </a>
+        </div>
+    </div>
+
+    <!-- BỘ LỌC CẤP ĐỘ (HSK 1 - 6) -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body p-3 bg-white rounded-3">
+            <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                <div class="d-flex align-items-center gap-2 flex-wrap">
+                    <span class="fw-bold text-dark me-2">
+                        <i class="bi bi-funnel-fill text-primary me-1"></i>Chọn cấp độ HSK:
+                    </span>
+                    <div class="d-flex gap-2 flex-wrap">
+                        @for (int i = 0; i < tenCapDo.Length; i++)
+                        {
+                            int lvl = i + 1; // Giá trị lvl truyền sang Controller (1 đến 21)
+                            string label = tenCapDo[i]; // Tên hiển thị trên nút
+
+                            <a href="@Url.Action("DanhSachTieuDe", "LuyenNgheHinhAnh", new { capdo = lvl })"
+                               class="btn rounded-pill px-3 py-1 fw-semibold transition-all @(idCapDo == lvl ? "btn-primary shadow-sm" : "btn-outline-secondary text-dark bg-light border-0")">
+                                @label
+                            </a>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Thông tin tổng quan -->
+    <div class="alert alert-info d-flex justify-content-between align-items-center mb-4 shadow-sm">
+        <span><i class="bi bi-info-circle me-2"></i>Tổng số bài học (HSK @idCapDo): <strong>@totalItems</strong></span>
+        <span>Trang <strong>@currentPage</strong> / <strong>@(totalPages == 0 ? 1 : totalPages)</strong></span>
+    </div>
+
+    <!-- Danh sách tiêu đề bài học -->
+    @if (Model != null && Model.data != null && Model.data.Count > 0)
+    {
+        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4 mb-4">
+            @foreach (var item in Model.data)
+            {
+                <div class="col" id="card-item-@item.idLuyenNghe">
+                    <div class="card h-100 border-0 shadow-sm card-hover">
+                        <div class="card-body d-flex flex-column justify-content-between p-4">
+                            <div>
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <span class="badge bg-primary bg-opacity-10 text-primary px-3 py-2 rounded-pill fw-normal">
+                                        <i class="bi bi-bookmark-star me-1"></i>Mã bài: #@item.idLuyenNghe
+                                    </span>
+                                    <div class="dropdown">
+                                        <button class="btn btn-link text-muted p-0" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                            <i class="bi bi-three-dots-vertical fs-5"></i>
+                                        </button>
+                                        <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0">
+                                            <li>
+                                                <button type="button"
+                                                        class="dropdown-item text-warning btn-edit-item"
+                                                        data-id="@item.idLuyenNghe"
+                                                        data-tieude="@item.tieuDe"
+                                                        data-capdo="@idCapDo">
+                                                    <i class="bi bi-pencil-square me-2"></i>Chỉnh sửa
+                                                </button>
+                                            </li>
+                                            <li>
+                                                <button type="button"
+                                                        class="dropdown-item text-danger btn-delete-item"
+                                                        data-id="@item.idLuyenNghe"
+                                                        data-tieude="@item.tieuDe">
+                                                    <i class="bi bi-trash me-2"></i>Xóa bài
+                                                </button>
+                                            </li>
+                                        </ul>
+                                    </div>
+                                </div>
+                                <h5 class="card-title fw-bold text-dark mb-3 text-truncate-2" title="@item.tieuDe">
+                                    @item.tieuDe
+                                </h5>
+                            </div>
+
+                            <div class="pt-3 border-top mt-3">
+                                <a href="@Url.Action("ChiTietLuyenNgheHA", "LuyenNgheHinhAnh", new { capdo = idCapDo, idLuyenNghe = item.idLuyenNghe })"
+                                   class="btn btn-primary w-100 rounded-pill fw-semibold">
+                                    <i class="bi bi-play-circle me-2"></i>Vào luyện nghe
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <!-- Phân trang (Pagination) -->
+        @if (totalPages > 1)
+        {
+            <nav aria-label="Page navigation" class="mt-4">
+                <ul class="pagination justify-content-center">
+                    <li class="page-item @(currentPage <= 1 ? "disabled" : "")">
+                        <a class="page-link" href="@Url.Action("DanhSachTieuDe", new { capdo = idCapDo, page = currentPage - 1 })" aria-label="Previous">
+                            <span aria-hidden="true">&laquo;</span>
+                        </a>
+                    </li>
+
+                    @for (int i = 1; i <= totalPages; i++)
+                    {
+                        <li class="page-item @(i == currentPage ? "active" : "")">
+                            <a class="page-link" href="@Url.Action("DanhSachTieuDe", new { capdo = idCapDo, page = i })">@i</a>
+                        </li>
+                    }
+
+                    <li class="page-item @(currentPage >= totalPages ? "disabled" : "")">
+                        <a class="page-link" href="@Url.Action("DanhSachTieuDe", new { capdo = idCapDo, page = currentPage + 1 })" aria-label="Next">
+                            <span aria-hidden="true">&raquo;</span>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        }
+    }
+    else
+    {
+        <!-- Giao diện khi không tìm thấy dữ liệu -->
+        <div class="text-center py-5 shadow-sm bg-light rounded-3">
+            <i class="bi bi-journal-x text-muted display-1"></i>
+            <h4 class="mt-3 text-secondary">Chưa có bài học nào cho cấp độ HSK @idCapDo</h4>
+            <p class="text-muted">Bạn có thể chọn cấp độ khác hoặc tạo bài học mới ngay bây giờ.</p>
+            <button class="btn btn-success mt-2" onclick="openAddModal()">
+                <i class="bi bi-plus-circle me-1"></i>Thêm bài học mới
+            </button>
+        </div>
+    }
+</div>
+
+<!-- MODAL THÊM / SỬA TIÊU ĐỀ -->
+<div class="modal fade" id="tieuDeModal" tabindex="-1" aria-labelledby="tieuDeModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title fw-bold" id="tieuDeModalLabel">Thêm mới bài học</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <form id="formTieuDe">
+                    <input type="hidden" id="modalIdLuyenNghe" value="0" />
+
+                    <div class="mb-3">
+                        <label for="modalIdCapDo" class="form-label fw-semibold">Cấp độ (HSK)</label>
+                        <input type="number" class="form-control" id="modalIdCapDo" value="@idCapDo" min="1" required />
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="modalTieuDeText" class="form-label fw-semibold">Tiêu đề bài học</label>
+                        <textarea class="form-control" id="modalTieuDeText" rows="3" placeholder="Nhập tiêu đề bài học..." required></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer bg-light">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                <button type="button" class="btn btn-primary" id="btnSaveTieuDe" onclick="saveTieuDe()">
+                    <i class="bi bi-save me-1"></i>Lưu dữ liệu
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .card-hover {
+        transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+    }
+
+        .card-hover:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+        }
+
+    .text-truncate-2 {
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+        min-height: 3rem;
+    }
+</style>
+
+<script>
+    const API_BASE_URL = '/api/LuyenNgheHinhAnh';
+    let tieuDeModalInstance = null;
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const modalEl = document.getElementById('tieuDeModal');
+        if (modalEl) {
+            tieuDeModalInstance = new bootstrap.Modal(modalEl);
+        }
+
+        // Lắng nghe sự kiện click trên các nút Chỉnh sửa
+        document.addEventListener('click', function(e) {
+            const btnEdit = e.target.closest('.btn-edit-item');
+            if (btnEdit) {
+                const id = btnEdit.getAttribute('data-id');
+                const tieuDe = btnEdit.getAttribute('data-tieude');
+                const capDo = btnEdit.getAttribute('data-capdo');
+                openEditModal(id, tieuDe, capDo);
+            }
+
+            const btnDelete = e.target.closest('.btn-delete-item');
+            if (btnDelete) {
+                const id = btnDelete.getAttribute('data-id');
+                const tieuDe = btnDelete.getAttribute('data-tieude');
+                deleteTieuDe(id, tieuDe);
+            }
+        });
+    });
+
+    // Mở modal Thêm mới
+    function openAddModal() {
+        document.getElementById('tieuDeModalLabel').innerText = 'Thêm mới bài học';
+        document.getElementById('modalIdLuyenNghe').value = 0;
+        document.getElementById('modalIdCapDo').value = @idCapDo;
+        document.getElementById('modalTieuDeText').value = '';
+        if (tieuDeModalInstance) tieuDeModalInstance.show();
+    }
+
+    // Mở modal Chỉnh sửa
+    function openEditModal(id, tieuDe, idCapDo) {
+        document.getElementById('tieuDeModalLabel').innerText = 'Chỉnh sửa bài học #' + id;
+        document.getElementById('modalIdLuyenNghe').value = id;
+        document.getElementById('modalIdCapDo').value = idCapDo;
+        document.getElementById('modalTieuDeText').value = tieuDe;
+        if (tieuDeModalInstance) tieuDeModalInstance.show();
+    }
+
+    // Thực hiện Thêm / Sửa qua API
+    async function saveTieuDe() {
+        const id = parseInt(document.getElementById('modalIdLuyenNghe').value) || 0;
+        const idCapDo = parseInt(document.getElementById('modalIdCapDo').value) || @idCapDo;
+        const tieuDe = document.getElementById('modalTieuDeText').value.trim();
+
+        if (!tieuDe) {
+            alert('Vui lòng nhập tiêu đề bài học.');
+            return;
+        }
+
+        const payload = {
+            idLuyenNghe: id,
+            tieuDe: tieuDe,
+            idCapDo: idCapDo
+        };
+
+        const isEdit = id > 0;
+        const url = isEdit ? `${API_BASE_URL}/sua-tieu-de/${id}` : `${API_BASE_URL}/them-tieu-de`;
+        const method = isEdit ? 'PUT' : 'POST';
+
+        const btnSave = document.getElementById('btnSaveTieuDe');
+        btnSave.disabled = true;
+        btnSave.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Đang xử lý...';
+
+        try {
+            const response = await fetch(url, {
+                method: method,
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(payload)
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                if (tieuDeModalInstance) tieuDeModalInstance.hide();
+                alert(result.message || 'Thao tác thành công!');
+                window.location.reload();
+            } else {
+                alert(result.message || 'Xảy ra lỗi trong quá trình xử lý.');
+            }
+        } catch (error) {
+            console.error('Lỗi API:', error);
+            alert('Không thể kết nối đến máy chủ.');
+        } finally {
+            btnSave.disabled = false;
+            btnSave.innerHTML = '<i class="bi bi-save me-1"></i>Lưu dữ liệu';
+        }
+    }
+
+    // Thực hiện Xóa qua API
+    async function deleteTieuDe(id, tieuDe) {
+        if (!confirm(`Bạn có chắc chắn muốn xóa bài học "${tieuDe}" (Mã: #${id}) không?`)) {
+            return;
+        }
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/xoa-tieu-de/${id}`, {
+                method: 'DELETE'
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                alert(result.message || 'Xóa bài học thành công!');
+                window.location.reload();
+            } else {
+                alert(result.message || 'Lỗi khi xóa bài học.');
+            }
+        } catch (error) {
+            console.error('Lỗi API xóa:', error);
+            alert('Không thể kết nối đến máy chủ.');
+        }
+    }
+</script>

@@ -1,0 +1,638 @@
+﻿@using Microsoft.AspNetCore.Http
+@using System.Security.Claims
+@using HocTiengTrung_3._0_T.Services
+@inject IHttpContextAccessor HttpContextAccessor
+@inject ITrungTamService TrungTamService
+
+@{
+    var context = HttpContextAccessor.HttpContext;
+    var user = context?.User;
+    var session = context?.Session;
+
+    // 1. Kiểm tra đăng nhập
+    bool isLoggedIn = user?.Identity?.IsAuthenticated ?? false;
+
+    // 2. Lấy thông tin hiển thị (Ưu tiên Session -> Claims)
+    string hoTenHienThi = session?.GetString("HoTenNhanVien")
+                          ?? user?.FindFirst(ClaimTypes.Name)?.Value
+                          ?? session?.GetString("TenDangNhap")
+                          ?? "Thành viên";
+
+    // 3. Đồng bộ lại Session nếu Cookie còn nhưng Session mất
+    if (isLoggedIn && string.IsNullOrEmpty(session?.GetString("MaNguoiDung")))
+    {
+        var userId = user?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        var tenDN = user?.FindFirst("TenDangNhap")?.Value ?? user?.Identity?.Name;
+
+        if (!string.IsNullOrEmpty(userId)) session?.SetString("MaNguoiDung", userId);
+        if (!string.IsNullOrEmpty(tenDN)) session?.SetString("TenDangNhap", tenDN);
+        session?.SetString("HoTenNhanVien", hoTenHienThi);
+    }
+
+    string currentVaiTro = User.FindFirst("TenVaiTro")?.Value
+                         ?? Context.Session.GetString("TenVaiTro")
+                         ?? "";
+    string maTrungTam = User.FindFirst("MaTrungTam")?.Value
+                        ?? Context.Session.GetString("MaTrungTam")
+                        ?? "";
+    string idTrungTam = User.FindFirst("IdTrungTam")?.Value
+                            ?? Context.Session.GetString("IdTrungTam")
+                            ?? "";
+
+    int.TryParse(idTrungTam, out int currentIdTrungTam);
+
+    string idTaiKhoanStr = user?.FindFirst("IdTaiKhoan")?.Value
+                           ?? session?.GetString("IdTaiKhoan")
+                           ?? "0";
+    int.TryParse(idTaiKhoanStr, out int currentIdTaiKhoan);
+
+    string vaiTroClean = (currentVaiTro ?? "").Trim();
+    bool isGiangVien = vaiTroClean.Equals("Giảng viên", StringComparison.OrdinalIgnoreCase)
+                       || (user?.IsInRole("Giảng viên") ?? false)
+                       || (user?.IsInRole("1002") ?? false);
+
+    bool isQuanLy = vaiTroClean.Equals("Quản lý trung tâm", StringComparison.OrdinalIgnoreCase)
+                    || (user?.IsInRole("Quản lý trung tâm") ?? false);
+
+    // 4. KIỂM TRA ĐẶC QUYỀN TRUNG TÂM KIM HOA
+    bool isKimHoa = string.Equals(maTrungTam?.Trim(), "KimHoa001", StringComparison.OrdinalIgnoreCase);
+
+    // MẶC ĐỊNH
+    string tenTrungTamHienThi = "Học Tiếng Trung.v3";
+    string logoHienThi = "";
+    string maTrungTamHienThi = "";
+
+    // TRUY VẤN DATABASE (CÓ CACHE) ĐỂ LẤY LOGO MỚI NHẤT THEO TRUNG TÂM
+    if (currentIdTrungTam > 0)
+    {
+        var ttInfo = await TrungTamService.GetThongTinTrungTamAsync(currentIdTrungTam);
+        if (!string.IsNullOrEmpty(ttInfo.Logo))
+        {
+            logoHienThi = ttInfo.Logo;
+        }
+        if (!string.IsNullOrEmpty(ttInfo.TenTrungTam))
+        {
+            tenTrungTamHienThi = ttInfo.TenTrungTam;
+        }
+        maTrungTamHienThi = ttInfo.MaTrungTam ?? "";
+    }
+}
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - @(isKimHoa ? "Tiếng Trung Kim Hoa" : "Học Tiếng Trung.v3")</title>
+
+    <!-- CSS Frameworks -->
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <!-- Phông chữ Be Vietnam Pro & Inter -->
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <style>
+            :root {
+                @if (isKimHoa)
+                {
+                    <text>
+                        /* Tone màu nhận diện đặc trưng theo Logo Tiếng Trung Kim Hoa */
+                        --primary-color: #00b894; /* Xanh chữ Kim */
+                        --primary-dark: #00997b;
+                        --secondary-color: #9bbde5; /* Xanh pastel nền logo */
+                        --accent-color: #b32428; /* Đỏ đô chữ Kim Hoa */
+                        --gold-color: #f1c40f; /* Vàng hoa văn sen */
+                        --bg-light: #f6f9fc;
+                    </text>
+                }
+                else
+                {
+
+                    <text> --primary-color: #0984e3;
+                        --primary-dark: #076bb8;
+                        --secondary-color: #00cec9;
+                        --accent-color: #d63031;
+                        --bg-light: #f8f9fa;
+                    </text>
+                }
+            }
+
+            body {
+                font-family: 'Be Vietnam Pro', 'Inter', sans-serif;
+                background-color: var(--bg-light);
+                color: #2d3436;
+                display: flex;
+                flex-direction: column;
+                min-height: 100vh;
+                -webkit-font-smoothing: antialiased;
+            }
+
+            /* Navbar Layout */
+            .navbar {
+                background: rgba(255, 255, 255, 0.96) !important;
+                backdrop-filter: blur(12px);
+                -webkit-backdrop-filter: blur(12px);
+                border-bottom: 2px solid @(isKimHoa ? "rgba(0, 184, 148, 0.25)" : "rgba(0,0,0,0.08)");
+                padding: 8px 0;
+                transition: all 0.3s ease;
+                box-shadow: 0 2px 12px rgba(0,0,0,0.03);
+            }
+
+            /* BRAND / LOGO STYLING HOÀN THIỆN */
+            .brand-link-custom {
+                display: inline-flex;
+                align-items: center;
+                gap: 10px;
+                padding: 2px 6px;
+                border-radius: 12px;
+                transition: all 0.25s ease;
+                text-decoration: none !important;
+            }
+
+                .brand-link-custom:hover {
+                    background: rgba(0, 184, 148, 0.05);
+                }
+
+            .logo-kim-hoa-wrapper {
+                position: relative;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                flex-shrink: 0;
+            }
+
+            .logo-kim-hoa-img {
+                width: 48px;
+                height: 48px;
+                object-fit: cover;
+                border-radius: 50%;
+                border: 2px solid #ffffff;
+                box-shadow: 0 4px 10px rgba(0, 184, 148, 0.25);
+                transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+                background: #fff;
+            }
+
+            .brand-link-custom:hover .logo-kim-hoa-img {
+                transform: scale(1.08) rotate(4deg);
+            }
+
+            .brand-text-block {
+                display: flex;
+                flex-direction: column;
+                line-height: 1.15;
+                user-select: none;
+            }
+
+            .brand-sub-title {
+                color: #b32428;
+                font-size: 13px;
+                font-weight: 700;
+                letter-spacing: 0.4px;
+                text-transform: uppercase;
+            }
+
+            .brand-main-title {
+                color: #00b894;
+                font-size: 19px;
+                font-weight: 800;
+                letter-spacing: -0.3px;
+            }
+
+            /* Căn giữa toàn bộ Navbar ở Desktop */
+            @@media (min-width: 992px) {
+                .navbar > .container-fluid {
+                    display: flex !important;
+                    justify-content: center !important;
+                    align-items: center !important;
+                    gap: 24px;
+                }
+
+                .navbar-collapse {
+                    display: flex !important;
+                    flex-grow: 0 !important;
+                    flex-basis: auto !important;
+                    align-items: center;
+                    justify-content: center;
+                    gap: 20px;
+                }
+
+                .navbar-nav {
+                    display: flex !important;
+                    flex-direction: row !important;
+                    flex-wrap: nowrap !important;
+                    align-items: center;
+                    gap: 6px;
+                    margin: 0 !important;
+                }
+
+                .nav-link {
+                    white-space: nowrap !important;
+                    font-size: 16.5px !important;
+                    padding: 8px 14px !important;
+                    font-weight: 500;
+                    color: #2d3436 !important;
+                    transition: all 0.2s ease;
+                    border-radius: 10px;
+                }
+
+                .user-actions-wrapper {
+                    white-space: nowrap;
+                    flex-shrink: 0;
+                    margin: 0 !important;
+                }
+            }
+
+            .nav-link:hover, .nav-item.show .nav-link {
+                color: var(--primary-color) !important;
+                background: rgba(0, 184, 148, 0.08);
+            }
+
+            /* Dropdown Menu */
+            .dropdown-menu {
+                border: none;
+                box-shadow: 0 10px 30px rgba(0,0,0,0.12);
+                border-radius: 14px;
+                padding: 8px;
+                animation: slideUp 0.25s ease;
+            }
+
+            @@keyframes slideUp {
+                from {
+                    opacity: 0;
+                    transform: translateY(8px);
+                }
+
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+            }
+
+            .dropdown-item {
+                border-radius: 8px;
+                padding: 8px 14px;
+                font-size: 15.5px !important;
+                font-weight: 500;
+                transition: 0.2s;
+                white-space: nowrap;
+            }
+
+                .dropdown-item:hover {
+                    background-color: var(--primary-color);
+                    color: white !important;
+                }
+
+            .btn-start {
+                background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+                color: white !important;
+                border-radius: 10px;
+                padding: 8px 18px;
+                font-size: 16px !important;
+                font-weight: 600;
+                border: none;
+                white-space: nowrap;
+                transition: 0.3s;
+            }
+
+                .btn-start:hover {
+                    transform: translateY(-1px);
+                    box-shadow: 0 4px 12px rgba(0, 184, 148, 0.35);
+                }
+
+            .user-name-text {
+                font-size: 15.5px !important;
+                font-weight: 600;
+                color: #2d3436;
+                max-width: 180px;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+            }
+
+            .avatar-circle {
+                width: 38px;
+                height: 38px;
+                background: @(isKimHoa ? "#e8f8f5" : "#dfe6e9");
+                border-radius: 50%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: var(--primary-color);
+                border: 2px solid white;
+                box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+            }
+
+            footer {
+                background: #fff;
+                margin-top: auto;
+                border-top: 1px solid #eee;
+                padding: 40px 0 20px;
+            }
+
+            /* Mobile Responsive */
+            @@media (max-width: 991.98px) {
+                .navbar-collapse {
+                    background: white;
+                    padding: 16px;
+                    border-radius: 16px;
+                    margin-top: 10px;
+                    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+                }
+
+                .dropdown-menu {
+                    text-align: center;
+                    background: #f8f9fa;
+                }
+            }
+    </style>
+</head>
+<body>
+    <header>
+        <nav class="navbar navbar-expand-lg navbar-light sticky-top">
+            <div class="container-fluid px-lg-4">
+                <!-- Brand / Logo -->
+                <!-- Brand / Logo -->
+                @if (!string.IsNullOrEmpty(logoHienThi))
+                {
+                    <a class="brand-link-custom" asp-controller="Home" asp-action="Index" title="@tenTrungTamHienThi">
+                        <div class="logo-kim-hoa-wrapper">
+                            <img src="@logoHienThi"
+                                 alt="@tenTrungTamHienThi"
+                                 class="logo-kim-hoa-img"
+                                 asp-append-version="true" />
+                        </div>
+                        <div class="brand-text-block">
+                            <span class="brand-sub-title">Cơ sở đào tạo</span>
+                            <span class="brand-main-title">@tenTrungTamHienThi</span>
+                        </div>
+                    </a>
+                }
+                else
+                {
+                    <a class="navbar-brand fw-bold" asp-controller="Home" asp-action="Index">
+                        <i class="fa-solid fa-dragon text-danger me-1"></i>HọcTiếngTrung<span class="text-primary">.v3</span>
+                    </a>
+                }
+
+                <!-- Nút Toggle Mobile -->
+                <button class="navbar-toggler border-0 shadow-none" type="button" data-bs-toggle="collapse" data-bs-target="#mainNavbar">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <!-- Nội dung Navbar -->
+                <div class="collapse navbar-collapse" id="mainNavbar">
+                    <ul class="navbar-nav text-center text-lg-start align-items-lg-center">
+                        <li class="nav-item">
+                            <a class="nav-link" asp-controller="Home" asp-action="Index">
+                                <i class="fa-solid fa-house-chimney me-1 small"></i>Trang chủ
+                            </a>
+                        </li>
+
+                       
+
+                        <!-- Khóa học Dropdown -->
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="studyDropdown" data-bs-toggle="dropdown">
+                                <i class="fa-solid fa-book-open me-1 small"></i>Khóa học
+                            </a>
+                            <ul class="dropdown-menu border-0 shadow-sm">
+                                <li><a class="dropdown-item" href="/QuanLyDanhSachTuVung/DanhSachTuVung"><i class="fa-solid fa-font me-2 text-primary d-none d-lg-inline"></i>Từ vựng HSK</a></li>
+                                <li><a class="dropdown-item" href="/QuanLyDanhSachTuVung/TuVungChuyenNganh"><i class="fa-solid fa-font me-2 text-primary d-none d-lg-inline"></i>Từ vựng chuyên ngành</a></li>
+                                <li><a class="dropdown-item" href="/QuanLyDanhSachTuVung/OnLuyenNgauNhien"><i class="fa-solid fa-bolt me-2 text-danger d-none d-lg-inline"></i>Ôn luyện hàng ngày</a></li>
+                                <li><a class="dropdown-item" href="/QuanLyDanhSachNguPhap/DanhSachNguPhap"><i class="fa-solid fa-quote-left me-2 text-success d-none d-lg-inline"></i>Ngữ pháp cơ bản</a></li>
+                                <li><a class="dropdown-item" href="/QuanLyDanhSachBaiTap/DanhSachLoaiBaiTap?capdo=1&amp;chuongTrinh=3"><i class="fa-solid fa-vial me-2 text-warning d-none d-lg-inline"></i>Bài tập thực hành</a></li>
+                                <li>
+                                    <a class="dropdown-item"
+                                       asp-controller="QuanLyLuyenNghe"
+                                       asp-action="DanhSachLuyeNghe"
+                                       asp-route-idCapDo="1">
+                                        <i class="fa-solid fa-headphones me-2 text-info d-none d-lg-inline"></i>Luyện nghe Audio
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item d-flex align-items-center" href="@Url.Action("ChiTietLuyenNgheHA", "LuyenNgheHinhAnh", new { capdo = 1, page = 1 })">
+                                        <i class="fa-solid fa-headphones fa-fw me-2 text-primary"></i>
+                                        <span>Luyện nghe hình ảnh</span>
+                                    </a>
+                                </li>
+                                <li><a class="dropdown-item" href="@Url.Action("DanhSachChuongTrinhTinh", "QuanLyDanhSachBaiHoc", new { capdo = 1, page = 1 })"><i class="fa-solid fa-book-open me-2 text-info d-none d-lg-inline"></i>Ôn luyện bài học</a></li>
+                            </ul>
+                        </li>
+
+                        <!-- Đề thi -->
+                        <li class="nav-item">
+                            <a class="nav-link" href="/QuanLyDeThi/DanhSachCapDo">
+                                <i class="fa-solid fa-file-signature me-1 small"></i>Đề thi HSK
+                            </a>
+                        </li>
+
+                        <!-- Bộ thủ Hán tự -->
+                        <li class="nav-item">
+                            <a class="nav-link" href="/PhanTichCauTaoChuHan/DanhSachBoThu">
+                                <i class="fa-solid fa-language me-1 small"></i>Bộ thủ
+                            </a>
+                        </li>
+
+                        <!-- Admin Section -->
+                        @if (session?.GetString("MaNguoiDung") == "3" || session?.GetString("MaNguoiDung") == "5470" || currentVaiTro == "Quản trị viên")
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link" href="/QuanLyTaiLieu1/DanhSachTaiLieu">
+                                    <i class="fa-solid fa-book-open me-1 small"></i>Tài liệu
+                                </a>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle text-danger" href="#" data-bs-toggle="dropdown">
+                                    <i class="fa-solid fa-user-shield me-1 small"></i>Quản trị
+                                </a>
+                                <ul class="dropdown-menu border-0 shadow-sm">
+                                    <li><a class="dropdown-item" href="/Home/HeThong"><i class="bi bi-speedometer2 me-2 d-none d-lg-inline"></i>Dashboard</a></li>
+                                    <li><a class="dropdown-item" href="/Admin/UserManagement"><i class="bi bi-people me-2 d-none d-lg-inline"></i>Quản lý người dùng</a></li>
+                                </ul>
+                            </li>
+                        }
+                        @if (currentVaiTro == "Quản lý trung tâm")
+                        {
+                                  
+                            <li class="nav-item">
+                                <a class="nav-link fw-semibold" style="color: var(--primary-color) !important;" asp-controller="QuanLyTrungTam" asp-action="ChiTietTrungTam" asp-route-id="@idTrungTam">
+                                    <i class="fa-solid fa-school me-1 small"></i>Cơ sở
+                                </a>
+                            </li>
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle text-danger" href="#" data-bs-toggle="dropdown">
+                                    <i class="fa-solid fa-user-shield me-1 small"></i>Quản trị
+                                </a>
+                                <ul class="dropdown-menu border-0 shadow-sm">
+                                    @* <li><a class="dropdown-item" href="/Home/HeThong"><i class="bi bi-speedometer2 me-2 d-none d-lg-inline"></i>Dashboard</a></li> *@
+                                    <li><a class="dropdown-item" href="/Home/QuanLyTT"><i class="bi bi-people me-2 d-none d-lg-inline"></i>Quản lý thông tin</a></li>
+                                </ul>
+                            </li>
+                        }
+                         
+                    </ul>
+
+                    <!-- User Actions / Hồ sơ -->
+                    <div class="user-actions-wrapper d-flex align-items-center justify-content-center justify-content-lg-start gap-2 mt-3 mt-lg-0">
+                        @if (isLoggedIn)
+                        {
+                            <div class="dropdown">
+                                <a class="d-flex align-items-center text-decoration-none dropdown-toggle" href="#" id="userDropdown" data-bs-toggle="dropdown">
+                                    <div class="avatar-circle">
+                                        <i class="fa-solid fa-user"></i>
+                                    </div>
+                                    <div class="ms-2 text-start">
+                                        <p class="mb-0 user-name-text">@hoTenHienThi</p>
+                                        <p class="mb-0 user-role-text">
+                                            @if (isKimHoa)
+                                            {
+                                                <span class="badge bg-success-subtle text-success border border-success-subtle fw-semibold" style="font-size: 0.75rem;">
+                                                    <i class="fa-solid fa-leaf me-1"></i>Kim Hoa
+                                                </span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-light text-dark fw-normal" style="font-size: 0.75rem;">@(string.IsNullOrEmpty(currentVaiTro) ? "Học viên" : currentVaiTro)</span>
+                                            }
+                                        </p>
+                                    </div>
+                                </a>
+                                <ul class="dropdown-menu dropdown-menu-end shadow-lg mt-2 border-0 text-center text-lg-start">
+                                   
+                                    @if (isQuanLy)
+                                    {
+                                        <li>
+                                            <a class="dropdown-item py-2" asp-controller="QuanLyTrungTam" asp-action="ChiTietTrungTam" asp-route-id="@idTrungTam">
+                                                <i class="fa-solid fa-school me-2 text-success d-none d-lg-inline"></i>Quản lý trung tâm
+                                            </a>
+                                        </li>
+                                    }
+                                    else if (isGiangVien)
+                                    {
+                                        <li>
+                                            <a class="dropdown-item py-2"
+                                               asp-controller="QuanLyTrungTam"
+                                               asp-action="ChiTietNhanSu"
+                                               asp-route-id="@currentIdTaiKhoan">
+                                                <i class="fa-solid fa-chalkboard-user me-2 text-success d-none d-lg-inline"></i>Hồ sơ giảng viên
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item py-2" asp-controller="QuanLyLopHoc" asp-action="DanhSachLopHoc">
+                                                <i class="fa-solid fa-book-open-reader me-2 text-primary d-none d-lg-inline"></i>Lớp học phụ trách
+                                            </a>
+                                        </li>
+                                    }
+                                    else
+                                    {
+                                        <li>
+                                            <a class="dropdown-item py-2" asp-controller="QuanLyTaiKhoan" asp-action="HoSoNguoiDung">
+                                                <i class="fa-solid fa-circle-user me-2 text-primary d-none d-lg-inline"></i>Hồ sơ cá nhân
+                                            </a>
+                                        </li>
+                                    }
+                                        <li>
+                                        <a class="dropdown-item py-2" href="#">
+                                            <i class="fa-solid fa-star me-2 text-warning d-none d-lg-inline"></i>Thành tích học tập
+                                        </a>
+                                    </li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li>
+                                        <a class="dropdown-item py-2 text-danger fw-bold" asp-controller="QuanLyTaiKhoan" asp-action="DangXuat">
+                                            <i class="fa-solid fa-right-from-bracket me-2 d-none d-lg-inline"></i>Đăng xuất
+                                        </a>
+                                    </li>
+                                </ul>
+                            </div>
+                        }
+                        else
+                        {
+                            <a asp-controller="QuanLyTaiKhoan" asp-action="DangNhap" class="text-decoration-none text-dark fw-bold d-none d-lg-block me-2" style="font-size: 16px;">
+                                Đăng nhập
+                            </a>
+                            <a asp-controller="QuanLyTaiKhoan" asp-action="DangKy" class="btn btn-start shadow-sm">
+                                <i class="fa-solid fa-user-plus me-1"></i>Đăng ký
+                            </a>
+                        }
+                    </div>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <div class="container my-5">
+        <main role="main">
+            @RenderBody()
+        </main>
+    </div>
+
+    <footer class="text-center text-lg-start">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-4 col-md-12 mb-4">
+                    @if (isKimHoa)
+                    {
+                        <h5 class="fw-bold" style="color: #b32428;">
+                            <i class="fa-solid fa-spa text-success me-1"></i> Tiếng Trung
+                        </h5>
+                        <p class="text-muted small mt-3">
+                            Trung tâm tiếng Trung  - Cơ sở đào tạo chất lượng cao, đồng hành cùng bạn trên con đường chinh phục HSK và giao tiếp tiếng Trung tự tin.
+                        </p>
+                    }
+                    else
+                    {
+                        <h5 class="fw-bold"><i class="fa-solid fa-dragon text-danger"></i> Học Tiếng Trung .v3</h5>
+                        <p class="text-muted small mt-3">
+                            Nền tảng học tiếng Trung trực tuyến hiện đại, giúp bạn chinh phục HSK một cách dễ dàng và hiệu quả nhất.
+                        </p>
+                    }
+                    <p class="text-secondary opacity-75 style-disclaimer" style="font-size: 0.75rem; line-height: 1.4;">
+                        *Lưu ý: Hệ thống bài tập và từ vựng được biên soạn dựa trên khung chương trình tham chiếu Boya và HSK.
+                    </p>
+                </div>
+                <div class="col-lg-4 col-md-6 mb-4">
+                    <h6 class="fw-bold">Liên kết nhanh</h6>
+                    <ul class="list-unstyled mb-0 small">
+                        <li class="mb-2"><a href="#" class="text-muted text-decoration-none">Giới thiệu</a></li>
+                        <li class="mb-2"><a href="#" class="text-muted text-decoration-none">Điều khoản sử dụng</a></li>
+                        <li class="mb-2"><a href="#" class="text-muted text-decoration-none">Chính sách bảo mật</a></li>
+                    </ul>
+                </div>
+                <div class="col-lg-4 col-md-6 mb-4 text-lg-end">
+                    <h6 class="fw-bold">Kết nối với chúng tôi</h6>
+                        @if (isKimHoa)
+                        {
+                            <div class="mt-3">
+                                <a href="https://www.facebook.com/cuong.phanviet.99" class="btn btn-outline-primary btn-sm rounded-circle me-2"><i class="fab fa-facebook-f"></i></a>
+                                <a href="https://youtube.com/@@luyennghetiengtrung3.0?si=74B6iaxQ918GNaqT" class="btn btn-outline-danger btn-sm rounded-circle me-2"><i class="fab fa-youtube"></i></a>
+                                <a href="https://www.tiktok.com/@@no.t.hsk5.th.i.tn7?_r=1&_t=ZS-965xPqsZsiA" class="btn btn-outline-info btn-sm rounded-circle" target="_blank" rel="noopener noreferrer"><i class="fab fa-tiktok"></i></a>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="mt-3">
+                                <a href="https://www.facebook.com/profile.php?id=61590729792874#" class="btn btn-outline-primary btn-sm rounded-circle me-2"><i class="fab fa-facebook-f"></i></a>
+                                <a href="https://youtube.com/@@luyennghetiengtrung3.0?si=74B6iaxQ918GNaqT" class="btn btn-outline-danger btn-sm rounded-circle me-2"><i class="fab fa-youtube"></i></a>
+                                <a href="https://www.tiktok.com/@@no.t.hsk5.th.i.tn7?_r=1&_t=ZS-965xPqsZsiA" class="btn btn-outline-info btn-sm rounded-circle" target="_blank" rel="noopener noreferrer"><i class="fab fa-tiktok"></i></a>
+                            </div>
+                        }
+                        
+                </div>
+            </div>
+            <hr class="my-4">
+            <div class="text-center text-muted small pb-3">
+                &copy; @DateTime.Now.Year - @(isKimHoa ? "Tiếng Trung" : "Học Tiếng Trung .v3") - Bản quyền thuộc về cơ sở đào tạo
+            </div>
+        </div>
+    </footer>
+
+    <partial name="_DanhSachGhiChu" />
+
+    <!-- Scripts -->
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

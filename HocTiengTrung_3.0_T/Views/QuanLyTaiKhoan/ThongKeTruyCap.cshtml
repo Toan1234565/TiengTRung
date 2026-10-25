@@ -1,0 +1,81 @@
+﻿@model List<HocTiengTrung_3._0_T.Models12.QuanLyTaiKhoan.AccessStatDetail>
+
+@{
+    ViewData["Title"] = "Thống kê truy cập";
+}
+
+<div class="container mt-4">
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-4 pb-2 border-bottom">
+        <h2 class="mb-0 text-dark fw-bold">
+            <i class="fas fa-chart-line text-primary me-2"></i>Thống kê lượt truy cập
+        </h2>
+        <a href="@Url.Action("DanhSach", "QuanLyTaiKhoan")" class="btn btn-outline-primary rounded-pill shadow-sm mt-2 mt-sm-0">
+            <i class="fas fa-users me-2"></i>Quản lý danh sách tài khoản
+        </a>
+    </div>
+    <!-- Bộ lọc -->
+    <form method="get" class="row g-3 mb-4">
+        <div class="col-auto">
+            <label>Từ ngày:</label>
+            <input type="date" name="tuNgay" class="form-control" value="@ViewBag.TuNgay" />
+        </div>
+        <div class="col-auto">
+            <label>Đến ngày:</label>
+            <input type="date" name="denNgay" class="form-control" value="@ViewBag.DenNgay" />
+        </div>
+        <div class="col-auto align-self-end">
+            <button type="submit" class="btn btn-primary">Lọc dữ liệu</button>
+        </div>
+    </form>
+
+    <!-- Khu vực hiển thị biểu đồ -->
+    <div class="card">
+        <div class="card-body">
+            <canvas id="accessChart" style="width:100%; height:400px;"></canvas>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        // Lấy dữ liệu từ Model được truyền từ Controller sang
+        const dataFromModel = @Html.Raw(Json.Serialize(Model));
+
+        const labels = dataFromModel.map(item => item.ngay);
+        const values = dataFromModel.map(item => item.soLuotTruyCap);
+        const uniqueUsers = dataFromModel.map(item => item.soNguoiDungDuyNhat);
+
+        const ctx = document.getElementById('accessChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'Tổng số lượt truy cập',
+                        data: values,
+                        borderColor: 'rgba(54, 162, 235, 1)',
+                        backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                        fill: true,
+                        tension: 0.3
+                    },
+                    {
+                        label: 'Số người dùng (Unique)',
+                        data: uniqueUsers,
+                        borderColor: 'rgba(255, 99, 132, 1)',
+                        backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                        fill: true,
+                        tension: 0.3
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: { beginAtZero: true, ticks: { stepSize: 1 } }
+                }
+            }
+        });
+    </script>
+}

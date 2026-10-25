@@ -1,0 +1,180 @@
+﻿@{
+    ViewData["Title"] = "Lộ Trình Ôn Luyện Tiếng Trung";
+}
+
+<div class="container py-5">
+    <!-- Section Header -->
+    <div class="text-center mb-5 header-section">
+        <span class="badge bg-primary-subtle text-primary px-3 py-2 rounded-pill font-monospace fw-semibold mb-2">
+            <i class="fa-solid fa-graduation-cap me-1"></i> KHÓA HỌC TỰ CHỌN
+        </span>
+        <h2 class="display-5 fw-bold text-dark">Lựa Chọn Lộ Trình Học Tiếng Trung</h2>
+        <p class="text-muted fs-6 mx-auto" style="max-width: 600px;">
+            Hệ thống bài tập và lộ trình bổ trợ kiến thức thiết kế bám sát các khung chương trình học tiếng Trung phổ biến.
+        </p>
+    </div>
+
+    <!-- Cards Grid -->
+    <div class="row g-4 justify-content-center">
+
+        <!-- CARD 1: LỘ TRÌNH THEO CHUẨN HSK 2.0 (ID = 1) -->
+        <div class="col-lg-4 col-md-6 fade-in-card" style="animation-delay: 0.1s;">
+            <div class="card h-100 course-card border-0 shadow-lg rounded-4 overflow-hidden position-relative">
+                <div class="card-img-wrapper">
+                    <img src="https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?q=80&w=800&auto=format&fit=crop"
+                         class="card-img-top course-img"
+                         alt="Lộ trình Bổ trợ HSK 2.0"
+                         onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?q=80&w=800&auto=format&fit=crop';">
+                    <div class="card-badge badge bg-primary">Khung HSK 2.0</div>
+                </div>
+                <div class="card-body p-4 d-flex flex-column">
+                    <div class="mb-2">
+                        <span class="badge bg-info-subtle text-info rounded-pill px-3 py-1 fw-bold">Luyện Thi Thực Chiến</span>
+                    </div>
+                    <h4 class="card-title fw-bold text-dark">Lộ trình Bổ trợ Theo Khung HSK 2.0</h4>
+                    <p class="card-text text-muted flex-grow-1">
+                        Hệ thống bài tập ôn luyện thiết kế tương thích với cấu trúc giáo trình Chuẩn HSK 2.0, tập trung củng cố từ vựng và ngữ pháp trọng tâm theo từng cấp độ.
+                    </p>
+
+                    <div class="pt-3 border-top mt-auto">
+                        <a href="@Url.Action("DanhSachBaiHoc", "QuanLyDanhSachBaiHoc", new { capdo = 1, IdGiaoTrinh = 1 })"
+                           class="btn btn-primary btn-lg w-100 rounded-pill fw-semibold shadow-sm text-uppercase tracking-wider">
+                            Học ngay <i class="fa-solid fa-arrow-right ms-2 btn-arrow"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- CARD 2: LỘ TRÌNH THEO CHUẨN BOYA PHIÊN BẢN 3 (ID = 2) -->
+        <div class="col-lg-4 col-md-6 fade-in-card" style="animation-delay: 0.2s;">
+            <div class="card h-100 course-card border-0 shadow-lg rounded-4 overflow-hidden position-relative">
+                <div class="card-img-wrapper">
+                    <img src="https://images.unsplash.com/photo-1516979187457-637abb4f9353?q=80&w=800&auto=format&fit=crop"
+                         class="card-img-top course-img"
+                         alt="Lộ trình Bổ trợ Boya V3"
+                         onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1456513080510-7bf3a84b82f8?q=80&w=800&auto=format&fit=crop';">
+                    <div class="card-badge badge bg-success">Phiên bản 3 (V3)</div>
+                </div>
+                <div class="card-body p-4 d-flex flex-column">
+                    <div class="mb-2">
+                        <span class="badge bg-success-subtle text-success rounded-pill px-3 py-1 fw-bold">Tư Duy & Ngữ Pháp</span>
+                    </div>
+                    <h4 class="card-title fw-bold text-dark">Lộ trình Bổ trợ Theo Khung Boya (Bản 3)</h4>
+                    <p class="card-text text-muted flex-grow-1">
+                        Nội dung bài tập bổ trợ cập nhật theo lộ trình Boya phiên bản 3 (Third Edition), tập trung nâng cao ngữ pháp, cấu trúc câu mở rộng và tư duy ngôn ngữ.
+                    </p>
+
+                    <div class="pt-3 border-top mt-auto">
+                        <a href="@Url.Action("DanhSachBaiHoc", "QuanLyDanhSachBaiHoc", new { capdo = 1, IdGiaoTrinh = 2 })"
+                           class="btn btn-success btn-lg w-100 rounded-pill fw-semibold shadow-sm text-uppercase tracking-wider">
+                            Học ngay <i class="fa-solid fa-arrow-right ms-2 btn-arrow"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- CARD 3: LỘ TRÌNH BỔ TRỢ THEO KHUNG CHUẨN HSK (ID = 3) -->
+        <div class="col-lg-4 col-md-6 fade-in-card" style="animation-delay: 0.3s;">
+            <div class="card h-100 course-card border-0 shadow-lg rounded-4 overflow-hidden position-relative">
+                <div class="card-img-wrapper">
+                    <img src="https://images.unsplash.com/photo-1434030216411-0b793f4b4173?q=80&w=800&auto=format&fit=crop"
+                         class="card-img-top course-img"
+                         alt="Lộ trình Bổ trợ Chuẩn HSK"
+                         onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1503676260728-1c00da094a0b?q=80&w=800&auto=format&fit=crop';">
+                    <div class="card-badge badge bg-primary">Chuẩn HSK</div>
+                </div>
+                <div class="card-body p-4 d-flex flex-column">
+                    <div class="mb-2">
+                        <span class="badge bg-primary-subtle text-primary rounded-pill px-3 py-1 fw-bold">Ứng Dụng & Thi Cử</span>
+                    </div>
+                    <h4 class="card-title fw-bold text-dark">Lộ trình Bổ trợ Theo Chuẩn HSK 3.0</h4>
+                    <p class="card-text text-muted flex-grow-1">
+                        Hệ thống bài tập bổ trợ bám sát khung năng lực HSK tiêu chuẩn. Giúp củng cố từ vựng trọng tâm, luyện phản xạ giao tiếp và chinh phục bài thi hiệu quả.
+                    </p>
+
+                    <div class="pt-3 border-top mt-auto">
+                        <a href="@Url.Action("DanhSachBaiHoc", "QuanLyDanhSachBaiHoc", new { capdo = 1, IdGiaoTrinh = 3 })"
+                           class="btn btn-primary btn-lg w-100 rounded-pill fw-semibold shadow-sm text-uppercase tracking-wider">
+                            Học ngay <i class="fa-solid fa-arrow-right ms-2 btn-arrow"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Custom CSS Animations & Styling -->
+<style>
+    /* Keyframes cho hiệu ứng xuất hiện */
+    @@keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .fade-in-card {
+        animation: fadeInUp 0.8s ease-out forwards;
+        opacity: 0;
+    }
+
+    /* Card Hover Styling */
+    .course-card {
+        transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+        background: #ffffff;
+    }
+
+        .course-card:hover {
+            transform: translateY(-10px) scale(1.02);
+            box-shadow: 0 20px 35px rgba(0, 0, 0, 0.15) !important;
+        }
+
+    /* Image Wrapper & Zoom */
+    .card-img-wrapper {
+        position: relative;
+        height: 260px;
+        overflow: hidden;
+        background-color: #f8f9fa;
+    }
+
+    .course-img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.5s ease;
+    }
+
+    .course-card:hover .course-img {
+        transform: scale(1.08);
+    }
+
+    .card-badge {
+        position: absolute;
+        top: 15px;
+        right: 15px;
+        font-size: 0.85rem;
+        padding: 6px 12px;
+        border-radius: 20px;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
+
+    /* Hiệu ứng mũi tên khi hover vào nút */
+    .btn-arrow {
+        transition: transform 0.3s ease;
+    }
+
+    .course-card:hover .btn-arrow {
+        transform: translateX(6px);
+    }
+
+    .tracking-wider {
+        letter-spacing: 0.5px;
+    }
+</style>

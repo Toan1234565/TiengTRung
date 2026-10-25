@@ -1,0 +1,396 @@
+﻿@using HocTiengTrung_3._0_T.Services
+@using Microsoft.AspNetCore.Http
+@using System.Security.Claims
+@inject ITrungTamService TrungTamService
+@inject IHttpContextAccessor HttpContextAccessor
+
+@{
+    var httpContext = HttpContextAccessor.HttpContext;
+    var user = httpContext?.User;
+    var session = httpContext?.Session;
+
+    var idTrungTam = user?.FindFirst("IdTrungTam")?.Value
+                     ?? session?.GetString("IdTrungTam")
+                     ?? "0";
+
+    var maTrungTam = user?.FindFirst("MaTrungTam")?.Value
+                     ?? session?.GetString("MaTrungTam")
+                     ?? "";
+
+    int.TryParse(idTrungTam, out int currentIdTrungTam);
+
+    // MẶC ĐỊNH ĐỒNG BỘ VỚI LOGO MỸ ĐỨC
+    string tenCoSoHienThi = "Tiếng Trung Mỹ Đức";
+    string logoCoSoHienThi = Url.Content("~/images/logo_MyDuc.jpg");
+    string subBadgeHienThi = "Hán Ngữ Mỹ Đức • Chuẩn HSK 3.0";
+
+    if (currentIdTrungTam > 0)
+    {
+        var ttInfo = await TrungTamService.GetThongTinTrungTamAsync(currentIdTrungTam);
+        if (!string.IsNullOrWhiteSpace(ttInfo.TenTrungTam))
+        {
+            tenCoSoHienThi = ttInfo.TenTrungTam;
+            subBadgeHienThi = $"{ttInfo.TenTrungTam} • HSK 3.0";
+        }
+        if (!string.IsNullOrWhiteSpace(ttInfo.Logo))
+        {
+            logoCoSoHienThi = ttInfo.Logo;
+        }
+    }
+
+    ViewData["Title"] = $"{tenCoSoHienThi} - Hệ Thống Đào Tạo Chuẩn HSK 3.0";
+
+    var currentUserName = session?.GetString("HoTenNhanVien")
+                              ?? user?.FindFirst(ClaimTypes.Name)?.Value
+                              ?? (user?.Identity?.IsAuthenticated == true ? user.Identity.Name : "Học viên");
+}
+
+<style>
+    :root {
+        --brand-main: #c01920;
+        --brand-dark: #870b10;
+        --brand-accent: #d4a017;
+        --brand-accent-light: #fdf5df;
+        --bg-canvas: #f4f7f6;
+        --text-dark: #2d3436;
+        --surface-white: #ffffff;
+    }
+
+    body {
+        background-color: var(--bg-canvas);
+        font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    }
+
+    /* 1. Left Sidebar Profile (Sticky Identity) */
+    .brand-sidebar {
+        background: linear-gradient(145deg, var(--brand-dark) 0%, var(--brand-main) 100%);
+        border-radius: 24px;
+        padding: 40px 30px;
+        color: white;
+        position: sticky;
+        top: 20px;
+        box-shadow: 0 20px 40px rgba(135, 11, 16, 0.15);
+        overflow: hidden;
+        border: 1px solid rgba(212, 160, 23, 0.3);
+    }
+
+        .brand-sidebar::after {
+            content: "";
+            position: absolute;
+            width: 300px;
+            height: 300px;
+            background: radial-gradient(circle, rgba(212, 160, 23, 0.15) 0%, transparent 70%);
+            top: -100px;
+            right: -100px;
+            pointer-events: none;
+        }
+
+    .brand-logo-container {
+        width: 140px;
+        height: 140px;
+        margin: 0 auto 25px;
+        border-radius: 20px;
+        background: var(--surface-white);
+        padding: 6px;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        transform: rotate(-3deg);
+        transition: transform 0.3s ease;
+    }
+
+        .brand-logo-container:hover {
+            transform: rotate(0deg) scale(1.05);
+        }
+
+        .brand-logo-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 14px;
+        }
+
+    .btn-brand-accent {
+        background: var(--brand-accent);
+        color: #fff;
+        font-weight: 600;
+        border: none;
+        border-radius: 12px;
+        padding: 12px 20px;
+        transition: all 0.2s;
+        width: 100%;
+        text-align: center;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-size: 0.9rem;
+    }
+
+        .btn-brand-accent:hover {
+            background: #e5b122;
+            color: #fff;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(212, 160, 23, 0.4);
+        }
+
+    /* 2. Bento Grid Quick Actions */
+    .bento-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 20px;
+        margin-bottom: 35px;
+    }
+
+    .bento-item {
+        background: var(--surface-white);
+        border-radius: 20px;
+        padding: 24px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        text-decoration: none !important;
+        transition: all 0.3s ease;
+        border: 1px solid rgba(0,0,0,0.04);
+        box-shadow: 0 4px 15px rgba(0,0,0,0.02);
+        position: relative;
+        overflow: hidden;
+    }
+
+        .bento-item:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 25px rgba(192, 25, 32, 0.08);
+            border-color: rgba(192, 25, 32, 0.2);
+        }
+
+    .bento-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.4rem;
+        margin-bottom: 16px;
+    }
+
+    /* 3. HSK Horizontal Strip */
+    .hsk-strip {
+        background: var(--surface-white);
+        border-radius: 20px;
+        padding: 25px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.02);
+        margin-bottom: 35px;
+    }
+
+    .hsk-circle-btn {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-decoration: none !important;
+        gap: 8px;
+        transition: transform 0.2s;
+    }
+
+        .hsk-circle-btn:hover {
+            transform: scale(1.08);
+        }
+
+    .hsk-circle {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 800;
+        font-size: 1.4rem;
+        color: white;
+        border: 3px solid rgba(255,255,255,0.8);
+    }
+
+    /* 4. Horizontal Module Cards */
+    .module-list {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .module-row-card {
+        display: flex;
+        align-items: center;
+        background: var(--surface-white);
+        border-radius: 16px;
+        padding: 20px;
+        text-decoration: none !important;
+        transition: all 0.3s ease;
+        border: 1px solid rgba(0,0,0,0.03);
+    }
+
+        .module-row-card:hover {
+            background: var(--brand-accent-light);
+            border-color: var(--brand-accent);
+            transform: translateX(5px);
+        }
+
+    .module-row-icon {
+        width: 56px;
+        height: 56px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        margin-right: 20px;
+        flex-shrink: 0;
+    }
+
+    .section-title {
+        font-size: 1.4rem;
+        font-weight: 800;
+        color: var(--text-dark);
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+</style>
+
+<div class="container-fluid px-lg-5 pb-5 mt-4">
+    <div class="row align-items-start">
+
+        <!-- CỘT TRÁI: NHẬN DIỆN THƯƠNG HIỆU (STICKY SIDEBAR) -->
+        <div class="col-lg-3 mb-4 mb-lg-0">
+            <div class="brand-sidebar text-center">
+                <div class="brand-logo-container">
+                    <img src="@logoCoSoHienThi" alt="@tenCoSoHienThi" onerror="this.style.display='none'" />
+                </div>
+
+                <div class="badge bg-white text-danger mb-3 px-3 py-2 rounded-pill fw-bold" style="font-size: 0.8rem;">
+                    @subBadgeHienThi
+                </div>
+
+                <h3 class="fw-bold mb-1">@tenCoSoHienThi</h3>
+                <p class="text-white-50 small mb-4 pb-3 border-bottom border-light border-opacity-25">
+                    Xin chào <span class="text-warning fw-bold">@currentUserName</span>! Sẵn sàng chinh phục Hán Ngữ hôm nay.
+                </p>
+
+                <div class="d-flex flex-column gap-3">
+                    <a href="/QuanLyDeThi/DanhSachCapDo" class="btn-brand-accent">
+                        <i class="fa-solid fa-laptop-code me-2"></i> Vào phòng thi số
+                    </a>
+                    <a href="#hsk-section" class="btn btn-outline-light rounded-3 py-2 fw-semibold">
+                        <i class="fa-solid fa-map-location-dot me-2"></i> Xem lộ trình học
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- CỘT PHẢI: KHÔNG GIAN HỌC TẬP (DASHBOARD) -->
+        <div class="col-lg-9">
+
+            <!-- 1. Bento Quick Actions -->
+            <div class="bento-grid">
+                <a href="/QuanLyDanhSachTuVung/DanhSachTuVung" class="bento-item">
+                    <div class="bento-icon" style="background: rgba(192, 25, 32, 0.1); color: var(--brand-main);">
+                        <i class="fa-solid fa-book-bookmark"></i>
+                    </div>
+                    <div>
+                        <h5 class="fw-bold text-dark mb-1">Từ vựng HSK 3.0</h5>
+                        <span class="text-muted small">5.000+ từ chuẩn mực</span>
+                    </div>
+                </a>
+
+                <a href="/QuanLyDanhSachNguPhap/DanhSachNguPhap" class="bento-item">
+                    <div class="bento-icon" style="background: rgba(212, 160, 23, 0.15); color: #9c6c03;">
+                        <i class="fa-solid fa-feather-pointed"></i>
+                    </div>
+                    <div>
+                        <h5 class="fw-bold text-dark mb-1">Ngữ pháp cốt lõi</h5>
+                        <span class="text-muted small">Cấu trúc & ví dụ thực chiến</span>
+                    </div>
+                </a>
+
+                <a href="@Url.Action("DauTruongXepHangA", "DauTruongXepHang")" class="bento-item">
+                    <div class="bento-icon" style="background: rgba(46, 204, 113, 0.15); color: #27ae60;">
+                        <i class="fa-solid fa-award"></i>
+                    </div>
+                    <div>
+                        <h5 class="fw-bold text-dark mb-1">Đấu trường thi đấu</h5>
+                        <span class="text-muted small">Tranh tài bảng vàng</span>
+                    </div>
+                </a>
+            </div>
+
+            <!-- 2. HSK Levels Strip -->
+            <div class="hsk-strip" id="hsk-section">
+                <h4 class="section-title"><i class="fa-solid fa-layer-group text-danger"></i> Lộ trình HSK 1 - 6</h4>
+                <div class="d-flex flex-wrap justify-content-between align-items-center mt-4 gap-3">
+                    @{
+                        var hskColors = new[] { "#c01920", "#a5131a", "#870b10", "#d4a017", "#b8860b", "#700508" };
+                        var hskNames = new[] { "Sơ cấp 1", "Sơ cấp 2", "Trung cấp 1", "Trung cấp 2", "Cao cấp 1", "Cao cấp 2" };
+                    }
+                    @for (int i = 1; i <= 6; i++)
+                    {
+                        <a href="/QuanLyDanhSachTuVung/DanhSachTuVung?capDo=@i" class="hsk-circle-btn">
+                            <div class="hsk-circle" style="background: @hskColors[i - 1]; box-shadow: 0 5px 15px @(hskColors[i - 1])60;">
+                                @i
+                            </div>
+                            <span class="fw-bold text-dark mt-1">HSK @i</span>
+                            <small class="text-muted" style="font-size: 0.75rem;">@hskNames[i - 1]</small>
+                        </a>
+                    }
+                </div>
+            </div>
+
+            <!-- 3. Horizontal Module List -->
+            <div>
+                <h4 class="section-title"><i class="fa-solid fa-cubes text-warning"></i> Chuyên đề đào tạo mở rộng</h4>
+                <div class="module-list">
+
+                    <a href="@Url.Action("PhanTichChuHan", "PhanTichCauTaoChuHan")" class="module-row-card">
+                        <div class="module-row-icon" style="background: rgba(192, 25, 32, 0.1); color: var(--brand-main);">
+                            <i class="fa-solid fa-pen-nib"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <h5 class="fw-bold text-dark mb-1">Chiết Tự & 214 Bộ Thủ</h5>
+                            <p class="text-muted mb-0 small">Khám phá nguồn gốc, quy tắc bút thuận và nghĩa tượng hình của chữ Hán.</p>
+                        </div>
+                        <i class="fa-solid fa-chevron-right text-muted opacity-50"></i>
+                    </a>
+
+                    <a href="@Url.Action("TuVungChuyenNganh", "QuanLyDanhSachTuVung")" class="module-row-card">
+                        <div class="module-row-icon" style="background: rgba(212, 160, 23, 0.12); color: #b8860b;">
+                            <i class="fa-solid fa-briefcase"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <h5 class="fw-bold text-dark mb-1">Hán Ngữ Thương Mại & Chuyên Ngành</h5>
+                            <p class="text-muted mb-0 small">Thuật ngữ xuất nhập khẩu, logistics, xưởng sản xuất và đàm phán.</p>
+                        </div>
+                        <i class="fa-solid fa-chevron-right text-muted opacity-50"></i>
+                    </a>
+
+                    <a href="@Url.Action("OnLuyenNgauNhien", "QuanLyDanhSachTuVung")" class="module-row-card">
+                        <div class="module-row-icon" style="background: rgba(142, 68, 173, 0.1); color: #8e44ad;">
+                            <i class="fa-solid fa-brain"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <h5 class="fw-bold text-dark mb-1">Ghi Nhớ Spaced Repetition</h5>
+                            <p class="text-muted mb-0 small">Thuật toán lặp lại ngắt quãng hỗ trợ ghi nhớ mặt chữ và pinyin lâu bền.</p>
+                        </div>
+                        <i class="fa-solid fa-chevron-right text-muted opacity-50"></i>
+                    </a>
+
+                    <a href="@Url.Action("ChiTietLuyenNgheHA", "LuyenNgheHinhAnh", new { capdo = 1, page = 1 })" class="module-row-card">
+                        <div class="module-row-icon" style="background: rgba(46, 204, 113, 0.1); color: #27ae60;">
+                            <i class="fa-solid fa-images"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <h5 class="fw-bold text-dark mb-1">Nghe Hiểu Trực Quan Hình Ảnh</h5>
+                            <p class="text-muted mb-0 small">Tư duy phản xạ âm thanh bản địa, loại bỏ thói quen dịch nhẩm tiếng Việt.</p>
+                        </div>
+                        <i class="fa-solid fa-chevron-right text-muted opacity-50"></i>
+                    </a>
+
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>

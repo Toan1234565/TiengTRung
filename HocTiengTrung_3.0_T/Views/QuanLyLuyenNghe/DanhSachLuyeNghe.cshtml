@@ -1,0 +1,346 @@
+﻿@model IEnumerable<HocTiengTrung_3._0_T.Models12.QuanLyLuyenNghe.VideoLuyenNgheModels>
+
+@{
+    ViewData["Title"] = "Danh Sách Luyện Nghe";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var user = Context.User;
+    var session = Context.Session;
+
+    if (user?.Identity?.IsAuthenticated == true && string.IsNullOrEmpty(session.GetString("MaNguoiDung")))
+    {
+        var userId = user.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        if (!string.IsNullOrEmpty(userId))
+        {
+            session.SetString("MaNguoiDung", userId);
+        }
+    }
+}
+!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    @* <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"> *@
+
+    <style>
+        /* Hiệu ứng cho Video Card */
+        .video-card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            cursor: default;
+        }
+
+            .video-card:hover {
+                transform: translateY(-5px);
+                box-shadow: 0 10px 20px rgba(0,0,0,0.15) !important;
+            }
+
+        .video-thumb {
+            overflow: hidden;
+            background: linear-gradient(45deg, #2c3e50, #000);
+        }
+
+            .video-thumb i {
+                transition: transform 0.3s ease, color 0.3s ease;
+            }
+
+        .video-card:hover .video-thumb i {
+            transform: scale(1.2);
+            color: #ffc107 !important;
+        }
+        /* Tùy chỉnh bảng phụ đề trong Modal */
+        .table-fixed-header {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .sub-row input {
+            border: 1px solid #dee2e6;
+        }
+
+            .sub-row input:focus {
+                border-color: #80bdff;
+                box-shadow: none;
+            }
+    </style>
+</head>
+<body>
+    <main>
+        <div class="container py-5">
+            @* --- HEADER --- *@
+            <div class="row mb-4 align-items-center">
+                <div class="col-md-7">
+                    <h2 class="fw-bold text-primary mb-1">
+                        <i class="fas fa-headphones-alt me-2"></i>Thư Viện Luyện Nghe
+                    </h2>
+                    <p class="text-muted mb-0">Hệ thống quản lý nội dung bài tập video và phụ đề song ngữ HSK.</p>
+                </div>
+
+                <div class="col-md-5 text-md-end mt-3 mt-md-0">
+                    <div class="btn-group shadow-sm">
+                        <button class="btn btn-outline-primary dropdown-toggle" data-bs-toggle="dropdown">
+                            <i class="fas fa-filter me-1"></i>
+                            @(ViewBag.CurrentCapDo != null ? "Cấp độ: HSK " + ViewBag.CurrentCapDo : "Lọc cấp độ")
+                        </button>
+                        <ul class="dropdown-menu shadow border-0">
+                            <li><a class="dropdown-item" asp-action="DanhSachLuyeNghe" asp-route-idCapDo="">Tất cả bài học</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            @for (int i = 1; i <= 6; i++)
+                            {
+                                <li><a class="dropdown-item" asp-action="DanhSachLuyeNghe" asp-route-idCapDo="@i">Cấp độ HSK @i</a></li>
+                            }
+                        </ul>
+                        @if (Context.Session.GetString("MaNguoiDung") == "3")
+                        {
+                            <button class="btn btn-success ms-2 rounded-pill px-4" onclick="showAddModal()">
+                                <i class="fas fa-plus-circle me-1"></i> Thêm bài mới
+                            </button>
+
+                            <button class="btn btn-outline-success ms-2 rounded-pill px-4" onclick="showImportExcelModal()">
+                                <i class="fas fa-file-excel me-1"></i> Nhập từ Excel
+                            </button>
+                        }
+
+                        
+                    </div>
+                </div>
+            </div>
+
+            <hr class="mb-5 opacity-10">
+
+            @* --- DANH SÁCH CARD --- *@
+            <div class="row g-4">
+                @if (Model != null && Model.Any())
+                {
+                    foreach (var item in Model)
+                    {
+                        <div class="col-12 col-sm-6 col-lg-4 col-xl-3">
+                            <div class="card h-100 border-0 shadow-sm video-card rounded-4 overflow-hidden">
+                                <div class="video-thumb d-flex align-items-center justify-content-center position-relative" style="height:180px;">
+                                    <span class="badge bg-danger position-absolute top-0 start-0 m-3 shadow">@item.TenCapDo</span>
+
+                                    <div class="position-absolute top-0 end-0 m-2 d-flex gap-2">
+                                        @if (Context.Session.GetString("MaNguoiDung") == "3")
+                                        {
+                                            <button onclick="showEditModal(@item.IdVideo)" class="btn btn-white btn-sm rounded-circle shadow-sm" title="Chỉnh sửa">
+                                                <i class="fas fa-pen text-warning"></i>
+                                            </button>
+                                            <button onclick="deleteVideo(@item.IdVideo)" class="btn btn-white btn-sm rounded-circle shadow-sm" title="Xóa">
+                                                <i class="fas fa-trash text-danger"></i>
+                                            </button>
+                                        }                                      
+                                    </div>
+
+                                    <i class="fas fa-play-circle text-white opacity-50" style="font-size: 4rem;"></i>
+                                </div>
+
+                                <div class="card-body p-4 d-flex flex-column">
+                                    <h5 class="card-title fw-bold text-dark mb-2 text-truncate-2" style="height: 3rem; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;">
+                                        @item.TieuDe
+                                    </h5>
+                                    <p class="card-text text-muted small mb-4" style="height: 2.5rem; overflow: hidden;">@item.MoTa</p>
+
+                                    <div class="mt-auto pt-3 border-top d-flex justify-content-between align-items-center">
+                                        <span class="text-muted small"><i class="far fa-calendar-alt me-1"></i> @item.NgayTao?.ToString("dd/MM/yyyy")</span>
+                                        <a asp-action="ChiTietLuyenNghe" asp-route-id="@item.IdVideo" class="btn btn-primary btn-sm rounded-pill px-3 shadow-sm">
+                                            Luyện tập <i class="fas fa-chevron-right ms-1" style="font-size: 0.7rem;"></i>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <div class="col-12 text-center py-5">
+                        <img src="https://cdn-icons-png.flaticon.com/512/7486/7486744.png" style="width: 120px; opacity: 0.5" alt="Empty" />
+                        <h4 class="mt-4 text-muted">Chưa có bài luyện nghe nào.</h4>
+                        <p>Hãy nhấn "Thêm bài mới" để bắt đầu xây dựng thư viện.</p>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <div class="modal fade" id="videoModal" data-bs-backdrop="static" tabindex="-1">
+            <div class="modal-dialog modal-xl modal-dialog-scrollable">
+                <div class="modal-content border-0 shadow-lg">
+                    <div id="modalHeader" class="modal-header text-white px-4">
+                        <h5 class="modal-title fw-bold" id="modalTitle">Tiêu đề Modal</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body p-4">
+                        <form id="formVideo">
+                            <input type="hidden" id="IdVideo" value="0">
+
+                            <div class="row g-4">
+                                <div class="col-md-6">
+                                    <div class="form-floating mb-3">
+                                        <input type="text" class="form-control" id="TieuDe" placeholder="Nhập tiêu đề..." required>
+                                        <label class="fw-bold">Tiêu đề bài nghe</label>
+                                    </div>
+                                    <div class="row g-2">
+                                        <div class="col-4">
+                                            <div class="form-floating">
+                                                <select class="form-select" id="IdCapDo">
+                                                    @for (int i = 1; i <= 6; i++)
+                                                    {
+                                                        <option value="@i">HSK @i</option>
+                                                    }
+                                                </select>
+                                                <label class="fw-bold">Cấp độ HSK</label>
+                                            </div>
+                                        </div>
+                                        <div class="col-8">
+                                            <div class="form-floating">
+                                                <input type="text" class="form-control" id="VideoPath" placeholder="Nhập YouTube ID hoặc URL..." required>
+                                                <label class="fw-bold text-primary">Đường dẫn Video / URL</label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <div class="form-floating h-100">
+                                        <textarea class="form-control h-100" id="MoTa" placeholder="Mô tả..." style="min-height: 120px"></textarea>
+                                        <label class="fw-bold">Mô tả bài học</label>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mt-5 mb-3 d-flex justify-content-between align-items-center">
+                                <h5 class="fw-bold text-secondary mb-0"><i class="fas fa-closed-captioning me-2"></i>Biên tập phụ đề</h5>
+                                <button type="button" class="btn btn-outline-primary btn-sm" onclick="addRowSub()">
+                                    <i class="fas fa-plus me-1"></i> Thêm dòng phụ đề
+                                </button>
+                            </div>
+
+                            <div class="table-responsive border rounded">
+                                <table class="table table-hover align-middle mb-0" id="tableSubs">
+                                    <thead class="table-light">
+                                        <tr class="text-center small fw-bold">
+                                            <th style="width: 100px">Bắt đầu (s)</th>
+                                            <th style="width: 100px">Kết thúc (s)</th>
+                                            <th>Hán tự (Tiếng Trung)</th>
+                                            <th>Pinyin</th>
+                                            <th>Dịch nghĩa (Việt)</th>
+                                            <th style="width: 50px"></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody></tbody>
+                                </table>
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer bg-light px-4">
+                        <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">Hủy bỏ</button>
+                        <button type="button" class="btn btn-primary px-5 shadow" id="btnSave" onclick="saveData()">
+                            <i class="fas fa-save me-2"></i>Lưu dữ liệu
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="modal fade" id="importExcelModal" data-bs-backdrop="static" tabindex="-1">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content border-0 shadow-lg">
+                    <div class="modal-header bg-success text-white px-4">
+                        <h5 class="modal-title fw-bold">
+                            <i class="fas fa-file-excel me-2"></i>Nhập Video & Phụ Đề Từ Excel
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body p-4">
+                        <form id="formImportExcel">
+                            <div class="mb-3">
+                                <label for="excelFile" class="form-label fw-bold">Chọn File Excel (.xlsx, .xls)</label>
+                                <input class="form-control" type="file" id="excelFile" accept=".xlsx, .xls" required>
+                                <div class="form-text text-muted small mt-2">
+                                    <i class="fas fa-info-circle me-1"></i> File Excel cần đúng định dạng cấu trúc dòng và cột như quy định.
+                                </div>
+                            </div>
+                        </form>
+                        <!-- Hiệu ứng Loading khi đang chờ xử lý API -->
+                        <div id="importLoading" class="text-center d-none my-3">
+                            <div class="spinner-border text-success" role="status"></div>
+                            <p class="text-muted small mt-2 mb-0">Đang xử lý dữ liệu file, vui lòng đợi trong giây lát...</p>
+                        </div>
+                    </div>
+                    <div class="modal-footer bg-light px-4">
+                        <button type="button" class="btn btn-secondary px-4" data-bs-dismiss="modal">Hủy bỏ</button>
+                        <button type="button" class="btn btn-success px-4 shadow" id="btnDoImport" onclick="executeImportExcel()">
+                            <i class="fas fa-upload me-2"></i>Bắt đầu nhập
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+       
+    </main>
+    <script src="~/js/quanlyluyennghe/luyennghe.js" asp-append-version="true"></script>
+
+    <script>
+        // Khởi tạo Bootstrap Modal instance cho Excel
+        let excelModalInstance = null;
+
+        function showImportExcelModal() {
+            // Reset form và ẩn loading trước khi mở modal
+            document.getElementById('formImportExcel').reset();
+            document.getElementById('importLoading').classList.add('d-none');
+            document.getElementById('btnDoImport').removeAttribute('disabled');
+
+            if (!excelModalInstance) {
+                excelModalInstance = new bootstrap.Modal(document.getElementById('importExcelModal'));
+            }
+            excelModalInstance.show();
+        }
+
+        async function executeImportExcel() {
+            const fileInput = document.getElementById('excelFile');
+
+            // Kiểm tra xem người dùng đã chọn file chưa
+            if (!fileInput.files || fileInput.files.length === 0) {
+                alert('Vui lòng chọn 1 file Excel trước khi bấm nhập!');
+                return;
+            }
+
+            const file = fileInput.files[0];
+            const formData = new FormData();
+            formData.append('file', file); // 'file' phải trùng khớp với tên tham số IFormFile file trong API của bạn
+
+            // Hiển thị trạng thái Loading và khóa nút bấm
+            document.getElementById('importLoading').classList.remove('d-none');
+            document.getElementById('btnDoImport').setAttribute('disabled', 'true');
+
+            try {
+                // Điền URL API của bạn vào đây (ví dụ tên Controller của bạn là VideoLuyenNghe)
+                // Nếu API nằm chung Controller với View này thì chỉ cần điền tên Action: 'add-video-excel' hoặc 'import-video-excel' tùy bạn đặt ở backend
+                const response = await fetch('/api/quanlyluyennghe/import-video-excel', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (response.ok && result.success) {
+                    alert(result.message || 'Nhập dữ liệu thành công!');
+                    excelModalInstance.hide();
+                    location.reload(); // Tải lại trang để cập nhật danh sách card video mới
+                } else {
+                    alert('Thất bại: ' + (result.message || 'Có lỗi xảy ra từ máy chủ.'));
+                }
+            } catch (error) {
+                console.error('Lỗi khi gọi kết nối API:', error);
+                alert('Không thể kết nối đến máy chủ hệ thống!');
+            } finally {
+                // Ẩn trạng thái Loading và mở lại nút bấm
+                document.getElementById('importLoading').classList.add('d-none');
+                document.getElementById('btnDoImport').removeAttribute('disabled');
+            }
+        }
+    </script>
+</body>
+</html>
+
+

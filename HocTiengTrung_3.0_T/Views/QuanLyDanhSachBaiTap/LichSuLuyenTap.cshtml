@@ -1,0 +1,211 @@
+﻿@model List<HocTiengTrung_3._0_T.Models12.LuuLichSu.LichSuLamBaiModels>
+
+@{
+    bool isXemHocVien = ViewBag.IsXemHocVien ?? (ViewBag.IdHocVien != null);
+    string tenHocVien = ViewBag.TenHocVien as string ?? "Học viên";
+
+    ViewData["Title"] = isXemHocVien ? $"Lịch Sử Luyện Tập - {tenHocVien}" : "Lịch Sử Luyện Tập HSK";
+
+    // Tính toán sơ bộ các chỉ số
+    int totalExams = Model?.Count ?? 0;
+    int tongSoCauDung = Model?.Sum(x => x.SoCauDung ?? 0) ?? 0;
+    int tongSoCauHoi = Model?.Sum(x => x.TongSoCau ?? 0) ?? 0;
+    double avgRate = tongSoCauHoi > 0 ? Math.Round((double)tongSoCauDung / tongSoCauHoi * 100, 1) : 0;
+    int maxCapDo = (Model != null && Model.Any()) ? (Model.Max(x => x.IdCapDo) ?? 0) : 0;
+}
+
+<style>
+    :root {
+        --hsk-main: #ff9800;
+        --hsk-sub: #2196f3;
+        --bg-light: #f8f9fa;
+    }
+
+    body {
+        background-color: var(--bg-light);
+    }
+
+    .stat-card {
+        border: none;
+        border-radius: 16px;
+        transition: transform 0.25s ease, box-shadow 0.25s ease;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+    }
+
+        .stat-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.08);
+        }
+
+    .table-container {
+        background: white;
+        border-radius: 20px;
+        padding: 25px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.06);
+    }
+
+    .status-badge {
+        padding: 6px 12px;
+        border-radius: 50px;
+        font-size: 0.8rem;
+        font-weight: 600;
+    }
+
+    .btn-view {
+        border-radius: 10px;
+        padding: 5px 14px;
+        transition: 0.2s;
+    }
+
+    .progress-sm {
+        height: 7px;
+        border-radius: 10px;
+    }
+
+    .icon-box {
+        width: 54px;
+        height: 54px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+</style>
+
+<div class="container py-4">
+    <!-- Tiêu đề trang -->
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+        <div>
+            @if (isXemHocVien)
+            {
+                <a href="javascript:history.back()" class="btn btn-outline-secondary btn-sm rounded-pill mb-2">
+                    <i class="fa-solid fa-arrow-left me-1"></i> Quay lại
+                </a>
+                <h2 class="fw-bold text-dark mb-1">
+                    <i class="fas fa-graduation-cap me-2 text-primary"></i> Tiến Độ Bài Làm: <span class="text-primary">@tenHocVien</span>
+                </h2>
+                <p class="text-muted small mb-0">Theo dõi toàn bộ lịch sử luyện tập và mức độ hoàn thành bài tập của học viên.</p>
+            }
+            else
+            {
+                <h2 class="fw-bold text-dark mb-1">
+                    <i class="fas fa-history me-2 text-warning"></i> Lịch Sử Luyện Tập
+                </h2>
+                <p class="text-muted small mb-0">Theo dõi hành trình ôn luyện và mức độ chuẩn xác qua từng dạng bài.</p>
+            }
+        </div>
+    </div>
+
+    <!-- 3 Thẻ thống kê tổng quan -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <div class="card stat-card bg-white p-3">
+                <div class="d-flex align-items-center">
+                    <div class="icon-box bg-warning bg-opacity-10 rounded-circle me-3">
+                        <i class="fas fa-pen-nib fa-xl text-warning"></i>
+                    </div>
+                    <div>
+                        <h6 class="text-muted small mb-1">Tổng bài đã làm</h6>
+                        <h3 class="fw-bold mb-0">@totalExams</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card stat-card bg-white p-3">
+                <div class="d-flex align-items-center">
+                    <div class="icon-box bg-success bg-opacity-10 rounded-circle me-3">
+                        <i class="fas fa-chart-line fa-xl text-success"></i>
+                    </div>
+                    <div>
+                        <h6 class="text-muted small mb-1">Tỷ lệ đúng TB</h6>
+                        <h3 class="fw-bold mb-0 text-success">@avgRate%</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card stat-card bg-white p-3">
+                <div class="d-flex align-items-center">
+                    <div class="icon-box bg-primary bg-opacity-10 rounded-circle me-3">
+                        <i class="fas fa-trophy fa-xl text-primary"></i>
+                    </div>
+                    <div>
+                        <h6 class="text-muted small mb-1">Cấp độ cao nhất</h6>
+                        <h3 class="fw-bold mb-0 text-primary">@(maxCapDo > 0 ? $"HSK {maxCapDo}" : "Chưa có")</h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bảng danh sách bài tập đã làm -->
+    <div class="table-container">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0" id="historyTable">
+                <thead class="table-light">
+                    <tr>
+                        <th class="border-0 px-4">Thời gian</th>
+                        <th class="border-0">Tên bài tập</th>
+                        <th class="border-0 text-center">Kết quả</th>
+                        <th class="border-0">Tỷ lệ đúng</th>
+                        <th class="border-0 text-end px-4">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model != null && Model.Any())
+                    {
+                        foreach (var item in Model)
+                        {
+                            int tongCau = item.TongSoCau ?? 0;
+                            int cauDung = item.SoCauDung ?? 0;
+                            double percent = tongCau > 0 ? Math.Round((double)cauDung / tongCau * 100, 1) : 0;
+                            string statusColor = percent >= 80 ? "success" : (percent >= 50 ? "warning" : "danger");
+
+                            <tr>
+                                <td class="px-4 text-muted small">
+                                    <i class="far fa-calendar-alt me-1"></i> @item.NgayLam?.ToString("dd/MM/yyyy HH:mm")
+                                </td>
+                                <td>
+                                    <span class="fw-bold text-dark">@(string.IsNullOrWhiteSpace(item.TenDe) ? "Bài tập thực hành" : item.TenDe)</span>
+                                    <br />
+                                    <span class="badge bg-secondary-subtle text-secondary small me-1">@(item.TenLoai ?? "Tổng hợp")</span>
+                                    <span class="badge bg-info-subtle text-info small">@(item.TenCapDo ?? $"HSK {item.IdCapDo}")</span>
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge bg-light text-@statusColor border border-@statusColor status-badge">
+                                        @cauDung/@tongCau
+                                    </span>
+                                </td>
+                                <td style="min-width: 150px;">
+                                    <div class="d-flex align-items-center">
+                                        <div class="progress progress-sm flex-grow-1 me-2 bg-light">
+                                            <div class="progress-bar bg-@statusColor" role="progressbar" style="width: @percent%"></div>
+                                        </div>
+                                        <small class="fw-bold text-@statusColor">@percent%</small>
+                                    </div>
+                                </td>
+                                <td class="text-end px-4">
+                                    <a href="@Url.Action("XemLaiBaiLam", "QuanLyDanhSachBaiTap", new { idLichSu = item.IdLichSu })"
+                                       class="btn btn-view btn-outline-primary btn-sm shadow-sm rounded-pill">
+                                        <i class="fas fa-search-plus me-1"></i> Chi tiết
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="5" class="text-center py-5">
+                                <i class="fa-solid fa-clipboard-list text-muted opacity-50 mb-3" style="font-size: 3rem;"></i>
+                                <p class="text-muted mb-0">
+                                    @(isXemHocVien ? "Học viên này chưa hoàn thành bài tập nào." : "Bạn chưa có bài luyện tập nào trên hệ thống.")
+                                </p>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

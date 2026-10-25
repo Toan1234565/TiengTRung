@@ -1,0 +1,7 @@
+{
+  "help": "https://go.microsoft.com/fwlink/?linkid=866610"
+}
+
+ //protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+ //   //=> optionsBuilder.UseSqlServer("Data Source=SQL1004.site4now.net;Initial Catalog=db_acacd1_hoctiengtrung12;User Id=db_acacd1_hoctiengtrung12_admin;Password=Toan28112004@;Encrypt=True;TrustServerCertificate=True;");
+ //   => optionsBuilder.UseSqlServer("Data Source=TOAN;Initial Catalog=HocTiengTrungDB;Integrated Security=True;Persist Security Info=False;Pooling=False;Multiple Active Result Sets=False;Connect Timeout=60;Encrypt=False"); 

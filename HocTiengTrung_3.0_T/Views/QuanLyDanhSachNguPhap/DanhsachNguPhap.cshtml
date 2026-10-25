@@ -1,0 +1,669 @@
+﻿@model List<HocTiengTrung_3._0_T.Models12.NguPhap.NguPhapModels>
+@using Newtonsoft.Json.Linq
+
+@{
+    ViewData["Title"] = "Quản lý ngữ pháp HSK " + ViewBag.CurrentCapDo;
+    int currentCapDo = ViewBag.CurrentCapDo ?? 1;
+    string searchTerm = ViewBag.SearchTerm as string ?? "";
+    int currentPage = ViewBag.CurrentPage ?? 1;
+    int pageSize = ViewBag.PageSize ?? 10;
+    int totalItems = ViewBag.TotalItems ?? 0;
+    int totalPages = totalItems > 0 ? (int)Math.Ceiling((double)totalItems / pageSize) : 1;
+    bool isUserVip = ViewBag.IsUserVip ?? false;
+    var user = Context.User;
+    var session = Context.Session;
+
+    if (user?.Identity?.IsAuthenticated == true && string.IsNullOrEmpty(session.GetString("MaNguoiDung")))
+    {
+        var userId = user.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        if (!string.IsNullOrEmpty(userId))
+        {
+            session.SetString("MaNguoiDung", userId);
+        }
+    }
+}
+
+<link href="~/css/quanlynguphap/danhsachtuvung.css" rel="stylesheet" asp-append-version="true" />
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
+
+<style>
+    /* Tổng thể */
+    body {
+        background-color: #f8f9fa;
+        color: black;
+    }
+
+    /* Search Bar */
+    .search-card {
+        background: #fff;
+        border-radius: 16px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+        border: none;
+    }
+
+        .search-card .form-control, .search-card .form-select {
+            background-color: #f3f4f6;
+            border-radius: 10px;
+            padding: 0.6rem 1rem;
+        }
+
+            .search-card .form-control:focus, .search-card .form-select:focus {
+                background-color: #fff;
+                border-color: #dc3545;
+                box-shadow: 0 0 0 0.25rem rgba(220, 53, 69, 0.25);
+            }
+
+    /* Bảng dữ liệu */
+    .table-container {
+        background: #fff;
+        border-radius: 16px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+        overflow: hidden;
+    }
+
+    .table > thead {
+        background-color: #fef2f2 !important;
+        color: #dc3545;
+        font-weight: 700;
+        text-transform: uppercase;
+        font-size: 0.85rem;
+        letter-spacing: 0.5px;
+    }
+
+    .table > tbody > tr {
+        transition: all 0.2s ease;
+    }
+
+        .table > tbody > tr:hover {
+            background-color: #fcfcfc;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.04);
+        }
+
+    /* Typo Ngữ pháp */
+    .grammar-item-title {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: black;
+        margin-bottom: 0.5rem;
+    }
+
+    .structure-highlight {
+        display: inline-block;
+        background: #fff5f5;
+        color: #dc3545;
+        padding: 6px 16px;
+        border-radius: 8px;
+        font-weight: 600;
+        border: 1px dashed #f5c2c7;
+        margin-bottom: 0.8rem;
+    }
+
+    .example-section {
+        background: #f8f9fa;
+        border-left: 4px solid #dc3545;
+        padding: 10px 15px;
+        border-radius: 0 8px 8px 0;
+        font-size: 0.95rem;
+        color: black;
+    }
+
+    .example-line {
+        display: block;
+        margin-bottom: 4px;
+    }
+
+        .example-line:last-child {
+            margin-bottom: 0;
+        }
+
+    /* Modal Form */
+    .modal-content {
+        border-radius: 20px;
+        overflow: hidden;
+    }
+
+    .modal-header {
+        background: linear-gradient(to right, #dc3545, #b02a37);
+        color: white;
+    }
+
+        .modal-header .btn-close {
+            filter: invert(1);
+        }
+
+    .form-label {
+        font-weight: 600;
+        color: black;
+        font-size: 0.9rem;
+    }
+
+    .custom-textarea {
+        border: 1px solid #dee2e6;
+        border-radius: 12px;
+        padding: 12px;
+        background-color: #fafbfc;
+        transition: all 0.3s;
+    }
+
+        .custom-textarea:focus {
+            background-color: #fff;
+            border-color: #dc3545;
+            box-shadow: 0 0 0 0.2rem rgba(220, 53, 69, 0.15);
+        }
+</style>
+
+<main class="container-fluid py-4 px-lg-5 animate__animated animate__fadeIn">
+    <div class="row align-items-center mb-4">
+        <div class="col-md-8">
+            <h2 class="fw-bold m-0 text-dark">
+                <i class="fas fa-book-open text-danger me-2"></i>
+                <span class="text-danger">HSK @currentCapDo</span> | Quản lý Nội dung Ngữ pháp
+            </h2>
+            <p class="text-muted mt-1 mb-0">Tra cứu, chỉnh sửa và quản lý cấu trúc ngữ pháp cùng bài tập đi kèm.</p>
+        </div>
+    </div>
+
+    <div class="search-card p-3 mb-4">
+        <form method="get" action="@Url.Action("DanhsachNguPhap")" class="row g-3 align-items-center">
+            <div class="col-md-2">
+                <div class="input-group">
+                    <span class="input-group-text bg-transparent border-0 text-danger"><i class="fas fa-layer-group"></i></span>
+                    <select name="capdo" class="form-select border-0 fw-bold text-danger bg-transparent" onchange="this.form.submit()">
+                        @for (int i = 1; i <= 6; i++)
+                        {
+                            <option value="@i" selected="@(currentCapDo == i)">Cấp độ HSK @i</option>
+                        }
+                    </select>
+                </div>
+            </div>
+            <div class="col-md-8">
+                <div class="input-group">
+                    <span class="input-group-text border-0 bg-transparent"><i class="fas fa-search text-muted"></i></span>
+                    <input type="text" class="form-control border-0 bg-transparent" name="searchTerm" value="@searchTerm" placeholder="Nhập tên ngữ pháp hoặc cấu trúc cần tìm...">
+                </div>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-danger w-100 rounded-pill fw-bold shadow-sm">
+                    <i class="fas fa-filter me-1"></i> Lọc dữ liệu
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <div class="table-container border-0">
+        <table class="table align-middle mb-0">
+            <thead>
+                <tr>
+                    <th class="ps-4 py-3 border-0">Nội dung chi tiết ngữ pháp</th>
+                    <th class="text-center py-3 border-0" style="width: 180px;">Thao tác</th>
+                </tr>
+            </thead>
+            <tbody>
+                @if (Model != null && Model.Any())
+                {
+                    int stt = (currentPage - 1) * pageSize + 1;
+                    int index = 0;
+                    foreach (var item in Model)
+                    {
+                        bool isFreeItem = (currentPage == 1 && index < 10);
+                        bool canAccess = isFreeItem || isUserVip;
+                        <tr>
+                            <td class="ps-4 py-4 border-bottom border-light">
+                                <div class="grammar-item-title text-danger">
+                                    <span class="badge bg-danger rounded-circle me-2" style="font-size: 0.8rem; vertical-align: middle;">@stt</span>
+                                    @item.TenNguPhap
+                                </div>
+                                <div class="structure-highlight mt-2 mb-3">
+                                    <i class="fas fa-link me-1"></i> Cấu trúc: @item.CauTruc
+                                </div>
+                                <p class="text-secondary mb-3" style="white-space: pre-line; line-height: 1.6; color:black;">
+                                    <strong>Giải thích:</strong> @item.GiaiThich
+                                </p>
+
+                                @if (!string.IsNullOrWhiteSpace(item.ViDu))
+                                {
+                                    <div class="example-section">
+                                        <div class="fw-bold text-dark mb-1"><i class="fas fa-quote-left me-1 text-danger opacity-50"></i> Ví dụ minh họa:</div>
+                                        @{
+                                            var examples = item.ViDu?.Split('\n') ?? new string[0];
+                                            foreach (var ex in examples.Where(e => !string.IsNullOrWhiteSpace(e)))
+                                            {
+                                                <span class="example-line"><i class="fas fa-caret-right text-danger me-2 small"></i>@ex</span>
+                                            }
+                                        }
+                                    </div>
+                                }
+                            </td>
+                            <td class="border-bottom border-light text-center">
+                                <div class="d-flex flex-column gap-2 px-3">
+                                    @if (Context.Session.GetString("MaNguoiDung") == "3")
+                                    {
+                                        <button class="btn btn-outline-primary btn-sm rounded-pill shadow-sm" style="font-size: 0.85rem;" onclick="openEditModal(@item.IdNguPhap)">
+                                            <i class="fas fa-edit me-1"></i> Chỉnh sửa
+                                        </button>
+                                    }
+
+                                    @if (canAccess)
+                                    {
+                                        <button class="btn btn-success btn-sm rounded-pill shadow-sm" style="font-size: 0.85rem;" onclick="location.href='@Url.Action("BaiTapNguPhap", "QuanLyDanhSachNguPhap", new { id = item.IdNguPhap, idLoai = 1 })'">
+                                            <i class="fas fa-tasks me-1"></i> Ôn luyện bài tập
+                                        </button>
+                                    }
+                                    else
+                                    {
+                                        <button class="btn btn-warning btn-sm rounded-pill shadow-sm fw-bold text-dark" style="font-size: 0.85rem;" onclick="showVipModal()">
+                                            <i class="fas fa-crown me-1 text-danger"></i> Nạp VIP để luyện
+                                        </button>
+                                    }
+                                </div>
+                            </td>
+                        </tr>
+                        stt++;
+                        index++;
+                    }
+                }
+                else
+                {
+                    <tr>
+                        <td colspan="2" class="text-center py-5">
+                            <img src="https://cdn-icons-png.flaticon.com/512/7486/7486754.png" alt="No data" style="width: 80px; opacity: 0.5;" class="mb-3" />
+                            <h5 class="text-muted fw-bold">Không tìm thấy dữ liệu phù hợp.</h5>
+                            <p class="text-muted small">Vui lòng thử nghiệm bằng từ khóa khác hoặc chuyển cấp độ HSK.</p>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    @if (totalPages > 1)
+    {
+        <nav class="mt-4">
+            <ul class="pagination justify-content-center shadow-sm" style="border-radius: 50px; overflow: hidden; display: inline-flex;">
+                <li class="page-item @(currentPage == 1 ? "disabled" : "")">
+                    <a class="page-link border-0 text-danger fw-bold px-3" href="@Url.Action("DanhsachNguPhap", new { capdo = currentCapDo, searchTerm = searchTerm, page = currentPage - 1 })">
+                        <i class="fas fa-chevron-left"></i>
+                    </a>
+                </li>
+
+                @for (int i = 1; i <= totalPages; i++)
+                {
+                    if (i == 1 || i == totalPages || (i >= currentPage - 2 && i <= currentPage + 2))
+                    {
+                        <li class="page-item @(i == currentPage ? "active" : "")">
+                            <a class="page-link border-0 @(i == currentPage ? "bg-danger text-white" : "text-dark fw-bold")" href="@Url.Action("DanhsachNguPhap", new { capdo = currentCapDo, searchTerm = searchTerm, page = i })">@i</a>
+                        </li>
+                    }
+                    else if (i == currentPage - 3 || i == currentPage + 3)
+                    {
+                        <li class="page-item disabled"><span class="page-link border-0 text-muted">...</span></li>
+                    }
+                }
+
+                <li class="page-item @(currentPage == totalPages ? "disabled" : "")">
+                    <a class="page-link border-0 text-danger fw-bold px-3" href="@Url.Action("DanhsachNguPhap", new { capdo = currentCapDo, searchTerm = searchTerm, page = currentPage + 1 })">
+                        <i class="fas fa-chevron-right"></i>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    }
+
+    <!-- Modal Form Cập nhật Ngữ pháp -->
+    <div class="modal fade" id="nguPhapModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold" id="modalTitle"><i class="fas fa-pen-nib me-2"></i>Cập nhật thông tin ngữ pháp</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4 bg-white">
+                    <form id="nguPhapForm">
+                        <input type="hidden" id="IdNguPhap" value="0" />
+
+                        <div class="row g-4 mb-4">
+                            <div class="col-md-8">
+                                <label class="form-label">Tên ngữ pháp <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control custom-textarea p-2" id="TenNguPhap" required placeholder="Nhập tên hoặc tiêu đề ngữ pháp">
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Cấp độ HSK</label>
+                                <select class="form-select custom-textarea p-2 text-danger fw-bold" id="IdCapDo">
+                                    @for (int i = 1; i <= 6; i++)
+                                    {
+                                        <option value="@i">HSK @i</option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="col-12">
+                                <label class="form-label">Cấu trúc áp dụng</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light border-end-0 text-danger"><i class="fas fa-code"></i></span>
+                                    <input type="text" class="form-control custom-textarea border-start-0 ps-0" id="CauTruc" placeholder="VD: Subject + 在 + Place + V...">
+                                </div>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label text-primary"><i class="fas fa-info-circle me-1"></i> Giải thích ý nghĩa</label>
+                                <textarea class="form-control custom-textarea shadow-none" id="GiaiThich" rows="6" placeholder="Giải thích chi tiết cách dùng của cấu trúc này..."></textarea>
+                            </div>
+
+                            <div class="col-md-6">
+                                <label class="form-label text-success"><i class="fas fa-comment-dots me-1"></i> Ví dụ minh họa</label>
+                                <textarea class="form-control custom-textarea shadow-none" id="ViDu" rows="6" placeholder="Mỗi ví dụ hãy gõ trên một dòng (Enter để xuống dòng)..."></textarea>
+                            </div>
+                        </div>
+
+                        <hr class="text-muted opacity-25" />
+
+                        <div class="d-flex justify-content-between align-items-center bg-light p-3 rounded-3 mb-3">
+                            <div>
+                                <h6 class="fw-bold mb-0 text-dark"><i class="fas fa-tasks text-primary me-2"></i>Danh sách câu hỏi đi kèm</h6>
+                                <small class="text-muted">Quản lý bài tập cho cấu trúc ngữ pháp này</small>
+                            </div>
+                            <button type="button" class="btn btn-primary rounded-pill px-4 shadow-sm fw-bold" onclick="addQuestionRow()">
+                                <i class="fas fa-plus me-1"></i> Thêm câu hỏi
+                            </button>
+                        </div>
+
+                        <div id="questionContainer" class="accordion mt-2">
+                            <div class="text-center py-5 text-muted border border-dashed rounded-4" style="border: 2px dashed #dee2e6;" id="noQuestionLabel">
+                                <i class="fas fa-clipboard-list fa-2x mb-2 text-black-50"></i><br>
+                                Chưa có câu hỏi nào. Bấm "Thêm câu hỏi" để bắt đầu.
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer bg-light border-0">
+                    <button type="button" class="btn btn-secondary rounded-pill px-4" data-bs-dismiss="modal">Hủy bỏ</button>
+                    <button type="button" class="btn btn-danger rounded-pill px-5 fw-bold shadow" onclick="saveNguPhap()">
+                        <i class="fas fa-save me-1"></i> Lưu thông tin
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Template JS Render Câu Hỏi -->
+    <template id="questionTemplate">
+        <div class="accordion-item border mb-3 question-item shadow-sm" style="border-radius: 12px; overflow: hidden;">
+            <h2 class="accordion-header">
+                <button class="accordion-button collapsed py-3 fw-bold text-dark bg-white" type="button" data-bs-toggle="collapse">
+                    <i class="fas fa-question-circle text-primary me-2"></i> <span class="q-header-text">Câu hỏi mới</span>
+                </button>
+            </h2>
+            <div class="accordion-collapse collapse">
+                <div class="accordion-body bg-light border-top">
+                    <input type="hidden" class="q-id" value="0" />
+                    <div class="row g-3">
+                        <div class="col-md-9">
+                            <label class="small fw-bold text-muted mb-1">Nội dung câu hỏi</label>
+                            <input type="text" class="form-control q-noiDung" placeholder="Nhập nội dung câu hỏi..." oninput="updateQuestionTitle(this)">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="small fw-bold text-muted mb-1">Loại bài tập</label>
+                            <select class="form-select q-loai">
+                                <option value="1">Trắc nghiệm</option>
+                                <option value="2">Sắp xếp câu</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <hr class="opacity-25 my-3">
+
+                    <label class="small fw-bold text-muted mb-2">Danh sách đáp án / từ gợi ý</label>
+                    <div class="options-container mb-2"></div>
+
+                    <div class="d-flex justify-content-between align-items-center mt-3">
+                        <button type="button" class="btn btn-outline-primary btn-sm rounded-pill px-3 add-option-btn" onclick="addOptionRow(this)">
+                            <i class="fas fa-plus me-1"></i> Thêm đáp án
+                        </button>
+                        <button type="button" class="btn btn-link text-danger text-decoration-none btn-sm fw-bold" onclick="removeQuestion(this)">
+                            <i class="fas fa-trash-alt me-1"></i> Xóa câu này
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </template>
+</main>
+
+<!-- MODAL VIP -->
+<div class="modal fade" id="vipNoticeModal" tabindex="-1" aria-labelledby="vipNoticeModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 rounded-4 shadow-lg overflow-hidden">
+            <div class="modal-header bg-warning bg-gradient text-dark border-0 py-3">
+                <h5 class="modal-title fw-bold" id="vipNoticeModalLabel">
+                    <i class="fas fa-crown me-2"></i>Nâng Cấp VIP Để Tiếp Tục
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center p-4">
+                <div class="mb-3">
+                    <i class="fas fa-lock text-warning display-3"></i>
+                </div>
+                <h4 class="fw-bold text-dark mb-2">Nội Dung Dành Cho Tài Khoản VIP</h4>
+                <p class="text-muted mb-4">
+                    Từ ngữ pháp <strong> số 11 trở đi đã</strong> thuộc đặc quyền VIP. Vui lòng nâng cấp tài khoản để mở khóa toàn bộ kho khóa học và bài tập thực hành.
+                </p>
+                <div class="d-grid gap-2">
+                    <a href="@Url.Action("CongThanhToan", "QuanLyTaiKhoan")" class="btn btn-warning btn-lg fw-bold rounded-pill text-dark shadow-sm">
+                        <i class="fas fa-gem me-2"></i>Nâng Cấp VIP Ngay
+                    </a>
+                    <button type="button" class="btn btn-light rounded-pill fw-semibold border" data-bs-dismiss="modal">Để Sau</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="~/js/quanly_baitap/danhsachnguphap.js" asp-append-version="true"></script>
+
+<script>
+    let nguPhapBsModal = null;
+    let vipBsModal = null;
+
+    document.addEventListener("DOMContentLoaded", function() {
+        const modalEl = document.getElementById('nguPhapModal');
+        if (modalEl) nguPhapBsModal = new bootstrap.Modal(modalEl);
+
+        const vipModalEl = document.getElementById('vipNoticeModal');
+        if (vipModalEl) vipBsModal = new bootstrap.Modal(vipModalEl);
+    });
+
+    function showVipModal() {
+        if (vipBsModal) vipBsModal.show();
+    }
+
+    function checkEmptyQuestions() {
+        const container = document.getElementById('questionContainer');
+        const items = container.querySelectorAll('.question-item');
+        const emptyLabel = document.getElementById('noQuestionLabel');
+        if (items.length === 0) {
+            if (!emptyLabel) {
+                container.innerHTML = `
+                        <div class="text-center py-5 text-muted border border-dashed rounded-4" style="border: 2px dashed #dee2e6;" id="noQuestionLabel">
+                            <i class="fas fa-clipboard-list fa-2x mb-2 text-black-50"></i><br>
+                            Chưa có câu hỏi nào. Bấm "Thêm câu hỏi" để bắt đầu.
+                        </div>`;
+            }
+        } else if (emptyLabel) {
+            emptyLabel.remove();
+        }
+    }
+
+    function addQuestionRow(data = null) {
+        checkEmptyQuestions();
+        const container = document.getElementById('questionContainer');
+        const template = document.getElementById('questionTemplate').content.cloneNode(true);
+        const qItem = template.querySelector('.question-item');
+
+        const qIndex = container.querySelectorAll('.question-item').length + 1;
+        const collapseId = 'collapseQ_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
+
+        const btnCollapse = qItem.querySelector('.accordion-button');
+        const collapseDiv = qItem.querySelector('.accordion-collapse');
+
+        btnCollapse.setAttribute('data-bs-target', '#' + collapseId);
+        collapseDiv.setAttribute('id', collapseId);
+
+        if (data) {
+            qItem.querySelector('.q-id').value = data.idCauHoi || 0;
+            qItem.querySelector('.q-noiDung').value = data.noiDung || '';
+            qItem.querySelector('.q-loai').value = data.idLoai || 1;
+            qItem.querySelector('.q-header-text').textContent = data.noiDung ? data.noiDung : `Câu hỏi ${qIndex}`;
+
+            if (data.danhSachDapAn && data.danhSachDapAn.length > 0) {
+                data.danhSachDapAn.forEach(op => addOptionRow(qItem.querySelector('.add-option-btn'), op));
+            }
+        } else {
+            qItem.querySelector('.q-header-text').textContent = `Câu hỏi ${qIndex}`;
+            // Thêm mặc định 2 đáp án trắng
+            const addBtn = qItem.querySelector('.add-option-btn');
+            addOptionRow(addBtn);
+            addOptionRow(addBtn);
+        }
+
+        container.appendChild(qItem);
+    }
+
+    function addOptionRow(btn, data = null) {
+        const qItem = btn.closest('.question-item');
+        const optionsContainer = qItem.querySelector('.options-container');
+
+        const optDiv = document.createElement('div');
+        optDiv.className = 'input-group mb-2 option-row';
+
+        const optText = data ? (data.noiDungDapAn || data.text || '') : '';
+        const isCorrect = data ? (data.laDapAnDung || data.isCorrect || false) : false;
+
+        optDiv.innerHTML = `
+                <div class="input-group-text bg-white">
+                    <input class="form-check-input mt-0 opt-isCorrect" type="checkbox" ${isCorrect ? 'checked' : ''} title="Đánh dấu đáp án đúng">
+                </div>
+                <input type="text" class="form-control opt-text" placeholder="Nhập nội dung đáp án..." value="${optText}">
+                <button class="btn btn-outline-danger" type="button" onclick="this.closest('.option-row').remove()"><i class="fas fa-times"></i></button>
+            `;
+
+        optionsContainer.appendChild(optDiv);
+    }
+
+    function updateQuestionTitle(input) {
+        const qItem = input.closest('.question-item');
+        const headerText = qItem.querySelector('.q-header-text');
+        headerText.textContent = input.value.trim() !== '' ? input.value : 'Câu hỏi mới';
+    }
+
+    function removeQuestion(btn) {
+        const qItem = btn.closest('.question-item');
+        qItem.remove();
+        checkEmptyQuestions();
+    }
+
+    function openEditModal(id) {
+        document.getElementById('nguPhapForm').reset();
+        document.getElementById('IdNguPhap').value = id;
+        document.getElementById('questionContainer').innerHTML = '';
+        checkEmptyQuestions();
+
+        Swal.fire({
+            title: 'Đang tải dữ liệu...',
+            allowOutsideClick: false,
+            didOpen: () => Swal.showLoading()
+        });
+
+        fetch(`/QuanLyDanhSachNguPhap/GetChiTietNguPhap?id=${id}`)
+            .then(res => res.json())
+            .then(res => {
+                Swal.close();
+                if (res.success && res.data) {
+                    const data = res.data;
+                    document.getElementById('TenNguPhap').value = data.tenNguPhap || '';
+                    document.getElementById('IdCapDo').value = data.idCapDo || ViewBag.CurrentCapDo || 1;
+                    document.getElementById('CauTruc').value = data.cauTruc || '';
+                    document.getElementById('GiaiThich').value = data.giaiThich || '';
+                    document.getElementById('ViDu').value = data.viDu || '';
+
+                    if (data.danhSachCauHoi && data.danhSachCauHoi.length > 0) {
+                        data.danhSachCauHoi.forEach(q => addQuestionRow(q));
+                    }
+
+                    if (nguPhapBsModal) nguPhapBsModal.show();
+                } else {
+                    Swal.fire('Lỗi', res.message || 'Không thể lấy dữ liệu ngữ pháp.', 'error');
+                }
+            })
+            .catch(err => {
+                Swal.close();
+                Swal.fire('Lỗi', 'Đã xảy ra lỗi kết nối máy chủ.', 'error');
+            });
+    }
+
+    function saveNguPhap() {
+        const tenNguPhap = document.getElementById('TenNguPhap').value.trim();
+        if (!tenNguPhap) {
+            Swal.fire('Cảnh báo', 'Vui lòng nhập tên ngữ pháp!', 'warning');
+            return;
+        }
+
+        const payload = {
+            idNguPhap: parseInt(document.getElementById('IdNguPhap').value) || 0,
+            tenNguPhap: tenNguPhap,
+            idCapDo: parseInt(document.getElementById('IdCapDo').value) || 1,
+            cauTruc: document.getElementById('CauTruc').value.trim(),
+            giaiThich: document.getElementById('GiaiThich').value.trim(),
+            viDu: document.getElementById('ViDu').value.trim(),
+            danhSachCauHoi: []
+        };
+
+        const qItems = document.querySelectorAll('#questionContainer .question-item');
+        qItems.forEach(q => {
+            const cauHoiObj = {
+                idCauHoi: parseInt(q.querySelector('.q-id').value) || 0,
+                noiDung: q.querySelector('.q-noiDung').value.trim(),
+                idLoai: parseInt(q.querySelector('.q-loai').value) || 1,
+                danhSachDapAn: []
+            };
+
+            const optRows = q.querySelectorAll('.option-row');
+            optRows.forEach(opt => {
+                cauHoiObj.danhSachDapAn.push({
+                    noiDungDapAn: opt.querySelector('.opt-text').value.trim(),
+                    laDapAnDung: opt.querySelector('.opt-isCorrect').checked
+                });
+            });
+
+            payload.danhSachCauHoi.push(cauHoiObj);
+        });
+
+        Swal.fire({
+            title: 'Đang lưu...',
+            allowOutsideClick: false,
+            didOpen: () => Swal.showLoading()
+        });
+
+        fetch('/QuanLyDanhSachNguPhap/LuuNguPhap', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        })
+            .then(res => res.json())
+            .then(res => {
+                Swal.close();
+                if (res.success) {
+                    Swal.fire('Thành công', 'Lưu dữ liệu ngữ pháp thành công!', 'success').then(() => {
+                        location.reload();
+                    });
+                } else {
+                    Swal.fire('Lỗi', res.message || 'Lưu dữ liệu thất bại.', 'error');
+                }
+            })
+            .catch(err => {
+                Swal.close();
+                Swal.fire('Lỗi', 'Lỗi kết nối máy chủ.', 'error');
+            });
+    }
+</script>

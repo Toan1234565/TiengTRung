@@ -1,0 +1,295 @@
+﻿@using Microsoft.AspNetCore.Http
+@{
+    ViewData["Title"] = "Trung Tâm Quản Trị & Điều Hành Cơ Sở";
+
+    // 1. Trích xuất ID hoặc Mã trung tâm từ Claims / Session
+    var idTrungTam = User.FindFirst("IdTrungTam")?.Value
+                     ?? Context.Session.GetString("IdTrungTam")
+                     ?? "0";
+
+    var maTrungTam = User.FindFirst("MaTrungTam")?.Value
+                     ?? Context.Session.GetString("MaTrungTam")
+                     ?? "";
+
+    // Ưu tiên IdTrungTam, nếu không có thì dùng MaTrungTam
+    var routeTarget = (!string.IsNullOrEmpty(idTrungTam) && idTrungTam != "0")
+                      ? idTrungTam
+                      : maTrungTam;
+}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewData["Title"]</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+            :root {
+                --primary-emerald: #00b894;
+                --primary-blue: #0984e3;
+                --primary-purple: #6c5ce7;
+                --primary-amber: #f59e0b;
+                --primary-rose: #e11d48;
+                --bg-light: #f8fafc;
+            }
+
+            body {
+                background-color: var(--bg-light);
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                color: #1e293b;
+            }
+
+            .header-title-box {
+                background: linear-gradient(135deg, #ffffff 0%, #f1f5f9 100%);
+                border-radius: 24px;
+                padding: 40px 25px;
+                box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+                border: 1px solid #e2e8f0;
+                margin-bottom: 40px;
+            }
+
+            .custom-card {
+                border-radius: 20px;
+                border: 1px solid #e2e8f0;
+                background: #ffffff;
+                transition: all 0.3s cubic-bezier(0.165, 0.84, 0.44, 1);
+                display: flex;
+                flex-direction: column;
+                height: 100%;
+            }
+
+                .custom-card:hover {
+                    transform: translateY(-6px);
+                    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.08) !important;
+                    border-color: #cbd5e1;
+                }
+
+            .icon-box {
+                width: 60px;
+                height: 60px;
+                border-radius: 16px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                margin: 0 auto 1.25rem;
+                font-size: 1.5rem;
+            }
+
+            .btn-rounded {
+                border-radius: 50px;
+                padding: 8px 20px;
+                font-weight: 600;
+                font-size: 0.9rem;
+                transition: all 0.25s ease;
+            }
+
+            .section-badge-title {
+                display: inline-flex;
+                align-items: center;
+                gap: 8px;
+                font-size: 1.15rem;
+                font-weight: 700;
+                margin-bottom: 20px;
+                color: #334155;
+            }
+    </style>
+</head>
+<body>
+
+    <div class="container py-5" style="max-width: 1200px;">
+
+        <!-- HEADER BANNER -->
+        <div class="header-title-box text-center">
+            <h1 class="display-6 fw-bold text-dark mb-2">
+                <i class="fa-solid fa-cube text-primary me-2"></i>Trung Tâm Quản Trị & Nhập Liệu
+            </h1>
+            <p class="lead text-muted mx-auto mb-0" style="max-width: 720px; font-size: 1.05rem;">
+                Hệ thống điều hành trung tâm đào tạo, quản lý nhân sự, khóa học và dữ liệu giáo trình trực thuộc.
+            </p>
+        </div>
+
+        <!-- 1. PHÂN HỆ QUẢN LÝ TRUNG TÂM & CƠ SỞ -->
+        <div class="section-badge-title">
+            <i class="fa-solid fa-school text-primary"></i> Phân Hệ Quản Lý Trung Tâm & Cơ Sở
+        </div>
+        <div class="row g-4 mb-5">
+            <!-- Quản lý lớp học -->
+            <div class="col-sm-6 col-lg-4">
+                <div class="card shadow-sm custom-card p-3">
+                    <div class="card-body text-center d-flex flex-column">
+                        <div class="icon-box bg-info bg-opacity-10 text-info">
+                            <i class="fa-solid fa-chalkboard-user"></i>
+                        </div>
+                        <h5 class="fw-bold mb-1">Quản Lý Lớp Học</h5>
+                        <p class="text-muted small mb-4 flex-grow-1">
+                            Quản lý thông tin lớp, sĩ số học viên, ngày khai giảng và phân bổ giảng viên.
+                        </p>
+                        <a href="/QuanLyLopHoc/DanhSachLopHoc" class="btn btn-info text-white w-100 btn-rounded shadow-sm">
+                            <i class="fa-solid fa-arrow-right-to-bracket me-1"></i> Danh sách lớp
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quản lý nhân sự -->
+            <div class="col-sm-6 col-lg-4">
+                <div class="card shadow-sm custom-card p-3">
+                    <div class="card-body text-center d-flex flex-column">
+                        <div class="icon-box bg-primary bg-opacity-10 text-primary">
+                            <i class="fa-solid fa-users-gear"></i>
+                        </div>
+                        <h5 class="fw-bold mb-1">Nhân Sự Cơ Sở</h5>
+                        <p class="text-muted small mb-4 flex-grow-1">
+                            Quản lý danh sách ban điều hành, giảng viên giảng dạy và trợ giảng trực thuộc.
+                        </p>
+                        <a href="/QuanLyTrungTam/DanhSachNhanSu" class="btn btn-primary w-100 btn-rounded shadow-sm">
+                            <i class="fa-solid fa-id-card-clip me-1"></i> Danh sách nhân sự
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Hồ sơ trung tâm -->
+            <div class="col-sm-6 col-lg-4">
+                <div class="card shadow-sm custom-card p-3 h-100">
+                    <div class="card-body text-center d-flex flex-column">
+                        <div class="icon-box bg-success bg-opacity-10 text-success">
+                            <i class="fa-solid fa-building-columns"></i>
+                        </div>
+                        <h5 class="fw-bold mb-1">Hồ Sơ Trung Tâm</h5>
+                        <p class="text-muted small mb-4 flex-grow-1">
+                            Xem chi tiết cơ sở, thông tin liên hệ, logo hiển thị và danh sách lớp học trực thuộc.
+                        </p>
+
+                        @if (!string.IsNullOrEmpty(routeTarget) && routeTarget != "0")
+                        {
+                            <!-- Dẫn trực tiếp vào trang Chi tiết trung tâm của tài khoản -->
+                            <a href="@Url.Action("ChiTietTrungTam", "QuanLyTrungTam", new { id = routeTarget })"
+                               class="btn btn-success w-100 btn-rounded shadow-sm">
+                                <i class="fa-solid fa-eye me-1"></i> Xem chi tiết cơ sở
+                            </a>
+                        }
+                        else
+                        {
+                            <!-- Thông báo nếu tài khoản chưa được gán trung tâm -->
+                            <button type="button"
+                                    onclick="Swal.fire('Thông báo', 'Tài khoản của bạn chưa được liên kết với cơ sở đào tạo nào!', 'info')"
+                                    class="btn btn-secondary w-100 btn-rounded shadow-sm">
+                                <i class="fa-solid fa-circle-exclamation me-1"></i> Chưa có cơ sở
+                            </button>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. PHÂN HỆ QUẢN LÝ ĐÀO TẠO & HỌC TẬP -->
+        <div class="section-badge-title">
+            <i class="fa-solid fa-book-open-reader text-success"></i> Phân Hệ Quản Lý Nội Dung Đào Tạo
+        </div>
+        <div class="row g-4 mb-5">
+            <!-- Bài học -->
+            <div class="col-sm-6 col-lg-3">
+                <div class="card shadow-sm custom-card p-3">
+                    <div class="card-body text-center d-flex flex-column">
+                        <div class="icon-box bg-success bg-opacity-10 text-success">
+                            <i class="fa-solid fa-book-bookmark"></i>
+                        </div>
+                        <h5 class="fw-bold mb-1">Chương Trình Học</h5>
+                        <p class="text-muted small mb-3 flex-grow-1">Quản lý bài giảng theo khung giáo trình.</p>
+                        <a href="@Url.Action("DanhSachBaiHocAdmin", "QuanLyDanhSachBaiHoc", new { capdo = 1, IdGiaoTrinh = 1 })" class="btn btn-outline-success w-100 btn-rounded">
+                            <i class="fa-solid fa-gear me-1"></i> Quản lý
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bài tập -->
+            <div class="col-sm-6 col-lg-3">
+                <div class="card shadow-sm custom-card p-3">
+                    <div class="card-body text-center d-flex flex-column">
+                        <div class="icon-box bg-warning bg-opacity-10 text-warning">
+                            <i class="fa-solid fa-list-check"></i>
+                        </div>
+                        <h5 class="fw-bold mb-1">Kho Bài Tập</h5>
+                        <p class="text-muted small mb-3 flex-grow-1">Quản lý các dạng bài tập thực hành bổ trợ.</p>
+                        <a href="/QuanLyDanhSachBaiTap/DanhSachQuanLyAdmin" class="btn btn-outline-warning text-dark w-100 btn-rounded">
+                            <i class="fa-solid fa-gear me-1"></i> Quản lý
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Đề thi -->
+            <div class="col-sm-6 col-lg-3">
+                <div class="card shadow-sm custom-card p-3">
+                    <div class="card-body text-center d-flex flex-column">
+                        <div class="icon-box bg-danger bg-opacity-10 text-danger">
+                            <i class="fa-solid fa-file-signature"></i>
+                        </div>
+                        <h5 class="fw-bold mb-1">Đề Thi HSK</h5>
+                        <p class="text-muted small mb-3 flex-grow-1">Ngân hàng câu hỏi & cấu trúc đề thi chính thức.</p>
+                        <a href="/QuanLyDeThi/DanhSachDeThiAdmin" class="btn btn-outline-danger w-100 btn-rounded">
+                            <i class="fa-solid fa-gear me-1"></i> Quản lý
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Ngữ pháp -->
+            <div class="col-sm-6 col-lg-3">
+                <div class="card shadow-sm custom-card p-3">
+                    <div class="card-body text-center d-flex flex-column">
+                        <div class="icon-box bg-primary bg-opacity-10 text-primary">
+                            <i class="fa-solid fa-spell-check"></i>
+                        </div>
+                        <h5 class="fw-bold mb-1">Ngữ Pháp</h5>
+                        <p class="text-muted small mb-3 flex-grow-1">Hệ thống mẫu câu & giải thích chi tiết ngữ pháp.</p>
+                        <a href="/QuanLyDanhSachNguPhap/DanhSachBaiTapAdmin" class="btn btn-outline-primary w-100 btn-rounded">
+                            <i class="fa-solid fa-gear me-1"></i> Quản lý
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+   
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <script>
+            document.addEventListener("DOMContentLoaded", function() {
+                // Kiểm tra cờ từ chối quyền truy cập (nếu có từ TempData)
+                const isAccessDenied = "@(TempData["AccessDenied"]?.ToString() ?? "")" === "true";
+                const errorMessage = "@Html.Raw(TempData["ErrorMessage"]?.ToString() ?? "Bạn không có quyền truy cập chức năng này!")";
+
+                if (isAccessDenied) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Truy cập bị từ chối!',
+                        text: errorMessage,
+                        timer: 2500,
+                        timerProgressBar: true,
+                        confirmButtonText: 'Quay lại Trang chủ',
+                        confirmButtonColor: '#d33',
+                        allowOutsideClick: false,
+                        allowEscapeKey: false
+                    }).then(() => {
+                        window.location.href = "/";
+                    });
+
+                    setTimeout(function() {
+                        window.location.href = "/";
+                    }, 2600);
+                }
+            });
+    </script>
+</body>
+</html>

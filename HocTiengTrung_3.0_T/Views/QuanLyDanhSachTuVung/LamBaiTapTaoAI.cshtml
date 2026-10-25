@@ -1,0 +1,297 @@
+﻿@model HocTiengTrung_3._0_T.Models12.BaiTap.DeThiViewModel
+
+@{
+    // 1. Thiết lập tiêu đề trang
+    ViewData["Title"] = Model.TenDe ?? "Luyện Tập HSK AI";
+
+    // 2. Trích xuất danh sách câu hỏi
+    var displays = Model.CauHois?.Take(10).ToList() ?? new List<HocTiengTrung_3._0_T.Models12.BaiTap.CauHoiModels>();
+
+    // 3. Lấy metadata từ câu hỏi đầu tiên
+    var firstQ = displays.FirstOrDefault();
+    int idCapDo = firstQ?.IdCapDo ?? 0;
+    int idLoai = firstQ?.IdLoai ?? 0;
+
+    bool isReadingComprehension = idLoai == 1004;
+    bool isSubmitted = ViewBag.IsSubmitted ?? false;
+    bool isSubmitted1 = ViewBag.IsSubmitted1 ?? true;
+    // Các logic khác của bạn
+    // 4. Khởi tạo danh sách từ vựng cho phần Điền từ (Loại 2)
+    List<string> poolWords = new List<string>();
+    if (idLoai == 2 && displays.Any())
+    {
+        poolWords = displays
+            .Select(q => q.DapAns?.FirstOrDefault(d => d.LaDapAnDung)?.NoiDungDapAn)
+            .Where(w => !string.IsNullOrEmpty(w))
+            .OrderBy(x => Guid.NewGuid())
+            .ToList();
+    }
+}
+
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"]</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="~/css/dannhsachbaitap/lambaithucte.css" asp-append-version="true" />
+</head>
+<body>
+    <main>
+        <div class="container quiz-wrapper py-4"
+             id="quiz-container-data"
+             data-total="@displays.Count"
+             data-capdo="@idCapDo"
+             data-loai="@idLoai">
+
+            <div class="quiz-container bg-white shadow-lg rounded-4 p-3 p-md-5 animate__animated animate__fadeIn">
+                @* Header & Progress Section *@
+                <div class="quiz-header mb-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <a href="javascript:void(0);" onclick="confirmBack()" class="btn btn-sm btn-outline-secondary rounded-pill px-3 transition-all">
+                            <i class="fas fa-chevron-left me-1"></i> Quay lại
+                        </a>
+                        <div class="progress-info text-center">
+                            <span class="text-muted fw-bold d-block small">TIẾN ĐỘ LUYỆN TẬP</span>
+                            <span class="badge bg-light text-dark border shadow-sm">
+                                Câu hỏi <span id="current-idx" class="text-primary">1</span>/@displays.Count
+                            </span>
+                        </div>
+                        <div id="score-text" class="badge bg-success fs-6 shadow-sm px-3 py-2">
+                            <i class="fas fa-check-circle me-1"></i> Đúng: 0
+                        </div>
+                    </div>
+
+                    <div class="progress mb-2" style="height: 10px; border-radius: 20px;">
+                        <div id="quiz-progress" class="progress-bar progress-bar-striped progress-bar-animated"
+                             role="progressbar" style="width: 0%; background: linear-gradient(45deg, #fd7e14, #ffbc00);"></div>
+                    </div>
+                </div>
+
+                @* 1. Reading Comprehension Passage *@
+                @if (isReadingComprehension && firstQ?.DoanVan != null)
+                {
+                    <div class="reading-passage-box p-4 mb-4 shadow-sm rounded-4 border-top border-4 border-primary bg-light">
+                        <h4 class="text-primary d-flex align-items-center mb-3">
+                            <i class="fas fa-book-open me-2"></i> @firstQ.DoanVan.TieuDe
+                        </h4>
+                        <div class="passage-content">
+                            <div class="text-chinese fw-normal mb-3 p-3 bg-white rounded-3 border" style="font-size: 1.35rem; line-height: 2; letter-spacing: 1px;">
+                                @firstQ.DoanVan.NoiDungHan
+                            </div>
+
+                            <div id="reading-explanation" style="display: @(isSubmitted ? "block" : "none")">
+                                <div class="result-explanation mt-3 p-3 border-start border-4 border-info bg-info bg-opacity-10 rounded-end">
+                                    <h6 class="text-info fw-bold"><i class="fas fa-language me-2"></i> Dịch nghĩa & Phiên âm:</h6>
+                                    @if (!string.IsNullOrEmpty(firstQ.DoanVan.NoiDungPinyin))
+                                    {
+                                        <div class="text-pinyin mb-2 text-muted fst-italic">@firstQ.DoanVan.NoiDungPinyin</div>
+                                    }
+                                    @if (!string.IsNullOrEmpty(firstQ.DoanVan.NoiDungViet))
+                                    {
+                                        <div class="text-viet text-dark">@firstQ.DoanVan.NoiDungViet</div>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+
+                @* 2. Fill-in-the-blank Word Pool *@
+                @if (idLoai == 2 && poolWords.Any())
+                {
+                    <div class="word-pool-sticky mb-4 animate__animated animate__fadeInDown">
+                        @* Xóa bỏ overflow-hidden nếu sticky không hoạt động *@
+                        <div class="card shadow-sm border-0">
+                            <div class="card-header bg-warning text-dark fw-bold py-2 text-center">
+                                <i class="fas fa-th-large me-2"></i> DANH SÁCH TỪ VỰNG GỢI Ý
+                            </div>
+                            <div class="card-body bg-light">
+                                <div class="d-flex flex-wrap gap-2 justify-content-center">
+                                    @{
+                                        char letterPool = 'A';
+                                    }
+                                    @foreach (var word in poolWords)
+                                    {
+                                        <div class="pool-item-card px-3 py-2 bg-white border rounded-3 shadow-sm d-flex align-items-center" data-letter="@letterPool">
+                                            <span class="badge bg-warning text-dark me-2">@letterPool</span>
+                                            <span class="fw-bold text-chinese">@word</span>
+                                        </div>
+                                        letterPool++;
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                }
+
+                @* 3. Question Content Area *@
+                <div id="quiz-content">
+                    @for (int i = 0; i < displays.Count; i++)
+                    {
+                        var q = displays[i];
+                        bool isFillBlank = q.IdLoai == 2;
+                        bool isReorder = q.IdLoai == 3;
+                        bool isListening = q.IdLoai == 1002 && !string.IsNullOrEmpty(q.AmThanhPath);
+                        bool isReading = q.IdLoai == 1004 || q.IdLoai == 1;
+
+                        string typeClass = isFillBlank ? "type-dienkhuyet" : isReorder ? "type-sapxep" : "type-tracnghiem";
+                        string typeName = isFillBlank ? "Điền từ" : (isReorder ? "Sắp xếp" : (isListening ? "Chính tả" : "Trắc nghiệm"));
+
+                        <div class="question-container mb-5 border-bottom pb-4 animate__animated animate__fadeIn"
+                             id="step-@i"
+                             data-id-cauhoi="@q.IdCauHoi"
+                             data-type="@q.IdLoai">
+
+                            <div class="d-flex align-items-center mb-3">
+                                <span class="badge rounded-pill @typeClass me-2 px-3">Câu @(i + 1): @typeName</span>
+                                <hr class="flex-grow-1 my-0 opacity-25">
+                            </div>
+
+                            <div class="question-box px-2">
+                                @* Case 1: Điền từ (Fill in the blank) *@
+                                @if (isFillBlank)
+                                {
+                                    <div class="question-item-card p-4 rounded-4 bg-white border-dashed">
+                                        <div class="row g-3 align-items-center">
+                                            <div class="col-lg-9">
+                                                <h5 class="text-chinese lh-lg mb-0">@q.NoiDung</h5>
+                                            </div>
+                                            <div class="col-lg-3">
+                                                <input type="text" class="form-control border-2 fill-blank-input text-center fw-bold"
+                                                       id="input-@i"
+                                                       placeholder="Nhập đáp án..."
+                                                       data-correct="@q.DapAns.FirstOrDefault(d => d.LaDapAnDung)?.NoiDungDapAn">
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+
+                                @* Case 2: Trắc nghiệm (Reading/Multiple Choice) *@
+                                else if (isReading)
+                                {
+                                    <h5 class="text-chinese mb-4 lh-base">@q.NoiDung</h5>
+                                    <div class="answers-list d-grid gap-3">
+                                        @foreach (var ans in q.DapAns)
+                                        {
+                                            <button class="btn btn-answer btn-outline-dark text-start p-3 rounded-3 d-flex align-items-center shadow-sm transition-all"
+                                                    data-is-correct="@ans.LaDapAnDung.ToString().ToLower()"
+                                                    onclick="selectAnswer(this, @i)">
+                                                <span class="answer-text">@ans.NoiDungDapAn</span>
+                                            </button>
+                                        }
+                                    </div>
+                                }
+
+                                @* Case 3: Nghe chép chính tả (Listening) *@
+                                else if (isListening)
+                                {
+                                    <div class="listening-box text-center p-4 bg-light rounded-4 mb-3">
+                                        <audio controls class="w-100 mb-3">
+                                            <source src="@q.AmThanhPath" type="audio/mpeg">
+                                        </audio>
+                                        <textarea id="input-@i" class="form-control border-2" rows="2"
+                                          placeholder="Nhập nội dung bạn nghe được..."
+                                          data-correct="@q.DapAns.FirstOrDefault(d => d.LaDapAnDung)?.NoiDungDapAn"></textarea>
+                                    </div>
+                                }
+
+                                @* Case 4: Sắp xếp câu (Reorder) *@
+                                else if (isReorder)
+                                {
+                                    <div class="reorder-box p-4 bg-light rounded-4">
+                                        <h6 class="text-muted mb-3">Sắp xếp các từ sau thành câu đúng:</h6>
+                                        <h5 class="mb-3 text-primary">@q.NoiDung</h5>
+                                        <textarea id="input-@i" class="form-control border-2 fw-bold text-chinese" rows="2"
+                                          placeholder="Gõ câu trả lời tại đây..."
+                                          data-correct="@q.DapAns.FirstOrDefault(d => d.LaDapAnDung)?.NoiDungDapAn"></textarea>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <h5 class="text-chinese mb-4 lh-base">@q.NoiDung</h5>
+                                    <div class="answers-list d-grid gap-3">
+                                        @foreach (var ans in q.DapAns)
+                                        {
+                                            <button class="btn btn-answer btn-outline-dark text-start p-3 rounded-3 d-flex align-items-center shadow-sm transition-all"
+                                                    data-is-correct="@ans.LaDapAnDung.ToString().ToLower()"
+                                                    onclick="selectAnswer(this, @i)">
+                                                <span class="answer-text">@ans.NoiDungDapAn</span>
+                                            </button>
+                                        }
+                                    </div>
+                                }
+                                @* Explanation Box (Ẩn mặc định) *@
+                                <div class="explanation-box mt-4" id="expl-@i" style="display:none;">
+                                    <div class="p-3 bg-success bg-opacity-10 rounded-3 border-start border-4 border-success">
+                                        <small class="text-success d-block fw-bold mb-1"><i class="fas fa-lightbulb me-2"></i> GIẢI THÍCH:</small>
+                                        <div class="small text-dark">@q.GiaiThich</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+
+                <div class="text-center mt-5 mb-5">
+                    <button type="button" id="btn-submit-all" onclick="submitFullQuiz()" class="btn btn-primary btn-lg rounded-pill px-5 shadow-lg">
+                        <i class="fas fa-check-double me-2"></i> HOÀN THÀNH & NỘP BÀI
+                    </button>
+                </div>
+
+
+
+                @* Result Screen *@
+                <div id="result-screen" class="text-center p-5 animate__animated animate__zoomIn" style="display:none;">
+                    <div class="result-icon mb-4">
+                        <div class="trophy-wrapper position-relative d-inline-block">
+                            <i class="fas fa-trophy text-warning" style="font-size: 6rem;"></i>
+                            <i class="fas fa-crown position-absolute top-0 start-50 translate-middle-x text-danger" style="font-size: 2rem; margin-top: -15px;"></i>
+                        </div>
+                    </div>
+                    <h2 class="fw-bold mb-2">Hoàn thành xuất sắc, Hoàng đế!</h2>
+                    <p class="text-muted mb-4">Bạn đã vượt qua bài luyện tập này với số điểm:</p>
+                    <div class="display-2 fw-bold text-primary mb-4">
+                        <span id="final-score">0</span><small class="fs-2 text-muted">/@displays.Count</small>
+                    </div>
+                    <div id="save-status" class="mb-4 alert alert-info py-2 d-inline-block px-4 rounded-pill"></div>
+
+                    <div class="d-flex flex-wrap gap-3 justify-content-center mt-2">
+                        <button class="btn btn-warning text-white rounded-pill px-4 py-2 shadow" onclick="reviewMyQuiz()">
+                            <i class="fas fa-search me-2"></i> Xem lại bài
+                        </button>
+                        <button class="btn btn-outline-primary rounded-pill px-4 py-2 shadow-sm" onclick="location.reload()">
+                            <i class="fas fa-redo me-2"></i> Làm lại
+                        </button>
+                        <a href="@Url.Action("DanhSachCapDoBaiTap", "QuanLyDanhSachBaiTap")" class="btn btn-primary rounded-pill px-4 py-2 shadow">
+                            <i class="fas fa-th-list me-2"></i> Bài học khác
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script src="~/js/quanly_baitap/lichsua_luu.js" asp-append-version="true"></script>
+
+    <script>
+        function addWord(idx, text) {
+            const area = document.getElementById('input-' + idx);
+            if (area) {
+                const currentVal = area.value.trim();
+                area.value = currentVal + (currentVal.length > 0 ? " " : "") + text;
+                area.focus();
+            }
+        }
+    </script>
+</body>
+</html>

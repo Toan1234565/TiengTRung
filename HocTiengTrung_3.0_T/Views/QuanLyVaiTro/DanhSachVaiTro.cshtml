@@ -1,0 +1,660 @@
+﻿@model dynamic
+@{
+    ViewData["Title"] = "Quản lý Vai trò Hệ thống";
+   
+}
+
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+        <div>
+            <h3 class="fw-bold text-dark mb-1">Quản lý Vai trò</h3>
+            <p class="text-muted small mb-0">Thiết lập các nhóm quyền tài khoản và gán phân quyền người dùng trong hệ thống.</p>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <!-- NÚT CHUÔNG NHẬT KÝ HOẠT ĐỘNG -->
+            <div class="position-relative me-2">
+                <button type="button"
+                        class="btn btn-light rounded-circle shadow-sm btn-nhat-ky d-flex align-items-center justify-content-center"
+                        style="width: 42px; height: 42px; border: 1px solid #dee2e6;"
+                        data-bs-toggle="modal"
+                        data-bs-target="#detailModal"
+                        title="Xem nhật ký hoạt động">
+                    <i class="fa-solid fa-bell text-primary fs-5"></i>
+                    <span class="position-absolute top-0 start-100 translate-middle p-1 bg-danger border border-light rounded-circle">
+                        <span class="visually-hidden">Hoạt động mới</span>
+                    </span>
+                </button>
+            </div>
+
+            <button type="button" class="btn btn-outline-primary d-flex align-items-center gap-2" onclick="moModalGanVaiTro()">
+                <i class="fa-solid fa-user-shield"></i> Gán vai trò cho tài khoản
+            </button>
+            <button type="button" class="btn btn-primary d-flex align-items-center gap-2 shadow-sm" onclick="moModalThemVaiTro()">
+                <i class="fa-solid fa-plus"></i> Thêm vai trò mới
+            </button>
+        </div>
+    </div>
+
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show border-0 shadow-sm mb-4" role="alert">
+            <i class="fa-solid fa-triangle-exclamation me-2"></i> @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <!-- Table Card -->
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+            <span class="fw-semibold text-secondary">
+                Danh sách quyền hạn (@(Model != null ? ((IEnumerable<dynamic>)Model).Count() : 0))
+            </span>
+            <div class="input-group input-group-sm" style="max-width: 250px;">
+                <span class="input-group-text bg-light border-end-0"><i class="fa-solid fa-magnifying-glass text-muted"></i></span>
+                <input type="text" id="filterVaiTroInput" class="form-control border-start-0" placeholder="Tìm kiếm vai trò..." onkeyup="locDanhSachVaiTro()">
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0" id="tableVaiTro">
+                <thead class="table-light text-secondary text-uppercase small">
+                    <tr>
+                        <th style="width: 80px;">Mã ID</th>
+                        <th>Tên vai trò</th>
+                        <th class="text-center" style="width: 180px;">Số lượng tài khoản</th>
+                        <th class="text-end" style="width: 150px;">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model != null && ((IEnumerable<dynamic>)Model).Any())
+                    {
+                        foreach (var item in Model)
+                        {
+                            int id = item.idVaiTro ?? item.IdVaiTro;
+                            string ten = item.tenVaiTro ?? item.TenVaiTro ?? "";
+                            int soLuong = item.soLuongTaiKhoan ?? item.SoLuongTaiKhoan ?? 0;
+
+                            <tr id="row-vaitro-@id">
+                                <td class="fw-bold text-muted">#@id</td>
+                                <td>
+                                    <span class="fw-semibold text-dark vaitro-name">@ten</span>
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge @(soLuong > 0 ? "bg-primary-subtle text-primary" : "bg-light text-muted border") px-3 py-2">
+                                        <i class="fa-regular fa-user me-1"></i> @soLuong tài khoản
+                                    </span>
+                                </td>
+                                <td class="text-end">
+                                    <div class="btn-group btn-group-sm">
+                                        <button type="button" class="btn btn-outline-warning" title="Chỉnh sửa" onclick="moModalSuaVaiTro(@id, '@ten')">
+                                            <i class="fa-regular fa-pen-to-square"></i>
+                                        </button>
+                                        <button type="button" class="btn btn-outline-danger" title="Xóa" onclick="xoaVaiTroApi(@id, '@ten', @soLuong)">
+                                            <i class="fa-regular fa-trash-can"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="4" class="text-center py-5 text-muted">
+                                <i class="fa-regular fa-folder-open fa-2x mb-2 d-block"></i>
+                                Chưa có vai trò nào được cấu hình trong hệ thống.
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- ========================================== -->
+<!-- MODAL NHẬT KÝ HỆ THỐNG / LỊCH SỬ THAY ĐỔI -->
+<!-- ========================================== -->
+<div class="modal fade" id="detailModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-light">
+                <h5 class="modal-title fw-bold text-dark">
+                    <i class="fa-solid fa-clock-rotate-left text-primary me-2"></i>Nhật ký hệ thống & Lịch sử truy vết
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-0" id="modalBodyNhatKy">
+                @await Html.PartialAsync("_LichSuThayDoi")
+            </div>
+            <div class="modal-footer bg-light py-2">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Đóng</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ========================================== -->
+<!-- MODAL THÊM / SỬA VAI TRÒ -->
+<!-- ========================================== -->
+<div class="modal fade" id="modalVaiTro" tabindex="-1" aria-labelledby="modalVaiTroTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-light">
+                <h5 class="modal-title fw-bold" id="modalVaiTroTitle">Thêm mới vai trò</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="formVaiTro" onsubmit="luuVaiTro(event)">
+                <div class="modal-body p-4">
+                    <input type="hidden" id="modalIdVaiTro" value="0" />
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Tên vai trò <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="txtTenVaiTro" required placeholder="VD: Quản trị viên, Giảng viên, Học viên...">
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                    <button type="submit" id="btnSubmitVaiTro" class="btn btn-primary px-4">
+                        <i class="fa-solid fa-floppy-disk me-1"></i> Lưu thông tin
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ========================================== -->
+<!-- MODAL GÁN VAI TRÒ CHO TÀI KHOẢN -->
+<!-- ========================================== -->
+<div class="modal fade" id="modalGanVaiTro" tabindex="-1" aria-labelledby="modalGanVaiTroTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-light">
+                <h5 class="modal-title fw-bold" id="modalGanVaiTroTitle">Gán vai trò cho tài khoản</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="formGanVaiTro" onsubmit="luuGanVaiTro(event)">
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">ID Tài khoản <span class="text-danger">*</span></label>
+                        <input type="number" class="form-control" id="txtIdTaiKhoanGan" required placeholder="Nhập ID tài khoản cần gán..." min="1">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Chọn vai trò mới <span class="text-danger">*</span></label>
+                        <select class="form-select" id="selectVaiTroGan" required>
+                            <option value="">-- Chọn vai trò --</option>
+                            @if (Model != null)
+                            {
+                                foreach (var item in Model)
+                                {
+                                    <option value="@(item.idVaiTro ?? item.IdVaiTro)">@(item.tenVaiTro ?? item.TenVaiTro)</option>
+                                }
+                            }
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                    <button type="submit" id="btnSubmitGan" class="btn btn-primary px-4">
+                        <i class="fa-solid fa-check me-1"></i> Xác nhận gán
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<script>
+    const API_URL = '/api/quanlyvaitro';
+    let modalVaiTroInstance = null;
+    let modalGanInstance = null;
+
+    document.addEventListener("DOMContentLoaded", function() {
+            // Kiểm tra cờ từ chối quyền truy cập
+            const isAccessDenied = "@(TempData["AccessDenied"]?.ToString() ?? "")" === "true";
+            const errorMessage = "@Html.Raw(TempData["ErrorMessage"]?.ToString() ?? "Bạn không có quyền truy cập chức năng này!")";
+
+            if (isAccessDenied) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Truy cập bị từ chối!',
+                    text: errorMessage,
+                    timer: 2500, // Tự động đóng sau 2.5 giây
+                    timerProgressBar: true,
+                    confirmButtonText: 'Quay lại Trang chủ',
+                    confirmButtonColor: '#d33',
+                    allowOutsideClick: false,
+                    allowEscapeKey: false
+                }).then(() => {
+                    // Chuyển hướng ngay về trang chủ
+                    window.location.href = "/";
+                });
+
+                // Tự động chuyển hướng phòng khi người dùng không bấm nút
+                setTimeout(function() {
+                    window.location.href = "/";
+                }, 2600);
+            }
+        });
+
+    document.addEventListener('DOMContentLoaded', function() {
+        modalVaiTroInstance = new bootstrap.Modal(document.getElementById('modalVaiTro'));
+        modalGanInstance = new bootstrap.Modal(document.getElementById('modalGanVaiTro'));
+
+        // Tự động load dữ liệu nhật ký khi mở modal qua nút chuông
+        $('#detailModal').on('show.bs.modal', function() {
+            if (typeof loadLichSuThayDoi === 'function') {
+                loadLichSuThayDoi(1);
+            }
+        });
+    });
+
+    // 1. Lọc nhanh danh sách vai trò
+    function locDanhSachVaiTro() {
+        const filter = document.getElementById('filterVaiTroInput').value.toLowerCase().trim();
+        const tr = document.getElementById('tableVaiTro').getElementsByTagName('tr');
+
+        for (let i = 1; i < tr.length; i++) {
+            const nameEl = tr[i].querySelector('.vaitro-name');
+            if (nameEl) {
+                const txt = nameEl.textContent || nameEl.innerText;
+                tr[i].style.display = txt.toLowerCase().indexOf(filter) > -1 ? "" : "none";
+            }
+        }
+    }
+
+    // 2. Mở Modal Thêm mới
+    function moModalThemVaiTro() {
+        document.getElementById('formVaiTro').reset();
+        document.getElementById('modalIdVaiTro').value = "0";
+        document.getElementById('modalVaiTroTitle').textContent = "Thêm mới vai trò";
+        modalVaiTroInstance.show();
+    }
+
+    // 3. Mở Modal Chỉnh sửa
+    function moModalSuaVaiTro(id, ten) {
+        document.getElementById('modalIdVaiTro').value = id;
+        document.getElementById('txtTenVaiTro').value = ten;
+        document.getElementById('modalVaiTroTitle').textContent = `Chỉnh sửa vai trò: ${ten}`;
+        modalVaiTroInstance.show();
+    }
+
+    // 4. Mở Modal Gán vai trò
+    function moModalGanVaiTro() {
+        document.getElementById('formGanVaiTro').reset();
+        modalGanInstance.show();
+    }
+
+    // 5. Lưu vai trò (POST Thêm hoặc PUT Sửa)
+    function luuVaiTro(e) {
+        e.preventDefault();
+
+        const id = parseInt(document.getElementById('modalIdVaiTro').value) || 0;
+        const ten = document.getElementById('txtTenVaiTro').value.trim();
+        const btn = document.getElementById('btnSubmitVaiTro');
+
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-1"></i> Đang lưu...';
+
+        const url = id > 0 ? `${API_URL}/updatevaitro/${id}` : `${API_URL}/addvaitro`;
+        const method = id > 0 ? 'PUT' : 'POST';
+
+        fetch(url, {
+            method: method,
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ IdVaiTro: id, TenVaiTro: ten })
+        })
+            .then(async res => {
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.message || 'Thao tác không thành công');
+                return data;
+            })
+            .then(res => {
+                modalVaiTroInstance.hide();
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Thành công!',
+                    text: res.message,
+                    timer: 1500,
+                    showConfirmButton: false
+                }).then(() => location.reload());
+            })
+            .catch(err => {
+                Swal.fire('Lỗi', err.message, 'error');
+            })
+            .finally(() => {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-floppy-disk me-1"></i> Lưu thông tin';
+            });
+    }
+
+    // 6. Xóa vai trò
+    function xoaVaiTroApi(id, ten, soLuongTaiKhoan) {
+        if (soLuongTaiKhoan > 0) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Không thể xóa',
+                text: `Vai trò "${ten}" đang được gán cho ${soLuongTaiKhoan} tài khoản. Vui lòng chuyển vai trò các tài khoản trước!`
+            });
+            return;
+        }
+
+        Swal.fire({
+            title: 'Xác nhận xóa?',
+            text: `Bạn có chắc chắn muốn xóa vai trò "${ten}" không?`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#dc3545',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Đồng ý xóa',
+            cancelButtonText: 'Hủy'
+        }).then(result => {
+            if (result.isConfirmed) {
+                fetch(`${API_URL}/deletevaitro/${id}`, { method: 'DELETE' })
+                    .then(async res => {
+                        const data = await res.json();
+                        if (!res.ok) throw new Error(data.message || 'Không thể xóa vai trò này');
+                        return data;
+                    })
+                    .then(res => {
+                        Swal.fire('Đã xóa!', res.message, 'success').then(() => {
+                            const row = document.getElementById(`row-vaitro-${id}`);
+                            if (row) row.remove();
+                        });
+                    })
+                    .catch(err => {
+                        Swal.fire('Thất bại', err.message, 'error');
+                    });
+            }
+        });
+    }
+
+    // 7. Gán vai trò cho tài khoản
+    function luuGanVaiTro(e) {
+        e.preventDefault();
+
+        const idTaiKhoan = parseInt(document.getElementById('txtIdTaiKhoanGan').value);
+        const idVaiTro = parseInt(document.getElementById('selectVaiTroGan').value);
+        const btn = document.getElementById('btnSubmitGan');
+
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-1"></i> Đang gán...';
+
+        fetch(`${API_URL}/gan-vaitro`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ IdTaiKhoan: idTaiKhoan, IdVaiTro: idVaiTro })
+        })
+            .then(async res => {
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.message || 'Gán vai trò thất bại');
+                return data;
+            })
+            .then(res => {
+                modalGanInstance.hide();
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Thành công!',
+                    text: res.message,
+                    timer: 2000,
+                    showConfirmButton: false
+                }).then(() => location.reload());
+            })
+            .catch(err => {
+                Swal.fire('Thất bại', err.message, 'error');
+            })
+            .finally(() => {
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-check me-1"></i> Xác nhận gán';
+            });
+    }
+</script>
+<!-- ========================================== -->
+<!-- MODAL THÊM / SỬA VAI TRÒ -->
+<!-- ========================================== -->
+<div class="modal fade" id="modalVaiTro" tabindex="-1" aria-labelledby="modalVaiTroTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-light">
+                <h5 class="modal-title fw-bold" id="modalVaiTroTitle">Thêm mới vai trò</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="formVaiTro" onsubmit="luuVaiTro(event)">
+                <div class="modal-body p-4">
+                    <input type="hidden" id="modalIdVaiTro" value="0" />
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Tên vai trò <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="txtTenVaiTro" required placeholder="VD: Quản trị viên, Giảng viên, Học viên...">
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                    <button type="submit" id="btnSubmitVaiTro" class="btn btn-primary px-4">
+                        <i class="fa-solid fa-floppy-disk me-1"></i> Lưu thông tin
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ========================================== -->
+<!-- MODAL GÁN VAI TRÒ CHO TÀI KHOẢN -->
+<!-- ========================================== -->
+<div class="modal fade" id="modalGanVaiTro" tabindex="-1" aria-labelledby="modalGanVaiTroTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-light">
+                <h5 class="modal-title fw-bold" id="modalGanVaiTroTitle">Gán vai trò cho tài khoản</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="formGanVaiTro" onsubmit="luuGanVaiTro(event)">
+                <div class="modal-body p-4">
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">ID Tài khoản <span class="text-danger">*</span></label>
+                        <input type="number" class="form-control" id="txtIdTaiKhoanGan" required placeholder="Nhập ID tài khoản cần gán..." min="1">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Chọn vai trò mới <span class="text-danger">*</span></label>
+                        <select class="form-select" id="selectVaiTroGan" required>
+                            <option value="">-- Chọn vai trò --</option>
+                            @if (Model != null)
+                            {
+                                foreach (var item in Model)
+                                {
+                                    <option value="@(item.idVaiTro ?? item.IdVaiTro)">@(item.tenVaiTro ?? item.TenVaiTro)</option>
+                                }
+                            }
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                    <button type="submit" id="btnSubmitGan" class="btn btn-primary px-4">
+                        <i class="fa-solid fa-check me-1"></i> Xác nhận gán
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <script>
+        const API_URL = '/api/quanlyvaitro';
+        let modalVaiTroInstance = null;
+        let modalGanInstance = null;
+
+        document.addEventListener('DOMContentLoaded', function() {
+            modalVaiTroInstance = new bootstrap.Modal(document.getElementById('modalVaiTro'));
+            modalGanInstance = new bootstrap.Modal(document.getElementById('modalGanVaiTro'));
+        });
+
+        // 1. Lọc nhanh danh sách vai trò
+        function locDanhSachVaiTro() {
+            const filter = document.getElementById('filterVaiTroInput').value.toLowerCase().trim();
+            const tr = document.getElementById('tableVaiTro').getElementsByTagName('tr');
+
+            for (let i = 1; i < tr.length; i++) {
+                const nameEl = tr[i].querySelector('.vaitro-name');
+                if (nameEl) {
+                    const txt = nameEl.textContent || nameEl.innerText;
+                    tr[i].style.display = txt.toLowerCase().indexOf(filter) > -1 ? "" : "none";
+                }
+            }
+        }
+
+        // 2. Mở Modal Thêm mới
+        function moModalThemVaiTro() {
+            document.getElementById('formVaiTro').reset();
+            document.getElementById('modalIdVaiTro').value = "0";
+            document.getElementById('modalVaiTroTitle').textContent = "Thêm mới vai trò";
+            modalVaiTroInstance.show();
+        }
+
+        // 3. Mở Modal Chỉnh sửa
+        function moModalSuaVaiTro(id, ten) {
+            document.getElementById('modalIdVaiTro').value = id;
+            document.getElementById('txtTenVaiTro').value = ten;
+            document.getElementById('modalVaiTroTitle').textContent = `Chỉnh sửa vai trò: ${ten}`;
+            modalVaiTroInstance.show();
+        }
+
+        // 4. Mở Modal Gán vai trò
+        function moModalGanVaiTro() {
+            document.getElementById('formGanVaiTro').reset();
+            modalGanInstance.show();
+        }
+
+        // 5. Lưu vai trò (POST Thêm hoặc PUT Sửa)
+        function luuVaiTro(e) {
+            e.preventDefault();
+
+            const id = parseInt(document.getElementById('modalIdVaiTro').value) || 0;
+            const ten = document.getElementById('txtTenVaiTro').value.trim();
+            const btn = document.getElementById('btnSubmitVaiTro');
+
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-1"></i> Đang lưu...';
+
+            const url = id > 0 ? `${API_URL}/updatevaitro/${id}` : `${API_URL}/addvaitro`;
+            const method = id > 0 ? 'PUT' : 'POST';
+
+            fetch(url, {
+                method: method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ IdVaiTro: id, TenVaiTro: ten })
+            })
+                .then(async res => {
+                    const data = await res.json();
+                    if (!res.ok) throw new Error(data.message || 'Thao tác không thành công');
+                    return data;
+                })
+                .then(res => {
+                    modalVaiTroInstance.hide();
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Thành công!',
+                        text: res.message,
+                        timer: 1500,
+                        showConfirmButton: false
+                    }).then(() => location.reload());
+                })
+                .catch(err => {
+                    Swal.fire('Lỗi', err.message, 'error');
+                })
+                .finally(() => {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fa-solid fa-floppy-disk me-1"></i> Lưu thông tin';
+                });
+        }
+
+        // 6. Xóa vai trò
+        function xoaVaiTroApi(id, ten, soLuongTaiKhoan) {
+            if (soLuongTaiKhoan > 0) {
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Không thể xóa',
+                    text: `Vai trò "${ten}" đang được gán cho ${soLuongTaiKhoan} tài khoản. Vui lòng chuyển vai trò các tài khoản trước!`
+                });
+                return;
+            }
+
+            Swal.fire({
+                title: 'Xác nhận xóa?',
+                text: `Bạn có chắc chắn muốn xóa vai trò "${ten}" không?`,
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#dc3545',
+                cancelButtonColor: '#6c757d',
+                confirmButtonText: 'Đồng ý xóa',
+                cancelButtonText: 'Hủy'
+            }).then(result => {
+                if (result.isConfirmed) {
+                    fetch(`${API_URL}/deletevaitro/${id}`, { method: 'DELETE' })
+                        .then(async res => {
+                            const data = await res.json();
+                            if (!res.ok) throw new Error(data.message || 'Không thể xóa vai trò này');
+                            return data;
+                        })
+                        .then(res => {
+                            Swal.fire('Đã xóa!', res.message, 'success').then(() => {
+                                const row = document.getElementById(`row-vaitro-${id}`);
+                                if (row) row.remove();
+                            });
+                        })
+                        .catch(err => {
+                            Swal.fire('Thất bại', err.message, 'error');
+                        });
+                }
+            });
+        }
+
+        // 7. Gán vai trò cho tài khoản
+        function luuGanVaiTro(e) {
+            e.preventDefault();
+
+            const idTaiKhoan = parseInt(document.getElementById('txtIdTaiKhoanGan').value);
+            const idVaiTro = parseInt(document.getElementById('selectVaiTroGan').value);
+            const btn = document.getElementById('btnSubmitGan');
+
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin me-1"></i> Đang gán...';
+
+            fetch(`${API_URL}/gan-vaitro`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ IdTaiKhoan: idTaiKhoan, IdVaiTro: idVaiTro })
+            })
+                .then(async res => {
+                    const data = await res.json();
+                    if (!res.ok) throw new Error(data.message || 'Gán vai trò thất bại');
+                    return data;
+                })
+                .then(res => {
+                    modalGanInstance.hide();
+                    Swal.fire({
+                        icon: 'success',
+                        title: 'Thành công!',
+                        text: res.message,
+                        timer: 2000,
+                        showConfirmButton: false
+                    }).then(() => location.reload());
+                })
+                .catch(err => {
+                    Swal.fire('Thất bại', err.message, 'error');
+                })
+                .finally(() => {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fa-solid fa-check me-1"></i> Xác nhận gán';
+                });
+        }
+    </script>
+}

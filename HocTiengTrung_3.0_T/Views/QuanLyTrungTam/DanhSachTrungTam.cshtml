@@ -1,0 +1,359 @@
+﻿@model dynamic
+@{
+    ViewData["Title"] = "Quản lý Trung tâm Đào tạo";
+
+    var dataList = Model?.data ?? Model?.Data;
+    int currentPage = ViewBag.CurrentPage ?? 1;
+    int totalPages = Model?.totalPages ?? Model?.TotalPages ?? 1;
+    int totalItems = Model?.totalItems ?? Model?.TotalItems ?? 0;
+    string search = ViewBag.Search ?? "";
+    bool? trangThai = ViewBag.TrangThai;
+}
+
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+        <div>
+            <h3 class="fw-bold text-dark mb-1">Quản lý Trung tâm</h3>
+            <p class="text-muted small mb-0">Quản lý danh sách các cơ sở, thông tin liên hệ và tên miền phụ.</p>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+            <!-- NÚT CHUÔNG XEM NHẬT KÝ THAY ĐỔI / TRUY VẾT -->
+            <div class="position-relative me-2">
+                <button type="button"
+                        id="btnChuongThongBao"
+                        class="btn btn-light rounded-circle shadow-sm d-flex align-items-center justify-content-center"
+                        style="width: 42px; height: 42px; border: 1px solid #dee2e6;"
+                        data-bs-toggle="modal"
+                        data-bs-target="#detailModal"
+                        title="Xem nhật ký hoạt động hệ thống">
+                    <i class="fa-solid fa-bell text-primary fs-5"></i>
+                    <span id="badgeSoThongBao"
+                          class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger border border-light d-none"
+                          style="font-size: 0.65rem;">
+                        0
+                    </span>
+                </button>
+            </div>
+
+            <button type="button" class="btn btn-primary d-flex align-items-center gap-2 shadow-sm" onclick="moModalThemMoiTrungTam()">
+                <i class="fa-solid fa-plus"></i> Thêm mới trung tâm
+            </button>
+        </div>
+    </div>
+
+    <!-- Thanh tìm kiếm & Bộ lọc -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body">
+            <form method="get" asp-action="DanhSachTrungTam" class="row g-3">
+                <div class="col-md-5">
+                    <label class="form-label small fw-semibold">Từ khóa tìm kiếm</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-white border-end-0"><i class="fa-solid fa-magnifying-glass text-muted"></i></span>
+                        <input type="text" name="search" value="@search" class="form-control border-start-0" placeholder="Tên trung tâm, mã, email hoặc SĐT...">
+                    </div>
+                </div>
+
+                <div class="col-md-3">
+                    <label class="form-label small fw-semibold">Trạng thái hoạt động</label>
+                    <select name="trangThai" class="form-select">
+                        <option value="">-- Tất cả trạng thái --</option>
+                        <option value="true" selected="@(trangThai == true)">Đang hoạt động</option>
+                        <option value="false" selected="@(trangThai == false)">Đã vô hiệu hóa</option>
+                    </select>
+                </div>
+
+                <div class="col-md-4 d-flex align-items-end gap-2">
+                    <button type="submit" class="btn btn-primary w-50">
+                        <i class="fa-solid fa-filter me-1"></i> Lọc
+                    </button>
+                    <a asp-action="DanhSachTrungTam" class="btn btn-outline-secondary w-50">
+                        <i class="fa-solid fa-arrows-rotate me-1"></i> Làm mới
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Bảng danh sách trung tâm -->
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
+            <span class="fw-semibold text-secondary">Tổng số: <strong class="text-dark">@totalItems</strong> trung tâm</span>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light text-secondary text-uppercase small">
+                    <tr>
+                        <th style="width: 50px;">#ID</th>
+                        <th style="width: 80px;">Logo</th>
+                        <th>Tên trung tâm</th>
+                        <th>Mã / Subdomain</th>
+                        <th>Liên hệ</th>
+                        <th>Hạn sử dụng</th>
+                        <th class="text-center" style="width: 140px;">Trạng thái</th>
+                        <th class="text-end" style="width: 160px;">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBodyTrungTam">
+                    @if (dataList != null && dataList.Count > 0)
+                    {
+                        foreach (var item in dataList)
+                        {
+                            int id = item.idTrungTam ?? item.IdTrungTam;
+                            string ten = item.tenTrungTam ?? item.TenTrungTam ?? "";
+                            string ma = item.maTrungTam ?? item.MaTrungTam ?? "--";
+                            string sub = item.subdomain ?? item.Subdomain ?? "--";
+                            string phone = item.soDienThoai ?? item.SoDienThoai ?? "--";
+                            string email = item.email ?? item.Email ?? "--";
+                            string logo = item.logo ?? item.Logo ?? "";
+                            bool isAct = item.trangThai ?? item.TrangThai ?? false;
+                            DateTime? hetHan = item.ngayHetHan ?? item.NgayHetHan;
+                            bool isExpired = hetHan.HasValue && hetHan.Value < DateTime.Now;
+
+                            <tr id="row-@id">
+                                <td class="fw-bold text-muted">@id</td>
+                                <td>
+                                    @if (!string.IsNullOrEmpty(logo))
+                                    {
+                                        <img src="@logo" alt="@ten" class="rounded border object-fit-cover" width="48" height="48" />
+                                    }
+                                    else
+                                    {
+                                        <div class="rounded bg-light border d-flex align-items-center justify-content-center text-secondary fw-bold" style="width: 48px; height: 48px;">
+                                            <i class="fa-regular fa-building"></i>
+                                        </div>
+                                    }
+                                </td>
+                                <td>
+                                    <div class="fw-semibold text-dark">@ten</div>
+                                    <small class="text-muted"><i class="fa-solid fa-location-dot me-1"></i>@(item.diaChi ?? item.DiaChi ?? "Chưa cập nhật")</small>
+                                </td>
+                                <td>
+                                    <div><span class="badge bg-light text-primary border font-monospace">@ma</span></div>
+                                    <small class="text-muted font-monospace">@sub</small>
+                                </td>
+                                <td>
+                                    <div class="small"><i class="fa-solid fa-phone text-muted me-1"></i>@phone</div>
+                                    <div class="small text-muted"><i class="fa-regular fa-envelope text-muted me-1"></i>@email</div>
+                                </td>
+                                <td>
+                                    @if (hetHan.HasValue)
+                                    {
+                                        <span class="small @(isExpired ? "text-danger fw-bold" : "text-dark")">
+                                            @hetHan.Value.ToString("dd/MM/yyyy")
+                                        </span>
+                                        @if (isExpired)
+                                        {
+                                            <div class="badge bg-danger-subtle text-danger" style="font-size: 0.7rem;">Hết hạn</div>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted small">Vĩnh viễn</span>
+                                    }
+                                </td>
+                                <td class="text-center">
+                                    <div class="form-check form-switch d-inline-block">
+                                        <input class="form-check-input cursor-pointer" type="checkbox" role="switch"
+                                               id="switch-@id" @(isAct ? "checked" : "")
+                                               onchange="toggleTrangThaiTrungTamApi(@id, this)">
+                                    </div>
+                                    <div id="status-label-@id" class="small @(isAct ? "text-success" : "text-muted")">
+                                        @(isAct ? "Hoạt động" : "Vô hiệu")
+                                    </div>
+                                </td>
+                                <td class="text-end">
+                                    <div class="btn-group btn-group-sm">
+                                        <a asp-action="ChiTietTrungTam" asp-route-id="@id" class="btn btn-outline-info" title="Xem chi tiết & lớp học">
+                                            <i class="fa-regular fa-eye"></i>
+                                        </a>
+                                        <button type="button" class="btn btn-outline-warning" title="Chỉnh sửa" onclick="moModalCapNhatTrungTam(@id)">
+                                            <i class="fa-regular fa-pen-to-square"></i>
+                                        </button>
+                                        <button type="button" class="btn btn-outline-danger" title="Xóa" onclick="xoaTrungTamApi(@id, '@ten')">
+                                            <i class="fa-regular fa-trash-can"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="8" class="text-center py-5 text-muted">
+                                <i class="fa-regular fa-folder-open fa-2x mb-2 d-block"></i>
+                                Không tìm thấy trung tâm nào phù hợp.
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Phân trang -->
+        @if (totalPages > 1)
+        {
+            <div class="card-footer bg-white d-flex justify-content-between align-items-center py-3 border-top">
+                <span class="small text-muted">Trang <strong>@currentPage</strong> / <strong>@totalPages</strong></span>
+                <nav>
+                    <ul class="pagination pagination-sm mb-0">
+                        <li class="page-item @(currentPage <= 1 ? "disabled" : "")">
+                            <a class="page-link" asp-action="DanhSachTrungTam" asp-route-page="@(currentPage - 1)" asp-route-search="@search" asp-route-trangThai="@trangThai">Trước</a>
+                        </li>
+                        @for (int p = 1; p <= totalPages; p++)
+                        {
+                            <li class="page-item @(p == currentPage ? "active" : "")">
+                                <a class="page-link" asp-action="DanhSachTrungTam" asp-route-page="@p" asp-route-search="@search" asp-route-trangThai="@trangThai">@p</a>
+                            </li>
+                        }
+                        <li class="page-item @(currentPage >= totalPages ? "disabled" : "")">
+                            <a class="page-link" asp-action="DanhSachTrungTam" asp-route-page="@(currentPage + 1)" asp-route-search="@search" asp-route-trangThai="@trangThai">Sau</a>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- ========================================== -->
+<!-- MODAL THÊM / CẬP NHẬT TRUNG TÂM -->
+<!-- ========================================== -->
+<div class="modal fade" id="modalTrungTam" tabindex="-1" aria-labelledby="modalTrungTamTitle" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-light">
+                <h5 class="modal-title fw-bold" id="modalTrungTamTitle">Thêm mới Trung tâm</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="formTrungTam" onsubmit="luuThongTinTrungTam(event)">
+                <div class="modal-body p-4">
+                    <input type="hidden" id="modalIdTrungTam" name="IdTrungTam" value="0" />
+
+                    <div class="row g-3">
+                        <div class="col-md-8">
+                            <label class="form-label fw-semibold small">Tên trung tâm <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="txtTenTrungTam" name="TenTrungTam" required placeholder="Nhập tên trung tâm...">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold small">Mã trung tâm (dùng làm tài khoản đăng nhập) <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control font-monospace" id="txtMaTrungTam" name="MaTrungTam" required placeholder="VD: KimHoa001">
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold small">Subdomain</label>
+                            <div class="input-group">
+                                <input type="text" class="form-control font-monospace" id="txtSubdomain" name="Subdomain" placeholder="kimhoa">
+                                <span class="input-group-text small text-muted">.hoctiengtrung.vn</span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold small">Số điện thoại</label>
+                            <input type="tel" class="form-control" id="txtSoDienThoai" name="SoDienThoai" placeholder="VD: 0987654321">
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold small">Email liên hệ</label>
+                            <input type="email" class="form-control" id="txtEmail" name="Email" placeholder="contact@trungtam.com">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold small">Ngày hết hạn dịch vụ</label>
+                            <input type="date" class="form-control" id="txtNgayHetHan" name="NgayHetHan">
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label fw-semibold small">Địa chỉ trụ sở</label>
+                            <input type="text" class="form-control" id="txtDiaChi" name="DiaChi" placeholder="Số nhà, đường, quận/huyện, tỉnh/thành...">
+                        </div>
+
+                        <div class="col-md-8">
+                            <label class="form-label fw-semibold small">Logo đại diện (Chỉ nhận .jpg, .jpeg, .png, .webp)</label>
+                            <input type="file" class="form-control" id="fileLogo" name="fileLogo" accept=".jpg,.jpeg,.png,.webp" onchange="previewImageTrungTam(this)">
+                        </div>
+                        <div class="col-md-4 text-center">
+                            <label class="form-label fw-semibold small d-block">Xem trước Logo</label>
+                            <img id="imgPreview" src="" alt="Logo Preview" class="rounded border object-fit-cover d-none" width="64" height="64" />
+                            <div id="imgPlaceholder" class="rounded bg-light border d-inline-flex align-items-center justify-content-center text-muted" style="width: 64px; height: 64px;">
+                                <i class="fa-regular fa-image fa-lg"></i>
+                            </div>
+                        </div>
+
+                        <div class="col-12 mt-2">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" id="chkTrangThai" name="TrangThai" checked>
+                                <label class="form-check-label fw-semibold small" for="chkTrangThai">Kích hoạt hoạt động ngay sau khi lưu</label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                    <button type="submit" id="btnSubmitModal" class="btn btn-primary px-4">
+                        <i class="fa-solid fa-floppy-disk me-1"></i> Lưu thông tin
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ========================================== -->
+<!-- MODAL NHẬT KÝ HỆ THỐNG / LỊCH SỬ THAY ĐỔI -->
+<!-- ========================================== -->
+<div class="modal fade" id="detailModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-light">
+                <h5 class="modal-title fw-bold text-dark mb-0">
+                    <i class="fa-solid fa-clock-rotate-left text-primary me-2"></i>Nhật ký hệ thống & Lịch sử truy vết
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-0" id="modalBodyNhatKy">
+                @await Html.PartialAsync("_LichSuThayDoi")
+            </div>
+            <div class="modal-footer bg-light py-2">
+                <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Đóng</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <!-- 1. Script chuông thông báo & nhật ký dùng chung -->
+    <script src="~/js/ThongBao-NhatKy/thongbao-nhatky.js"></script>
+
+    <!-- 2. Script quản lý trung tâm (CRUD, Toggle, Preview logo) -->
+    <script src="~/js/TrungTam/quanly-trungtam.js"></script>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            // Kiểm tra phân quyền truy cập
+            const isAccessDenied = "@(TempData["AccessDenied"]?.ToString() ?? "")" === "true";
+            const errorMessage = "@Html.Raw(TempData["ErrorMessage"]?.ToString() ?? "Bạn không có quyền truy cập chức năng này!")";
+
+            if (isAccessDenied) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Truy cập bị từ chối!',
+                    text: errorMessage,
+                    timer: 2500,
+                    timerProgressBar: true,
+                    confirmButtonText: 'Quay lại Trang chủ',
+                    confirmButtonColor: '#d33',
+                    allowOutsideClick: false
+                }).then(() => {
+                    window.location.href = "/";
+                });
+                return;
+            }
+
+            // Gọi hàm cập nhật chuông thông báo từ thongbao-nhatky.js (Admin tổng xem toàn bộ: id = 0)
+            capNhatBadgeSoLuongThongBao(0);
+        });
+    </script>
+}

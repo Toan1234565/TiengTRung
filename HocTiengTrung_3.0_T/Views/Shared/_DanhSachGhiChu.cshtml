@@ -1,0 +1,689 @@
+﻿<!-- Views/Shared/_FloatingNote.cshtml -->
+<style>
+    /* ========================================================= */
+    /* CSS FLOATING NOTE WIDGET (KIỂU WORD & PHÓNG TO)           */
+    /* ========================================================= */
+    .note-floating-btn {
+        position: fixed;
+        bottom: 25px;
+        right: 25px;
+        width: 60px;
+        height: 60px;
+        background: linear-gradient(135deg, #0984e3, #00cec9);
+        color: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        box-shadow: 0 8px 24px rgba(9, 132, 227, 0.35);
+        cursor: pointer;
+        z-index: 1050;
+        transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+        .note-floating-btn:hover {
+            transform: scale(1.1) rotate(-5deg);
+            box-shadow: 0 12px 28px rgba(9, 132, 227, 0.45);
+            color: white;
+        }
+
+    .note-chat-box {
+        position: fixed;
+        bottom: 95px;
+        right: 25px;
+        width: 460px;
+        max-width: calc(100vw - 40px);
+        height: 580px;
+        background: white;
+        border-radius: 16px;
+        box-shadow: 0 15px 35px rgba(0, 0, 0, 0.18);
+        z-index: 1050;
+        display: none;
+        flex-direction: column;
+        overflow: hidden;
+        border: 1px solid rgba(0, 0, 0, 0.08);
+        transition: all 0.3s ease;
+        animation: notePopIn 0.3s ease-out forwards;
+    }
+
+        /* Style Chế độ Phóng to màn hình */
+        .note-chat-box.expanded {
+            top: 20px;
+            bottom: 20px;
+            left: 20px;
+            right: 20px;
+            width: auto;
+            height: auto;
+            max-width: none;
+            border-radius: 16px;
+        }
+
+    @@keyframes notePopIn {
+        from {
+            opacity: 0;
+            transform: translateY(20px) scale(0.95);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+        }
+    }
+
+    .note-header {
+        background: linear-gradient(135deg, #0984e3, #00cec9);
+        color: white;
+        padding: 12px 18px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .note-header-actions button {
+        background: transparent;
+        border: none;
+        color: white;
+        font-size: 1.1rem;
+        padding: 4px 8px;
+        cursor: pointer;
+        opacity: 0.85;
+        transition: opacity 0.2s;
+    }
+
+        .note-header-actions button:hover {
+            opacity: 1;
+        }
+
+    .note-body {
+        flex: 1;
+        padding: 12px;
+        overflow-y: auto;
+        background: #f8f9fa;
+        display: flex;
+        flex-direction: column;
+    }
+
+        /* Custom Scrollbar */
+        .note-body::-webkit-scrollbar, .word-editor::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .note-body::-webkit-scrollbar-track, .word-editor::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+
+        .note-body::-webkit-scrollbar-thumb, .word-editor::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 4px;
+        }
+
+            .note-body::-webkit-scrollbar-thumb:hover, .word-editor::-webkit-scrollbar-thumb:hover {
+                background: #a8a8a8;
+            }
+
+    .note-badge {
+        position: absolute;
+        top: -2px;
+        right: -2px;
+        background: #ff7675;
+        color: white;
+        font-size: 0.75rem;
+        width: 22px;
+        height: 22px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 2px solid white;
+        font-weight: bold;
+    }
+
+    /* WORD TOOLBAR STYLES */
+    .word-toolbar {
+        background: #f1f3f5;
+        border: 1px solid #dee2e6;
+        border-bottom: none;
+        border-radius: 8px 8px 0 0;
+        padding: 6px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+        align-items: center;
+    }
+
+        .word-toolbar button, .word-toolbar select, .word-toolbar input[type="color"] {
+            background: white;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            padding: 4px 8px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            color: #495057;
+            transition: all 0.15s ease-in-out;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+            .word-toolbar button:hover, .word-toolbar select:hover {
+                background: #e9ecef;
+                color: #0984e3;
+            }
+
+        .word-toolbar input[type="color"] {
+            padding: 1px 2px;
+            width: 30px;
+        }
+
+    .toolbar-divider {
+        width: 1px;
+        height: 20px;
+        background: #ced4da;
+        margin: 0 3px;
+    }
+
+    /* WORD EDITOR CONTENT AREA */
+    .word-editor-container {
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+        height: 100%;
+    }
+
+    .word-editor {
+        flex: 1;
+        background: white;
+        border: 1px solid #dee2e6;
+        border-radius: 0 0 8px 8px;
+        padding: 15px;
+        min-height: 250px;
+        overflow-y: auto;
+        outline: none;
+        font-family: 'Arial', sans-serif;
+        font-size: 14px;
+        line-height: 1.6;
+        box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);
+    }
+
+        .word-editor:focus {
+            border-color: #74b9ff;
+        }
+
+        /* Định dạng thêm cho nội dung bên trong editor */
+        .word-editor ul, .word-editor ol {
+            padding-left: 20px;
+            margin-bottom: 10px;
+        }
+
+        .word-editor p {
+            margin-bottom: 10px;
+        }
+
+        .word-editor a {
+            color: #0984e3;
+            text-decoration: underline;
+            cursor: pointer;
+        }
+
+    /* Note Card List */
+    .note-card {
+        background: white;
+        border-radius: 10px;
+        padding: 12px 15px;
+        margin-bottom: 10px;
+        border: 1px solid #e9ecef;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.03);
+        transition: transform 0.2s, box-shadow 0.2s;
+        cursor: pointer;
+    }
+
+        .note-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 12px rgba(0,0,0,0.08);
+            border-color: #74b9ff;
+        }
+
+    .note-card-title {
+        font-weight: 600;
+        color: #2d3436;
+        margin-bottom: 4px;
+        font-size: 0.95rem;
+    }
+
+    .note-card-snippet {
+        color: #636e72;
+        font-size: 0.85rem;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+
+    .note-card-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 8px;
+        font-size: 0.75rem;
+        color: #b2bec3;
+    }
+</style>
+
+<!-- Floating Action Button -->
+<div class="note-floating-btn" id="btnOpenNote" title="Ghi chú nhanh">
+    <i class="fa-solid fa-note-sticky"></i>
+    <span class="note-badge" id="noteCountBadge" style="display: none;">0</span>
+</div>
+
+<!-- Main Chat / Editor Box -->
+<div class="note-chat-box" id="noteChatBox">
+    <div class="note-header">
+        <div class="d-flex align-items-center gap-2">
+            <i class="fa-solid fa-file-word fs-5"></i>
+            <h6 class="mb-0 fw-bold" id="noteWidgetHeaderTitle">Ghi Chú Cá Nhân</h6>
+        </div>
+        <div class="note-header-actions d-flex align-items-center gap-1">
+            <button type="button" id="btnExpandNote" title="Phóng to / Thu nhỏ">
+                <i class="fa-solid fa-expand" id="expandIcon"></i>
+            </button>
+            <button type="button" id="btnCloseNote" title="Đóng">
+                <i class="fa-solid fa-xmark"></i>
+            </button>
+        </div>
+    </div>
+
+    <div class="note-body" id="noteListContainer">
+        <!-- Render động bằng JS -->
+    </div>
+</div>
+
+<script>
+    (function() {
+        const API_BASE_URL = '/api/quanlythumucghichu';
+        let notes = [];
+        let currentNoteId = null;
+
+        // Biến phục vụ phân trang
+        let currentPage = 1;
+        let pageSize = 10; // Có thể tùy chỉnh số lượng hiển thị mỗi trang tại đây
+        let totalPages = 1;
+        let totalItems = 0;
+
+        // Định dạng ngày giờ
+        function formatDate(dateString) {
+            if (!dateString) return '';
+            const date = new Date(dateString);
+            return date.toLocaleString('vi-VN', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric' });
+        }
+
+        // Cập nhật Badge số lượng tổng
+        function updateBadge() {
+            const badge = document.getElementById('noteCountBadge');
+            if (!badge) return;
+            if (totalItems > 0) {
+                badge.innerText = totalItems;
+                badge.style.display = 'flex';
+            } else {
+                badge.style.display = 'none';
+            }
+        }
+
+        // --- GỌI API ---
+        async function fetchNotes(page = 1) {
+            try {
+                const response = await fetch(`${API_BASE_URL}/danh-sach?page=${page}&pageSize=${pageSize}`);
+                if (response.ok) {
+                    const data = await response.json();
+                    notes = data.danhSach || [];
+                    currentPage = data.page;
+                    pageSize = data.pageSize;
+                    totalPages = data.totalPages;
+                    totalItems = data.totalItems;
+                    updateBadge();
+                } else if (response.status === 401) {
+                    console.warn("Người dùng chưa đăng nhập.");
+                }
+            } catch (error) {
+                console.error("Lỗi khi tải danh sách:", error);
+            }
+        }
+
+        // --- RENDER GIAO DIỆN ---
+        window.renderNoteListUI = async function(targetPage = 1) {
+            currentNoteId = null;
+            const container = document.getElementById('noteListContainer');
+            document.getElementById('noteWidgetHeaderTitle').innerText = "Danh Sách Ghi Chú";
+
+            container.innerHTML = `<div class="text-center my-auto py-5 text-muted"><i class="fa-solid fa-spinner fa-spin fs-2"></i><div class="mt-2">Đang tải dữ liệu...</div></div>`;
+
+            await fetchNotes(targetPage);
+
+            let html = `
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <span class="text-muted small">Tổng số: <strong>${totalItems}</strong> ghi chú</span>
+                        <button class="btn btn-sm btn-primary rounded-pill px-3 shadow-sm" id="btnCreateNewNote">
+                            <i class="fa-solid fa-plus me-1"></i> Tạo ghi chú mới
+                        </button>
+                    </div>
+                `;
+
+            if (notes.length === 0) {
+                html += `
+                        <div class="text-center text-muted my-auto py-5">
+                            <i class="fa-regular fa-folder-open fs-1 mb-2 d-block opacity-50"></i>
+                            <span>Chưa có ghi chú nào. Hãy tạo mới!</span>
+                        </div>`;
+            } else {
+                html += `<div class="note-cards-wrapper flex-grow-1">`;
+                notes.forEach(note => {
+                    const sizeKB = (note.kichThuocFile / 1024).toFixed(1);
+                    html += `
+                                <div class="note-card" onclick="openNoteEditor(${note.idGhiChu})">
+                                    <div class="note-card-title">${escapeHtml(note.tieuDe || 'Ghi chú không tên')}</div>
+                                    <div class="note-card-snippet"><i class="fa-solid fa-file-word me-1 text-primary"></i> ${note.tenFile} (${sizeKB} KB)</div>
+                                    <div class="note-card-footer">
+                                        <span><i class="fa-regular fa-clock me-1"></i>${formatDate(note.ngayCapNhat)}</span>
+                                        <button class="btn btn-link text-danger p-0 ms-auto" style="font-size: 0.85rem;"
+                                                onclick="event.stopPropagation(); deleteNote(${note.idGhiChu})" title="Xóa">
+                                            <i class="fa-solid fa-trash-can"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            `;
+                });
+                html += `</div>`;
+
+                // --- THANH PHÂN TRANG (PAGINATION) ---
+                if (totalPages > 1) {
+                    html += `
+                            <nav aria-label="Page navigation" class="mt-3 pt-2 border-top">
+                                <ul class="pagination pagination-sm justify-content-center mb-0">
+                                    <li class="page-item ${currentPage === 1 ? 'disabled' : ''}">
+                                        <button class="page-link" onclick="renderNoteListUI(${currentPage - 1})">Trước</button>
+                                    </li>
+                        `;
+
+                    for (let i = 1; i <= totalPages; i++) {
+                        html += `
+                                <li class="page-item ${currentPage === i ? 'active' : ''}">
+                                    <button class="page-link" onclick="renderNoteListUI(${i})">${i}</button>
+                                </li>
+                            `;
+                    }
+
+                    html += `
+                                    <li class="page-item ${currentPage === totalPages ? 'disabled' : ''}">
+                                        <button class="page-link" onclick="renderNoteListUI(${currentPage + 1})">Sau</button>
+                                    </li>
+                                </ul>
+                            </nav>
+                        `;
+                }
+            }
+
+            container.innerHTML = html;
+            document.getElementById('btnCreateNewNote')?.addEventListener('click', () => openNoteEditor(null));
+        }
+
+        // Render Trình soạn thảo Word
+        window.openNoteEditor = async function(id) {
+            currentNoteId = id;
+            const container = document.getElementById('noteListContainer');
+
+            let noteTieuDe = "";
+            let noteNoiDung = "";
+
+            if (id) {
+                document.getElementById('noteWidgetHeaderTitle').innerText = "Đang tải...";
+                container.innerHTML = `<div class="text-center my-auto py-5 text-muted"><i class="fa-solid fa-spinner fa-spin fs-2"></i><div class="mt-2">Đang tải nội dung từ Cloudinary...</div></div>`;
+
+                try {
+                    const response = await fetch(`${API_BASE_URL}/chi-tiet/${id}`);
+                    if (response.ok) {
+                        const data = await response.json();
+                        noteTieuDe = data.thongTin.tieuDe;
+                        noteNoiDung = data.noiDung;
+                    } else {
+                        alert("Không thể tải chi tiết ghi chú!");
+                        return renderNoteListUI(currentPage);
+                    }
+                } catch (error) {
+                    alert("Lỗi kết nối khi tải nội dung!");
+                    return renderNoteListUI(currentPage);
+                }
+            }
+
+            document.getElementById('noteWidgetHeaderTitle').innerText = id ? "Chỉnh Sửa Ghi Chú" : "Ghi Chú Mới (Word)";
+
+            container.innerHTML = `
+                        <div class="word-editor-container">
+                            <div class="mb-2 d-flex gap-2">
+                                <input type="text" id="noteTitleInput" class="form-control form-control-sm fw-bold border-0 shadow-sm"
+                                       placeholder="Nhập tiêu đề ghi chú..." value="${escapeHtml(noteTieuDe)}">
+                            </div>
+
+                            <!-- WORD TOOLBAR -->
+                            <div class="word-toolbar shadow-sm">
+                                <select onchange="execCmd('fontName', this.value)" title="Font chữ">
+                                    <option value="Arial">Arial</option>
+                                    <option value="Segoe UI">Segoe UI</option>
+                                    <option value="Times New Roman">Times New Roman</option>
+                                    <option value="Courier New">Courier New</option>
+                                </select>
+
+                                <select onchange="execCmd('fontSize', this.value)" title="Cỡ chữ">
+                                    <option value="1">10px</option>
+                                    <option value="2">12px</option>
+                                    <option value="3" selected>14px</option>
+                                    <option value="4">18px</option>
+                                    <option value="5">24px</option>
+                                    <option value="6">32px</option>
+                                </select>
+
+                                <div class="toolbar-divider"></div>
+
+                                <button type="button" onclick="execCmd('bold')" title="In đậm"><i class="fa-solid fa-bold"></i></button>
+                                <button type="button" onclick="execCmd('italic')" title="In nghiêng"><i class="fa-solid fa-italic"></i></button>
+                                <button type="button" onclick="execCmd('underline')" title="Gạch chân"><i class="fa-solid fa-underline"></i></button>
+                                <button type="button" onclick="execCmd('strikeThrough')" title="Gạch ngang"><i class="fa-solid fa-strikethrough"></i></button>
+
+                                <div class="toolbar-divider"></div>
+
+                                <input type="color" onchange="execCmd('foreColor', this.value)" title="Màu chữ">
+                                <input type="color" onchange="execCmd('hiliteColor', this.value)" value="#ffffff" title="Màu nền chữ">
+
+                                <div class="toolbar-divider"></div>
+
+                                <button type="button" onclick="execCmd('justifyLeft')" title="Căn trái"><i class="fa-solid fa-align-left"></i></button>
+                                <button type="button" onclick="execCmd('justifyCenter')" title="Căn giữa"><i class="fa-solid fa-align-center"></i></button>
+                                <button type="button" onclick="execCmd('justifyRight')" title="Căn phải"><i class="fa-solid fa-align-right"></i></button>
+
+                                <div class="toolbar-divider"></div>
+
+                                <button type="button" onclick="execCmd('insertUnorderedList')" title="Danh sách chấm"><i class="fa-solid fa-list-ul"></i></button>
+                                <button type="button" onclick="execCmd('insertOrderedList')" title="Danh sách số"><i class="fa-solid fa-list-ol"></i></button>
+
+                                <div class="toolbar-divider"></div>
+
+                                <button type="button" onclick="insertLink()" title="Chèn đường dẫn"><i class="fa-solid fa-link"></i></button>
+                                <button type="button" onclick="execCmd('removeFormat')" title="Xóa định dạng"><i class="fa-solid fa-eraser"></i></button>
+                            </div>
+
+                            <!-- EDITOR BODY -->
+                            <div class="word-editor" id="wordEditorContent" contenteditable="true" placeholder="Nhập nội dung ghi chú tại đây...">${noteNoiDung}</div>
+
+                            <!-- FOOTER ACTIONS -->
+                            <div class="d-flex justify-content-between align-items-center mt-3 pt-2 border-top">
+                                <button type="button" class="btn btn-sm btn-outline-secondary" id="btnBackToList">
+                                    <i class="fa-solid fa-arrow-left me-1"></i> Quay lại
+                                </button>
+                                <button type="button" class="btn btn-sm btn-success px-4" id="btnSaveNote">
+                                    <i class="fa-solid fa-floppy-disk me-1"></i> Lưu ghi chú
+                                </button>
+                            </div>
+                        </div>
+                    `;
+
+            document.getElementById('btnBackToList').addEventListener('click', () => renderNoteListUI(currentPage));
+            document.getElementById('btnSaveNote').addEventListener('click', saveCurrentNote);
+
+            if (!id) document.getElementById('wordEditorContent').focus();
+        };
+
+        window.execCmd = function(command, value = null) {
+            document.execCommand(command, false, value);
+            document.getElementById('wordEditorContent')?.focus();
+        };
+
+        window.insertLink = function() {
+            const url = prompt("Nhập URL liên kết (bao gồm http/https):", "https://");
+            if (url) execCmd("createLink", url);
+        };
+
+        // LƯU GHI CHÚ
+        async function saveCurrentNote() {
+            const titleInput = document.getElementById('noteTitleInput').value.trim();
+            const editorEl = document.getElementById('wordEditorContent');
+            const contentInput = editorEl.innerHTML.trim();
+
+            if (!titleInput) {
+                alert("Vui lòng nhập tiêu đề ghi chú!");
+                document.getElementById('noteTitleInput').focus();
+                return;
+            }
+
+            const pureText = editorEl.innerText.trim();
+            if (!pureText && !contentInput.includes('<img')) {
+                alert("Vui lòng nhập nội dung ghi chú!");
+                editorEl.focus();
+                return;
+            }
+
+            const btnSave = document.getElementById('btnSaveNote');
+            const originalBtnHtml = btnSave.innerHTML;
+
+            btnSave.disabled = true;
+            btnSave.innerHTML = `<i class="fa-solid fa-spinner fa-spin me-1"></i> Đang lưu...`;
+
+            const payload = {
+                TieuDe: titleInput,
+                NoiDung: contentInput
+            };
+
+            try {
+                let url = currentNoteId ? `${API_BASE_URL}/cap-nhat/${currentNoteId}` : `${API_BASE_URL}/them-moi`;
+                let method = currentNoteId ? 'PUT' : 'POST';
+
+                const response = await fetch(url, {
+                    method: method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const contentType = response.headers.get("content-type");
+                let result = {};
+                if (contentType && contentType.indexOf("application/json") !== -1) {
+                    result = await response.json();
+                }
+
+                if (response.ok) {
+                    renderNoteListUI(1); // Lưu xong quay về trang 1
+                } else {
+                    alert(result.message || "Đã xảy ra lỗi khi lưu ghi chú trên Server.");
+                }
+            } catch (error) {
+                console.error("Lỗi lưu:", error);
+                alert("Lỗi kết nối tới máy chủ.");
+            } finally {
+                btnSave.disabled = false;
+                btnSave.innerHTML = originalBtnHtml;
+            }
+        }
+
+        // XÓA GHI CHÚ
+        window.deleteNote = async function(id) {
+            if (confirm("Bạn có chắc chắn muốn xóa ghi chú này? Thao tác sẽ xóa luôn file lưu trữ vĩnh viễn.")) {
+                const container = document.getElementById('noteListContainer');
+                container.innerHTML = `<div class="text-center my-auto py-5 text-danger"><i class="fa-solid fa-spinner fa-spin fs-2"></i><div class="mt-2">Đang xóa ghi chú...</div></div>`;
+
+                try {
+                    const response = await fetch(`${API_BASE_URL}/xoa/${id}`, { method: 'DELETE' });
+
+                    if (response.ok) {
+                        // Nếu xóa hết bản ghi ở trang hiện tại và không phải trang 1, lùi về trang trước
+                        let targetPage = currentPage;
+                        if (notes.length === 1 && currentPage > 1) {
+                            targetPage--;
+                        }
+                        renderNoteListUI(targetPage);
+                    } else {
+                        const contentType = response.headers.get("content-type");
+                        let errorMessage = "Có lỗi khi xóa ghi chú.";
+                        if (contentType && contentType.indexOf("application/json") !== -1) {
+                            const result = await response.json();
+                            errorMessage = result.message || errorMessage;
+                        }
+                        alert(errorMessage);
+                        renderNoteListUI(currentPage);
+                    }
+                } catch (error) {
+                    alert("Lỗi kết nối tới máy chủ.");
+                    renderNoteListUI(currentPage);
+                }
+            }
+        };
+
+        function escapeHtml(str) {
+            if (!str) return "";
+            return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+        }
+
+        // --- KHỞI TẠO ---
+        function initQuickNotes() {
+            const btnOpen = document.getElementById('btnOpenNote');
+            const btnClose = document.getElementById('btnCloseNote');
+            const btnExpand = document.getElementById('btnExpandNote');
+            const chatBox = document.getElementById('noteChatBox');
+            const expandIcon = document.getElementById('expandIcon');
+
+            if (!btnOpen || !chatBox) return;
+
+            btnOpen.addEventListener('click', function() {
+                chatBox.style.display = 'flex';
+                btnOpen.style.display = 'none';
+                renderNoteListUI(1);
+            });
+
+            if (btnClose) {
+                btnClose.addEventListener('click', function() {
+                    chatBox.style.display = 'none';
+                    btnOpen.style.display = 'flex';
+                    fetchNotes(1);
+                });
+            }
+
+            if (btnExpand) {
+                btnExpand.addEventListener('click', function() {
+                    chatBox.classList.toggle('expanded');
+                    if (chatBox.classList.contains('expanded')) {
+                        expandIcon.classList.replace('fa-expand', 'fa-compress');
+                        btnExpand.setAttribute('title', 'Thu nhỏ');
+                    } else {
+                        expandIcon.classList.replace('fa-compress', 'fa-expand');
+                        btnExpand.setAttribute('title', 'Phóng to');
+                    }
+                });
+            }
+
+            fetchNotes(1);
+        }
+
+        if (document.readyState === "loading") {
+            document.addEventListener("DOMContentLoaded", initQuickNotes);
+        } else {
+            initQuickNotes();
+        }
+    })();
+</script>

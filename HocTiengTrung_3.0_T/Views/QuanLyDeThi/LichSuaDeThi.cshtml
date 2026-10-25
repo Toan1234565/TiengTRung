@@ -1,0 +1,128 @@
+﻿@model List<HocTiengTrung_3._0_T.Models12.QuanLyDeThi.KetQuaThiViewModel>
+
+@{
+    ViewData["Title"] = "Lịch sử luyện thi HSK";
+}
+
+<div class="container py-5">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold text-primary"><i class="bi bi-clock-history"></i> Lịch sử làm bài</h2>
+            <p class="text-muted">Xem lại quá trình nỗ lực và tiến bộ của bạn</p>
+        </div>
+        <a href="@Url.Action("DanhSachDeThi", "QuanLyDeThi")" class="btn btn-outline-primary rounded-pill">
+            <i class="bi bi-plus-circle"></i> Làm đề mới
+        </a>
+    </div>
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i> @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+    @if (Model == null || !Model.Any())
+    {
+        <div class="card border-0 shadow-sm text-center p-5">
+            <div class="card-body">
+                <img src="https://cdn-icons-png.flaticon.com/512/7486/7486744.png" alt="Empty" style="width: 120px; opacity: 0.5" class="mb-3">
+                <h4 class="text-muted">Bạn chưa thực hiện bài thi nào.</h4>
+                <p>Hãy bắt đầu luyện tập ngay để chinh phục HSK!</p>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="card border-0 shadow-sm overflow-hidden">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="bg-primary text-white">
+                        <tr>
+                            <th class="ps-4">Tên đề thi</th>
+                            <th class="text-center">Ngày làm</th>
+                            <th class="text-center">Số câu đúng</th>
+                            <th class="text-center">Điểm số</th>
+                            <th class="text-center">Thời gian</th>
+                            <th class="text-end pe-4">Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model)
+                        {
+                            <tr>
+                                <td class="ps-4">
+                                    <div class="fw-bold text-dark">@item.TenDe</div>
+                                    <small class="text-muted">ID Kết quả: #@item.IdKetQua</small>
+                                </td>
+                                <td class="text-center">
+                                    <div class="small">@item.ThoiGianHoanThanh?.ToString("dd/MM/yyyy")</div>
+                                    <div class="text-muted extra-small">@item.ThoiGianHoanThanh?.ToString("HH:mm")</div>
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge rounded-pill bg-success-subtle text-success border border-success px-3">
+                                        @item.SoCauDung / @item.TongSoCau
+                                    </span>
+                                </td>
+                                <td class="text-center">
+                                    <strong class="fs-5 @(item.DiemSo >= 180 ? "text-primary" : "text-danger")">
+                                        @item.DiemSo
+                                    </strong>
+                                    <small class="text-muted">/300</small>
+                                </td>
+                                <td class="text-center text-muted">
+                                    <i class="bi bi-stopwatch"></i> @item.ThoiGianHoanThanh?.ToString("mm:ss") phút
+                                </td>
+                                <td class="text-end pe-4">
+                                    <a href="@Url.Action("KetQuaBaiThi", "QuanLyDeThi", new { id = item.IdKetQua })"
+                                       class="btn btn-sm btn-primary rounded-pill px-3 shadow-sm">
+                                        <i class="bi bi-eye"></i> Chi tiết
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+</div>
+
+<style>
+    body {
+        background-color: #f8f9fa;
+    }
+
+    .table thead th {
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 0.85rem;
+        letter-spacing: 0.5px;
+        padding-top: 15px;
+        padding-bottom: 15px;
+    }
+
+    .table tbody tr {
+        transition: all 0.2s;
+    }
+
+        .table tbody tr:hover {
+            background-color: #f1f4f9;
+            cursor: pointer;
+        }
+
+    .bg-success-subtle {
+        background-color: #e6f4ea !important;
+    }
+
+    .extra-small {
+        font-size: 0.75rem;
+    }
+
+    .card {
+        border-radius: 15px;
+    }
+
+    .badge {
+        font-weight: 500;
+    }
+</style>

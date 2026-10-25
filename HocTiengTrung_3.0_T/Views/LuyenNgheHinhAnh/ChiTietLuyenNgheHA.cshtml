@@ -1,0 +1,815 @@
+﻿
+
+@model dynamic
+@{
+    ViewData["Title"] = $"Luyện nghe HSK 3.0 - Cấp độ {ViewBag.IdCapDo}";
+    int currentPage = ViewBag.CurrentPage ?? 1;
+    int totalPages = ViewBag.TotalPages ?? 0;
+    int totalItems = ViewBag.TotalItems ?? 0;
+    int idCapDo = ViewBag.IdCapDo ?? 1;
+   
+    int baiHocFilter = ViewBag.BaiHoc ?? 0;
+    bool? daThuocFilter = ViewBag.DaThuocFilter as bool?;
+}
+@{
+    // Khai báo danh sách tên 21 cấp độ
+    string[] tenCapDoList = new string[]
+    {
+        // 6 cái đầu: HSK 1 -> 6 (Lvl 1 - 6)
+        "HSK 1", "HSK 2", "HSK 3", "HSK 4", "HSK 5", "HSK 6",
+
+        // 9 cái tiếp theo: HSK 3.0 Cấp 1 -> 9 (Lvl 7 - 15)
+        "HSK 3.0 - Cấp 1", "HSK 3.0 - Cấp 2", "HSK 3.0 - Cấp 3",
+        "HSK 3.0 - Cấp 4", "HSK 3.0 - Cấp 5", "HSK 3.0 - Cấp 6",
+        "HSK 3.0 - Cấp 7", "HSK 3.0 - Cấp 8", "HSK 3.0 - Cấp 9",
+
+        // 6 cái tiếp theo: Giáo trình Sơ - Trung - Cao cấp (Lvl 16 - 21)
+        "Sơ cấp 1", "Sơ cấp 2",
+        "Trung cấp 1", "Trung cấp 2",
+        "Cao cấp 1", "Cao cấp 2"
+    };
+}
+
+<!-- CSS Tùy Chỉnh -->
+<style>
+    .custom-card {
+        border-radius: 16px;
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .card-hover:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 .5rem 1rem rgba(0,0,0,.15) !important;
+    }
+
+    .img-container {
+        height: 180px;
+        overflow: hidden;
+        border-top-left-radius: 16px;
+        border-top-right-radius: 16px;
+        cursor: zoom-in;
+    }
+
+    .img-container img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.3s ease;
+    }
+
+    .img-container:hover img {
+        transform: scale(1.05);
+    }
+
+    .audio-btn {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 10;
+        background-color: rgba(255, 255, 255, 0.9);
+        transition: background-color 0.2s;
+    }
+
+    .audio-btn:hover {
+        background-color: #fff;
+    }
+
+    .divider-line {
+        height: 4px;
+        width: 100%;
+        background-color: #f16d7a;
+    }
+
+    .btn-action {
+        background-color: #f16d7a;
+        color: white;
+        border: none;
+        padding: 8px 24px;
+        transition: background-color 0.2s;
+    }
+
+    .btn-action:hover {
+        background-color: #e05563;
+        color: white;
+    }
+
+    .btn-close-custom {
+        position: absolute;
+        top: -15px;
+        right: -15px;
+        width: 40px;
+        height: 40px;
+        background-color: #f16d7a;
+        color: white;
+        border: none;
+        border-radius: 50%;
+        z-index: 1055;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+        transition: background-color 0.2s;
+    }
+
+    .btn-close-custom:hover {
+        background-color: #d9534f;
+    }
+</style>
+
+<div class="container-fluid py-4" style="background-color: #f4f6f9; min-height: 100vh;">
+    <!-- Header & Bộ lọc -->
+    <div class="card shadow-sm mb-4 border-0 rounded-4">
+        <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+                <h3 class="card-title text-danger m-0 fw-bold">
+                    <i class="fas fa-headphones-alt me-2"></i>Luyện Nghe HSK 3.0
+                </h3>
+
+                <div class="d-flex align-items-center gap-2 flex-wrap">
+                    @if (idCapDo > 0 && idCapDo <= tenCapDoList.Length)
+                    {
+                        <span class="badge bg-primary fs-6 rounded-pill px-3">
+                            <i class="fas fa-layer-group me-1"></i> Trình độ: @tenCapDoList[idCapDo - 1]
+                        </span>
+                    }
+
+                    @if (baiHocFilter > 0)
+                    {
+                        <span class="badge bg-info text-dark fs-6 rounded-pill px-3">
+                            <i class="fas fa-book-open me-1"></i> Bài: @baiHocFilter
+                        </span>
+                    }
+
+                    <span class="badge bg-danger fs-6 rounded-pill px-3">
+                        <i class="fas fa-list-ol me-1"></i> Tổng số: @totalItems bài
+                    </span>
+                </div>
+            </div>
+
+            <!-- Form Filter -->
+            <form id="filterForm" method="get" asp-action="ChiTietLuyenNgheHA" class="row g-3 align-items-end">
+                <!-- Cấp độ -->
+               
+                <div class="col-md-3">
+                    <label class="form-label fw-bold text-muted">Cấp độ</label>
+                    <select name="capdo" id="selectCapDo" class="form-select rounded-pill" onchange="onCapDoChange()">
+                        @for (int i = 0; i < tenCapDoList.Length; i++)
+                        {
+                            int lvl = i + 1;
+                            <option value="@lvl" selected="@(idCapDo == lvl)">
+                                @tenCapDoList[i]
+                            </option>
+                        }
+                    </select>
+                </div>
+                <!-- Bài học -->
+                <div class="col-md-3">
+                    <label class="form-label fw-bold text-muted">Bài học</label>
+                    <select name="baiHoc"
+                            id="selectBaiHoc"
+                            class="form-select rounded-pill"
+                            onchange="document.getElementById('filterForm').submit()">
+                        <option value="0" selected="@(baiHocFilter == 0)">-- Tất cả bài học --</option>
+                        @if (ViewBag.DanhSachSoBai != null)
+                        {
+                            foreach (int sb in (List<int>)ViewBag.DanhSachSoBai)
+                            {
+                                <option value="@sb" selected="@(baiHocFilter == sb)">
+                                    Bài @sb
+                                </option>
+                            }
+                        }
+                    </select>
+                </div>
+
+                <!-- Trạng thái -->
+                <div class="col-md-3">
+                    <label class="form-label fw-bold text-muted">Trạng thái</label>
+                    <select name="daThuoc" class="form-select rounded-pill" onchange="document.getElementById('filterForm').submit()">
+                        <option value="">-- Tất cả --</option>
+                        <option value="true" selected="@(daThuocFilter == true)">Đã thuộc</option>
+                        <option value="false" selected="@(daThuocFilter == false)">Chưa thuộc</option>
+                    </select>
+                </div>
+
+                <!-- Tốc độ phát -->
+                <div class="col-md-3">
+                    <label class="form-label fw-bold text-muted">
+                        <i class="fas fa-tachometer-alt me-1 text-danger"></i>Tốc độ phát
+                    </label>
+                    <select id="globalAudioSpeed" class="form-select rounded-pill" onchange="changeGlobalSpeed(this.value)">
+                        <option value="0.5">0.5x (Rất chậm)</option>
+                        <option value="0.75">0.75x (Chậm)</option>
+                        <option value="1.0" selected>1.0x (Chuẩn)</option>
+                        <option value="1.25">1.25x (Nhanh)</option>
+                        <option value="1.5">1.5x (Rất nhanh)</option>
+                        <option value="2.0">2.0x (Nhanh x2)</option>
+                    </select>
+                </div>
+
+                <!-- Nút thao tác -->
+                <div class="col-md-12 d-flex gap-2 mt-3">
+                    <a href="@Url.Action("ChiTietLuyenNgheHA")" class="btn btn-light rounded-pill px-4 border">
+                        <i class="fas fa-redo me-1"></i> Xóa bộ lọc
+                    </a>
+
+                    @if (Context.Session.GetString("MaNguoiDung") == "3" || Context.Session.GetString("MaNguoiDung") == "5470")
+                    {
+                        int currentIdLuyenNghe = ViewBag.IdLuyenNghe ?? 0;
+                        if (currentIdLuyenNghe == 0 && Model != null && Model.data != null)
+                        {
+                            var firstItem = ((IEnumerable<dynamic>)Model.data).FirstOrDefault();
+                            if (firstItem != null && firstItem.idLuyenNghe != null)
+                            {
+                                currentIdLuyenNghe = Convert.ToInt32(firstItem.idLuyenNghe);
+                            }
+                        }
+
+                        if (currentIdLuyenNghe > 0)
+                        {
+                            <button type="button"
+                                    class="btn btn-danger rounded-pill px-3"
+                                    onclick="deleteAllByLuyenNghe(@currentIdLuyenNghe)">
+                                <i class="fas fa-trash-alt me-1"></i> Xóa tất cả chi tiết
+                            </button>
+                        }
+                    }
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Danh sách thẻ bài nghe -->
+    <div class="row g-4" id="listeningList">
+        @if (Model != null && Model.data != null && ((IEnumerable<dynamic>)Model.data).Any())
+        {
+            foreach (var item in Model.data)
+            {
+                bool isLearned = item.daThuoc ?? false;
+                <div class="col-12 col-md-6 col-lg-3" id="card-item-@item.idChiTiet">
+                    <div class="card h-100 shadow-sm border-0 custom-card card-hover position-relative">
+
+                        <!-- Vùng Hình ảnh: Bấm vào ảnh sẽ mở Modal học chi tiết toàn khối -->
+                        <div class="position-relative img-container"
+                             onclick="openStudyModal('@item.hinhAnh', '@item.fileAudio', `@item.chieuHanText`, `@item.phienAmPinyin`, `@item.nghiaTiengViet`, @item.idChiTiet)">
+                            <img src="@item.hinhAnh"
+                                 class="card-img-top"
+                                 alt="Hình ảnh luyện nghe"
+                                 title="Nhấp để phóng to toàn khối học tập" />
+
+                            <!-- Thẻ Audio Ẩn -->
+                            <audio id="audio-@item.idChiTiet" src="@item.fileAudio" crossorigin="anonymous"></audio>
+
+                            <button type="button" class="btn btn-light audio-btn rounded-circle shadow" onclick="event.stopPropagation(); playAudio('audio-@item.idChiTiet')">
+                                <i class="fas fa-volume-up text-danger"></i>
+                            </button>
+                        </div>
+
+                        <div class="divider-line"></div>
+
+                        <!-- Card Body: Hiển thị nhanh bên ngoài -->
+                        <div class="card-body d-flex flex-column align-items-center justify-content-center p-4">
+
+                            <!-- Nút hiển thị thông tin -->
+                            <button class="btn btn-action rounded-pill fw-bold shadow-sm mb-2"
+                                    type="button"
+                                    data-bs-toggle="collapse"
+                                    data-bs-target="#info-@item.idChiTiet"
+                                    aria-expanded="false">
+                                Hiển thị thông tin
+                            </button>
+
+                            <!-- Thông tin hiển thị -->
+                            <div class="collapse w-100 mt-3 text-center" id="info-@item.idChiTiet">
+                                <h4 class="text-danger mb-1" style="font-family: 'KaiTi', '楷体', serif; font-weight: bold;">@item.chieuHanText</h4>
+                                <p class="text-muted fs-6 mb-2" style="font-style: italic;">@item.phienAmPinyin</p>
+                                <hr style="border-top: 1px dashed #ccc; margin: 10px 0;">
+                                <p class="fs-6 text-dark mb-3">@item.nghiaTiengViet</p>
+
+                                <!-- Nút đánh dấu đã thuộc -->
+                                <div class="border-top pt-3 mt-2">
+                                    <button type="button"
+                                            id="btn-learned-@item.idChiTiet"
+                                            class="btn btn-sm w-100 rounded-pill mb-2 @(isLearned ? "btn-success" : "btn-outline-secondary")"
+                                            onclick="toggleDaThuoc(@item.idChiTiet, this)">
+                                        <i class="fas @(isLearned ? "fa-check-circle" : "fa-circle") me-1"></i>
+                                        <span class="btn-text">@(isLearned ? "Đã thuộc" : "Đánh dấu đã thuộc")</span>
+                                    </button>
+                                    @if (Context.Session.GetString("MaNguoiDung") == "3")
+                                    {
+                                        <div class="d-flex gap-2">
+                                            <button type="button"
+                                                    class="btn btn-sm btn-outline-warning w-50 rounded-pill"
+                                                    onclick="openEditModal(@item.idChiTiet, @(item.idLuyenNghe ?? 0), `@item.chieuHanText`, `@item.phienAmPinyin`, `@item.nghiaTiengViet`, `@item.fileAudio`, `@item.hinhAnh`)">
+                                                <i class="fas fa-edit me-1"></i>Sửa
+                                            </button>
+
+                                            <button type="button"
+                                                    class="btn btn-sm btn-outline-danger w-50 rounded-pill"
+                                                    onclick="deleteChiTiet(@item.idChiTiet)">
+                                                <i class="fas fa-trash me-1"></i>Xóa
+                                            </button>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+        else
+        {
+            <div class="col-12 text-center py-5">
+                <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                <p class="text-muted fs-5">Không tìm thấy dữ liệu.</p>
+            </div>
+        }
+    </div>
+
+    <!-- Phân trang -->
+    @if (totalPages > 1)
+    {
+        <nav class="mt-5">
+            <ul class="pagination justify-content-center">
+                <li class="page-item @(currentPage == 1 ? "disabled" : "")">
+                    <a class="page-link rounded-start-pill" href="@Url.Action("ChiTietLuyenNgheHA", new { capdo = idCapDo, page = currentPage - 1, baiHoc = baiHocFilter, daThuoc = daThuocFilter })">
+                        <i class="fas fa-chevron-left"></i>
+                    </a>
+                </li>
+                @for (int i = 1; i <= totalPages; i++)
+                {
+                    <li class="page-item @(i == currentPage ? "active" : "")">
+                        <a class="page-link" href="@Url.Action("ChiTietLuyenNgheHA", new { capdo = idCapDo, page = i, baiHoc = baiHocFilter, daThuoc = daThuocFilter })">@i</a>
+                    </li>
+                }
+                <li class="page-item @(currentPage == totalPages ? "disabled" : "")">
+                    <a class="page-link rounded-end-pill" href="@Url.Action("ChiTietLuyenNgheHA", new { capdo = idCapDo, page = currentPage + 1, baiHoc = baiHocFilter, daThuoc = daThuocFilter })">
+                        <i class="fas fa-chevron-right"></i>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    }
+</div>
+
+<!-- 1. MODAL XEM CHI TIẾT BÀI HỌC -->
+<div class="modal fade" id="studyModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0 position-relative" style="border-radius: 20px;">
+            <button type="button" class="btn-close-custom shadow" data-bs-dismiss="modal">
+                <i class="fas fa-times"></i>
+            </button>
+            <div class="modal-body p-4 p-md-5 text-center">
+                <div class="position-relative d-inline-block mb-4 w-100">
+                    <img id="modalImg" src="" class="img-fluid w-100 shadow-sm" style="border-radius: 12px; border: 6px double #f3e5d8;" alt="Ảnh bài học">
+                    
+                    <div class="position-absolute d-flex align-items-center gap-2" style="top: 15px; right: 15px; z-index: 10;">
+                        <select id="modalAudioSpeed" class="form-select form-select-sm rounded-pill shadow-sm" style="width: auto; background-color: rgba(255,255,255,0.95);" onchange="changeModalSpeed(this.value)">
+                            <option value="0.5">0.5x</option>
+                            <option value="0.75">0.75x</option>
+                            <option value="1.0" selected>1.0x</option>
+                            <option value="1.25">1.25x</option>
+                            <option value="1.5">1.5x</option>
+                            <option value="2.0">2.0x</option>
+                        </select>
+                        <button type="button" class="btn btn-light rounded-circle shadow"
+                                style="width: 45px; height: 45px;"
+                                onclick="playModalAudio()">
+                            <i class="fas fa-volume-up text-danger fs-5"></i>
+                        </button>
+                    </div>
+
+                    <audio id="modalAudioPlayer" src="" crossorigin="anonymous"></audio>
+                </div>
+                <div id="modalBtnContainer">
+                    <button class="btn btn-action rounded-pill fw-bold fs-5 px-5 py-2 shadow-sm" onclick="revealModalInfo()">
+                        Hiển thị thông tin
+                    </button>
+                </div>
+                <div id="modalInfoContainer" class="d-none">
+                    <h1 id="modalHanziText" class="text-danger mb-2" style="font-family: 'KaiTi', '楷体', serif; font-weight: bold; letter-spacing: 2px;"></h1>
+                    <h4 id="modalPinyinText" class="text-secondary mb-3" style="font-style: italic;"></h4>
+                    <hr style="border-top: 2px dashed #e0e0e0; margin: 20px auto; width: 85%;">
+                    <h5 id="modalVietText" class="text-dark fw-medium mb-0"></h5>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 2. MODAL SỬA CHI TIẾT BÀI LUYỆN NGHE -->
+<div class="modal fade" id="editDetailModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-4 border-0 shadow">
+            <div class="modal-header bg-danger text-white rounded-top-4">
+                <h5 class="modal-title fw-bold"><i class="fas fa-edit me-2"></i>Chỉnh Sửa Chi Tiết</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4">
+                <form id="formEditDetail">
+                    <input type="hidden" id="editIdChiTiet" />
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">ID Bài Luyện Nghe (IdLuyenNghe)</label>
+                        <input type="number" class="form-control rounded-pill" id="editIdLuyenNghe" required />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Chữ Hán (ChieuHanText)</label>
+                        <input type="text" class="form-control rounded-pill" id="editChieuHanText" placeholder="Ví dụ: 你好" required />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Phiên Âm (PhienAmPinyin)</label>
+                        <input type="text" class="form-control rounded-pill" id="editPhienAmPinyin" placeholder="Ví dụ: nǐ hǎo" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Nghĩa Tiếng Việt (NghiaTiengViet)</label>
+                        <input type="text" class="form-control rounded-pill" id="editNghiaTiengViet" placeholder="Ví dụ: Xin chào" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Link File Audio (FileAudio)</label>
+                        <input type="text" class="form-control rounded-pill" id="editFileAudio" placeholder="https://..." />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Link Hình Ảnh (HinhAnh)</label>
+                        <input type="text" class="form-control rounded-pill" id="editHinhAnh" placeholder="https://..." />
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer border-top-0 pt-0">
+                <button type="button" class="btn btn-secondary rounded-pill px-4" data-bs-dismiss="modal">Hủy</button>
+                <button type="button" class="btn btn-danger rounded-pill px-4" id="btnSaveEdit" onclick="saveEditChiTiet()">
+                    <i class="fas fa-save me-1"></i>Lưu thay đổi
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- JavaScript Xử Lý Sự Kiện -->
+<script>
+   
+    let audioCtx = null;
+    const audioNodesMap = new Map();
+    let currentGlobalSpeed = 1.0;
+
+    function onCapDoChange() {
+        // Reset lựa chọn bài học về "0" (Tất cả bài học)
+        const selectBaiHoc = document.getElementById('selectBaiHoc');
+        if (selectBaiHoc) {
+            selectBaiHoc.value = "0";
+        }
+
+        // Xóa idLuyenNghe ẩn (nếu có) trên form để không bị dính bài học cũ
+        const hiddenIdLuyenNghe = document.getElementById('hiddenIdLuyenNghe');
+        if (hiddenIdLuyenNghe) {
+            hiddenIdLuyenNghe.value = "";
+        }
+
+        // Submit form lọc
+        document.getElementById('filterForm').submit();
+    } 
+    // Tự động load Bài học khi trang vừa load xong
+    document.addEventListener("DOMContentLoaded", function() {
+        const selectCapDo = document.getElementById('selectCapDo');
+        if (selectCapDo && selectCapDo.value) {
+            loadFilterByLuyenNghe(selectCapDo.value);
+        }
+    });
+
+    function playAudioWithAmplifier(audioEl, speed = currentGlobalSpeed) {
+        if (!audioEl) return;
+
+        // Cập nhật tốc độ phát
+        audioEl.playbackRate = parseFloat(speed) || 1.0;
+
+        // Tăng âm lượng 5x bằng Web Audio API
+        try {
+            if (!audioCtx) {
+                const AudioContext = window.AudioContext || window.webkitAudioContext;
+                audioCtx = new AudioContext();
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume();
+            }
+
+            if (!audioNodesMap.has(audioEl)) {
+                const source = audioCtx.createMediaElementSource(audioEl);
+                const gainNode = audioCtx.createGain();
+
+                gainNode.gain.value = 2.0; // Khuếch đại 5x
+
+                source.connect(gainNode);
+                gainNode.connect(audioCtx.destination);
+                audioNodesMap.set(audioEl, { source, gainNode });
+            } else {
+                const nodes = audioNodesMap.get(audioEl);
+                if (nodes && nodes.gainNode) {
+                    nodes.gainNode.gain.value = 2.0; // Khuếch đại 5x
+                }
+            }
+        } catch (e) {
+            console.warn("Đang dùng chế độ phát tiêu chuẩn.", e);
+        }
+
+        // Tắt các audio khác đang phát
+        document.querySelectorAll('audio').forEach(el => {
+            if (el !== audioEl) {
+                el.pause();
+                el.currentTime = 0;
+            }
+        });
+
+        audioEl.play().catch(err => console.error("Lỗi phát audio:", err));
+    }
+
+    // Phát âm thanh cho các thẻ bài ngoài danh sách
+    function playAudio(audioId) {
+        const audioEl = document.getElementById(audioId);
+        if (audioEl) {
+            playAudioWithAmplifier(audioEl, currentGlobalSpeed);
+        }
+    }
+
+    // Phát âm thanh trong Modal phóng to
+    function playModalAudio() {
+        const audio = document.getElementById('modalAudioPlayer');
+        if (audio) {
+            audio.currentTime = 0;
+            playAudioWithAmplifier(audio, currentGlobalSpeed);
+        }
+    }
+
+    // Thay đổi tốc độ phát ở bộ lọc chính
+    function changeGlobalSpeed(speed) {
+        currentGlobalSpeed = parseFloat(speed);
+        const modalSelect = document.getElementById('modalAudioSpeed');
+        if (modalSelect) modalSelect.value = speed;
+    }
+
+    // Thay đổi tốc độ phát trong Modal
+    function changeModalSpeed(speed) {
+        currentGlobalSpeed = parseFloat(speed);
+        const globalSelect = document.getElementById('globalAudioSpeed');
+        if (globalSelect) globalSelect.value = speed;
+    }
+
+    // =========================================================================
+    // 2. XỬ LÝ MODAL HỌC TỪ VỰNG (PHÓNG TO CẢ KHỐI HỌC)
+    // =========================================================================
+    let currentModalIdChiTiet = null;
+
+    function openStudyModal(imgUrl, audioUrl, hanzi, pinyin, viet, idChiTiet) {
+        currentModalIdChiTiet = idChiTiet;
+
+        document.getElementById('modalImg').src = imgUrl;
+        document.getElementById('modalAudioPlayer').src = audioUrl;
+        document.getElementById('modalHanziText').innerText = hanzi;
+        document.getElementById('modalPinyinText').innerText = pinyin;
+        document.getElementById('modalVietText').innerText = viet;
+
+        document.getElementById('modalBtnContainer').classList.remove('d-none');
+        document.getElementById('modalInfoContainer').classList.add('d-none');
+
+        const modal = new bootstrap.Modal(document.getElementById('studyModal'));
+        modal.show();
+    }
+
+    function revealModalInfo() {
+        document.getElementById('modalBtnContainer').classList.add('d-none');
+        document.getElementById('modalInfoContainer').classList.remove('d-none');
+
+        if (currentModalIdChiTiet) {
+            const infoCollapseEl = document.getElementById(`info-${currentModalIdChiTiet}`);
+            if (infoCollapseEl) {
+                const bsCollapse = bootstrap.Collapse.getOrCreateInstance(infoCollapseEl);
+                bsCollapse.show();
+            }
+        }
+    }
+
+    // Reset audio khi đóng Modal
+    document.addEventListener("DOMContentLoaded", function() {
+        const studyModalEl = document.getElementById('studyModal');
+        if (studyModalEl) {
+            studyModalEl.addEventListener('hidden.bs.modal', function() {
+                const audio = document.getElementById('modalAudioPlayer');
+                if (audio) {
+                    audio.pause();
+                    audio.currentTime = 0;
+                }
+            });
+        }
+    });
+
+    
+
+    // =========================================================================
+    // 4. ĐÁNH DẤU ĐÃ THUỘC / CHƯA THUỘC (TOGGLE)
+    // =========================================================================
+    async function toggleDaThuoc(idChiTiet, btn) {
+        if (!btn || btn.classList.contains('disabled')) return;
+
+        const icon = btn.querySelector('i');
+        const textSpan = btn.querySelector('.btn-text');
+        const originalIconClass = icon ? icon.className : 'fas fa-circle me-1';
+
+        btn.classList.add('disabled');
+        if (icon) icon.className = 'fas fa-spinner fa-spin me-1';
+
+        try {
+            const response = await fetch('/api/luyennghehinhanh/danh-dau-hinh-anh', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(idChiTiet)
+            });
+
+            if (response.status === 401) {
+                alert("Phiên làm việc đã hết hạn. Vui lòng đăng nhập lại!");
+                window.location.href = '/QuanLyTaiKhoan/DangNhap';
+                return;
+            }
+
+            const data = await response.json();
+
+            if (response.ok && data.success) {
+                const urlParams = new URLSearchParams(window.location.search);
+                const daThuocFilter = urlParams.get('daThuoc');
+
+                if (daThuocFilter !== null && daThuocFilter !== '') {
+                    const cardItem = document.getElementById(`card-item-${idChiTiet}`);
+                    if (cardItem) {
+                        cardItem.style.transition = 'all 0.3s ease';
+                        cardItem.style.opacity = '0';
+                        cardItem.style.transform = 'scale(0.9)';
+                        setTimeout(() => {
+                            cardItem.remove();
+                            const remainingCards = document.querySelectorAll('#listeningList > div[id^="card-item-"]');
+                            if (remainingCards.length === 0) window.location.reload();
+                        }, 300);
+                    }
+                } else {
+                    const isLearnedStatus = (data.isLearned !== undefined) ? data.isLearned : data.daThuoc;
+
+                    if (isLearnedStatus) {
+                        btn.classList.remove('btn-outline-secondary');
+                        btn.classList.add('btn-success', 'text-white');
+                        if (icon) icon.className = 'fas fa-check-circle me-1';
+                        if (textSpan) textSpan.textContent = 'Đã thuộc';
+                    } else {
+                        btn.classList.remove('btn-success', 'text-white');
+                        btn.classList.add('btn-outline-secondary');
+                        if (icon) icon.className = 'fas fa-circle me-1';
+                        if (textSpan) textSpan.textContent = 'Đánh dấu đã thuộc';
+                    }
+                }
+            } else {
+                alert(data.message || "Không thể cập nhật trạng thái.");
+                if (icon) icon.className = originalIconClass;
+            }
+        } catch (error) {
+            console.error("Lỗi Fetch:", error);
+            alert("Lỗi kết nối máy chủ. Vui lòng thử lại sau.");
+            if (icon) icon.className = originalIconClass;
+        } finally {
+            btn.classList.remove('disabled');
+        }
+    }
+
+    // =========================================================================
+    // 5. XỬ LÝ SỬA CHI TIẾT
+    // =========================================================================
+    function openEditModal(idChiTiet, idLuyenNghe, chieuHanText, phienAmPinyin, nghiaTiengViet, fileAudio, hinhAnh) {
+        document.getElementById('editIdChiTiet').value = idChiTiet;
+        document.getElementById('editIdLuyenNghe').value = idLuyenNghe;
+        document.getElementById('editChieuHanText').value = chieuHanText || '';
+        document.getElementById('editPhienAmPinyin').value = phienAmPinyin || '';
+        document.getElementById('editNghiaTiengViet').value = nghiaTiengViet || '';
+        document.getElementById('editFileAudio').value = fileAudio || '';
+        document.getElementById('editHinhAnh').value = hinhAnh || '';
+
+        const editModal = new bootstrap.Modal(document.getElementById('editDetailModal'));
+        editModal.show();
+    }
+
+    async function saveEditChiTiet() {
+        const idChiTiet = document.getElementById('editIdChiTiet').value;
+        const btnSave = document.getElementById('btnSaveEdit');
+
+        const payload = {
+            idLuyenNghe: parseInt(document.getElementById('editIdLuyenNghe').value) || null,
+            chieuHanText: document.getElementById('editChieuHanText').value,
+            phienAmPinyin: document.getElementById('editPhienAmPinyin').value,
+            nghiaTiengViet: document.getElementById('editNghiaTiengViet').value,
+            fileAudio: document.getElementById('editFileAudio').value,
+            hinhAnh: document.getElementById('editHinhAnh').value
+        };
+
+        btnSave.disabled = true;
+        btnSave.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Đang lưu...';
+
+        try {
+            const response = await fetch(`/api/luyennghehinhanh/sua-chi-tiet/${idChiTiet}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
+            const data = await response.json();
+
+            if (response.ok && data.success) {
+                alert("Cập nhật chi tiết thành công!");
+                window.location.reload();
+            } else {
+                alert(data.message || "Cập nhật thất bại. Vui lòng thử lại!");
+            }
+        } catch (error) {
+            console.error("Lỗi khi sửa chi tiết:", error);
+            alert("Lỗi kết nối máy chủ!");
+        } finally {
+            btnSave.disabled = false;
+            btnSave.innerHTML = '<i class="fas fa-save me-1"></i>Lưu thay đổi';
+        }
+    }
+
+    // =========================================================================
+    // 6. XỬ LÝ XÓA ĐƠN LẺ CHI TIẾT
+    // =========================================================================
+    async function deleteChiTiet(idChiTiet) {
+        if (!confirm("Bạn có chắc chắn muốn xóa chi tiết từ vựng này không? Hành động không thể hoàn tác!")) {
+            return;
+        }
+
+        try {
+            const response = await fetch(`/api/luyennghehinhanh/xoa-chi-tiet/${idChiTiet}`, {
+                method: 'DELETE'
+            });
+
+            const data = await response.json();
+
+            if (response.ok && data.success) {
+                alert("Xóa chi tiết thành công!");
+                const cardItem = document.getElementById(`card-item-${idChiTiet}`);
+                if (cardItem) {
+                    cardItem.style.transition = 'all 0.3s ease';
+                    cardItem.style.opacity = '0';
+                    cardItem.style.transform = 'scale(0.8)';
+                    setTimeout(() => {
+                        cardItem.remove();
+                        const remaining = document.querySelectorAll('#listeningList > div[id^="card-item-"]');
+                        if (remaining.length === 0) window.location.reload();
+                    }, 300);
+                }
+            } else {
+                alert(data.message || "Xóa thất bại!");
+            }
+        } catch (error) {
+            console.error("Lỗi khi xóa chi tiết:", error);
+            alert("Có lỗi xảy ra khi gọi API xóa!");
+        }
+    }
+
+    // =========================================================================
+    // 7. XỬ LÝ XÓA TOÀN BỘ CHI TIẾT THEO ID_LUYENNGHE
+    // =========================================================================
+    async function deleteAllByLuyenNghe(idLuyenNghe) {
+        if (!idLuyenNghe || idLuyenNghe <= 0) {
+            alert("Không tìm thấy ID Luyện Nghe hợp lệ!");
+            return;
+        }
+
+        const confirmDelete = confirm(
+            `CẢNH BÁO: Bạn có chắc chắn muốn XÓA TOÀN BỘ tất cả chi tiết từ vựng của Bài Luyện Nghe (ID: ${idLuyenNghe}) không?\n\nHành động này KHÔNG THỂ hoàn tác!`
+        );
+
+        if (!confirmDelete) return;
+
+        try {
+            const response = await fetch(`/api/luyennghehinhanh/xoa-tat-ca-chi-tiet/${idLuyenNghe}`, {
+                method: 'DELETE'
+            });
+
+            const data = await response.json();
+
+            if (response.ok && data.success) {
+                alert(data.message || "Đã xóa toàn bộ chi tiết thành công!");
+                window.location.reload();
+            } else {
+                alert(data.message || "Xóa thất bại. Vui lòng thử lại!");
+            }
+        } catch (error) {
+            console.error("Lỗi khi xóa toàn bộ chi tiết:", error);
+            alert("Có lỗi xảy ra khi kết nối máy chủ!");
+        }
+    }
+</script>

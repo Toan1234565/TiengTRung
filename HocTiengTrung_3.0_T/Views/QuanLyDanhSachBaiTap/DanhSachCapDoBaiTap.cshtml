@@ -1,0 +1,125 @@
+﻿@model List<HocTiengTrung_3._0_T.Models12.TuVung.CapDoModels>
+
+@{
+    ViewData["Title"] = "Chọn Cấp Độ Luyện Tập";
+}
+
+<style>
+    .hsk-exercise-card {
+        transition: all 0.3s cubic-bezier(.25,.8,.25,1);
+        cursor: pointer;
+        border-radius: 20px !important;
+        overflow: hidden;
+        border: 2px solid transparent !important;
+    }
+
+        .hsk-exercise-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 15px 30px rgba(255, 152, 0, 0.2) !important;
+            background-color: #ffffff;
+            border-color: #ff9800 !important;
+        }
+
+    .exercise-badge {
+        width: 65px;
+        height: 65px;
+        font-size: 26px;
+        font-weight: 800;
+        background: linear-gradient(135deg, #f6d365 0%, #fda085 100%);
+        box-shadow: 0 4px 15px rgba(253, 160, 133, 0.4);
+        transition: all 0.3s ease;
+    }
+
+    .hsk-exercise-card:hover .exercise-badge {
+        transform: scale(1.1) rotate(-5deg);
+    }
+
+    .section-title {
+        position: relative;
+        display: inline-block;
+        padding-bottom: 10px;
+    }
+
+        .section-title::after {
+            content: '';
+            position: absolute;
+            width: 60%;
+            height: 4px;
+            background: #ff9800;
+            bottom: 0;
+            left: 20%;
+            border-radius: 2px;
+        }
+
+    .btn-exercise {
+        background-color: #ff9800;
+        border: none;
+        color: white;
+        transition: 0.3s;
+        font-weight: 600;
+    }
+
+        .btn-exercise:hover {
+            background-color: #e68a00;
+            color: white;
+            box-shadow: 0 5px 15px rgba(230, 138, 0, 0.4);
+        }
+</style>
+
+<div class="container mt-5">
+    <div class="text-center mb-5">
+        <h2 class="fw-bold section-title text-uppercase">Trung Tâm Bài Tập</h2>
+        <p class="text-muted mt-3">Bước 1: Chọn cấp độ HSK bạn muốn thử thách</p>
+    </div>
+
+    <div class="row g-4">
+        @if (Model != null)
+        {
+            @foreach (var item in Model)
+            {
+                <div class="col-xl-4 col-md-6 mb-4">
+                    <div class="card h-100 shadow-sm border-0 hsk-exercise-card position-relative p-2">
+                        <div class="card-body text-center p-4">
+                            <div class="exercise-badge text-white d-inline-flex align-items-center justify-content-center mb-4 rounded-circle">
+                                @item.IdCapDo
+                            </div>
+
+                            <h4 class="card-title fw-bold text-dark">Luyện Tập @item.TenCapDo</h4>
+                            <p class="card-text text-muted px-3">
+                                Khám phá kho bài tập đa dạng phù hợp với trình độ @item.TenCapDo.
+                            </p>
+
+                            <div class="mt-4">
+                                <a asp-action="DanhSachLoaiBaiTap"
+                                   asp-controller="QuanLyDanhSachBaiTap"
+                                   asp-route-capdo="@item.IdCapDo"
+
+                                   class="btn btn-exercise rounded-pill px-5 stretched-link">
+                                    Tiếp theo <i class="fas fa-arrow-right ms-2"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+    </div>
+</div>
+@section Scripts {
+    <script>
+        // Hiệu ứng nhẹ khi cuộn trang
+        document.addEventListener('DOMContentLoaded', function() {
+            const cards = document.querySelectorAll('.hsk-hover-card');
+            cards.forEach((card, index) => {
+                card.style.opacity = '0';
+                card.style.transform = 'translateY(20px)';
+                setTimeout(() => {
+                    card.style.transition = 'all 0.6s ease-out';
+                    card.style.opacity = '1';
+                    card.style.transform = 'translateY(0)';
+                }, index * 100);
+            });
+        });
+    </script>
+}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />

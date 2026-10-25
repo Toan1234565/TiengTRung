@@ -1,0 +1,719 @@
+﻿@using System.Security.Claims
+@{
+    // 1. Kiểm tra vai trò từ Claims và Session
+    string currentVaiTro = (User.FindFirst("TenVaiTro")?.Value
+                            ?? Context.Session.GetString("TenVaiTro")
+                            ?? "").Trim();
+
+    var roleClaims = User.FindAll(ClaimTypes.Role).Select(c => c.Value.Trim()).ToList();
+
+    bool isAdmin = currentVaiTro.Equals("Quản trị viên", StringComparison.OrdinalIgnoreCase)
+                   || currentVaiTro.Equals("Admin", StringComparison.OrdinalIgnoreCase)
+                   || roleClaims.Any(r => r.Equals("Quản trị viên", StringComparison.OrdinalIgnoreCase)
+                                       || r.Equals("Admin", StringComparison.OrdinalIgnoreCase)
+                                       || r == "1");
+
+    // 2. Chặn truy cập nếu không phải Quản trị viên
+    if (!isAdmin)
+    {
+        <!DOCTYPE html>
+        <html lang="vi">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Từ chối quyền truy cập</title>
+            <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+            <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+        </head>
+        <body class="bg-light d-flex align-items-center justify-content-center" style="min-height: 100vh;">
+            <script>
+                    document.addEventListener('DOMContentLoaded', function() {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Truy cập bị từ chối!',
+                            text: 'Chỉ Quản trị viên hệ thống mới có quyền truy cập vào khu vực này!',
+                            confirmButtonText: 'Quay về trang chủ',
+                            confirmButtonColor: '#dc3545',
+                            allowOutsideClick: false,
+                            allowEscapeKey: false
+                        }).then((result) => {
+                            window.location.href = '@Url.Action("Index", "Home")';
+                        });
+                    });
+            </script>
+        </body>
+    </html>
+    return; // Dừng không cho render tiếp nội dung bên dưới
+}
+
+string apiUrl = "https://hoctiengtrung13-001-site1.ftempurl.com";
+// string apiUrl = "https://localhost:7151";
+
+var idTrungTam = User.FindFirst("IdTrungTam")?.Value
+                 ?? Context.Session.GetString("IdTrungTam")
+                 ?? "0";
+
+var maTrungTam = User.FindFirst("MaTrungTam")?.Value
+                 ?? Context.Session.GetString("MaTrungTam")
+                 ?? "";
+
+var routeValue = (!string.IsNullOrEmpty(idTrungTam) && idTrungTam != "0")
+                 ? idTrungTam
+                 : maTrungTam;
+}
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hệ Thống Nhập Dữ Liệu Hoàng Gia</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+            :root {
+                --royal-gold: #d4af37;
+                --royal-blue: #002366;
+            }
+
+            body {
+                background-color: #f8f9fa;
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            }
+
+            .custom-card {
+                border-radius: 20px;
+                border: none;
+                transition: transform 0.3s ease, box-shadow 0.3s ease;
+                background-color: #fff;
+            }
+
+                .custom-card:hover {
+                    transform: translateY(-6px);
+                    box-shadow: 0 12px 24px rgba(0,0,0,0.08) !important;
+                }
+
+            .btn-rounded {
+                border-radius: 50px;
+                padding: 8px 20px;
+                font-weight: 600;
+            }
+
+            .icon-box {
+                width: 60px;
+                height: 60px;
+                border-radius: 50%;
+                margin: 0 auto 1rem;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+
+            .modal-content {
+                border-radius: 20px;
+                border: none;
+                overflow: hidden;
+            }
+
+            .input-group-text {
+                border-radius: 20px 0 0 20px;
+                background-color: #fff;
+            }
+
+            .form-control-custom {
+                border-radius: 0 20px 20px 0;
+            }
+
+            .feature-box {
+                padding: 1.5rem;
+                background: #fff;
+                border-radius: 20px;
+                height: 100%;
+                transition: transform 0.3s ease, box-shadow 0.3s ease;
+            }
+
+                .feature-box:hover {
+                    transform: translateY(-5px);
+                    box-shadow: 0 10px 20px rgba(0,0,0,0.08) !important;
+                }
+
+            .feature-icon-wrapper {
+                width: 50px;
+                height: 50px;
+                border-radius: 14px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 1.5rem;
+                margin-bottom: 1rem;
+            }
+    </style>
+</head>
+<body>
+
+    <div class="container py-5">
+        <!-- Header Banner -->
+        <div class="text-center mb-5">
+            <h1 class="display-5 fw-bold text-dark mb-3">
+                <i class="bi bi-gem text-warning me-2"></i>Hệ Thống Nhập Dữ Liệu Hoàng Gia
+            </h1>
+            <p class="lead text-muted mx-auto" style="max-width: 700px;">
+                Kính chào Hoàng đế! Vui lòng chọn hạng mục dữ liệu cần xử lý. Hệ thống đã sẵn sàng phục vụ ngài.
+            </p>
+            <hr class="w-25 mx-auto border-2 border-primary">
+        </div>
+
+        <!-- PHÂN HỆ QUẢN LÝ TRUNG TÂM & CƠ SỞ -->
+        <h4 class="fw-bold text-secondary mb-3 mt-4">
+            <i class="fa-solid fa-school-flag me-2 text-primary"></i>Phân Hệ Quản Lý Cơ Sở & Đào Tạo
+        </h4>
+        <div class="row g-4 mb-5">
+           
+
+            
+            <div class="col-sm-6 col-lg-3">
+                <div class="card shadow-sm h-100 p-3 custom-card">
+                    <div class="card-body text-center">
+                        <div class="icon-box bg-warning bg-opacity-10 text-warning">
+                            <i class="fas fa-shield-halved fs-2"></i>
+                        </div>
+                        <h5 class="fw-bold mb-1">Vai Trò & Quyền</h5>
+                        <p class="text-muted small mb-3">Cấu hình phân quyền hệ thống nhân sự.</p>
+                        <a href="@Url.Action("DanhSachVaiTro", "QuanLyVaiTro")" class="btn btn-warning text-dark w-100 btn-rounded shadow-sm">
+                            <i class="fas fa-user-lock me-2"></i> Phân quyền
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-sm-6 col-lg-3">
+                <a href="@Url.Action("DanhSachTrungTam", "QuanLyTrungTam", new { id = routeValue })" class="text-decoration-none text-dark d-block h-100">
+                    <div class="feature-box shadow-sm border">
+                        <div class="feature-icon-wrapper" style="background: rgba(245, 158, 11, 0.12); color: #f59e0b;">
+                            <i class="fa-solid fa-school"></i>
+                        </div>
+                        <h5 class="fw-bold mb-2 fs-5 text-dark">Hồ Sơ Trung Tâm</h5>
+                        <p class="text-muted small mb-0">Xem chi tiết cơ sở, thông tin liên hệ và lớp học trực thuộc.</p>
+                    </div>
+                </a>
+            </div>
+        </div>
+
+        <!-- PHÂN HỆ QUẢN LÝ NỘI DUNG ĐÀO TẠO -->
+        <h4 class="fw-bold text-secondary mb-3 mt-4">
+            <i class="fas fa-tasks me-2 text-success"></i>Phân Hệ Quản Lý Học Liệu HSK
+        </h4>
+        <div class="row g-4 mb-5">
+            <div class="col-sm-6 col-lg-3">
+                <div class="card shadow-sm h-100 p-3 custom-card">
+                    <div class="card-body text-center">
+                        <div class="icon-box bg-info bg-opacity-10 text-info">
+                            <i class="fas fa-layer-group fs-2"></i>
+                        </div>
+                        <h5 class="fw-bold mb-1">Quản lý Cấp Độ</h5>
+                        <p class="text-muted small mb-3">Quản lý và cấu hình các cấp độ HSK.</p>
+                        <a href="/QuanLyDanhSachTuVung/DanhSachCapDo" class="btn btn-info text-white w-100 btn-rounded shadow-sm">
+                            <i class="fas fa-cog me-2"></i> Vào quản lý
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-sm-6 col-lg-3">
+                <div class="card shadow-sm h-100 p-3 custom-card">
+                    <div class="card-body text-center">
+                        <div class="icon-box bg-success bg-opacity-10 text-success">
+                            <i class="fas fa-book fs-2"></i>
+                        </div>
+                        <h5 class="fw-bold mb-1">Quản lý Bài Học</h5>
+                        <p class="text-muted small mb-3">Quản lý giáo trình và bài học HSK.</p>
+                        <a href="@Url.Action("DanhSachBaiHocAdmin", "QuanLyDanhSachBaiHoc", new { capdo = 1, IdGiaoTrinh = 1 })" class="btn btn-success text-white w-100 btn-rounded shadow-sm">
+                            <i class="fas fa-cog me-2"></i> Vào quản lý
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-sm-6 col-lg-3">
+                <div class="card shadow-sm h-100 p-3 custom-card">
+                    <div class="card-body text-center">
+                        <div class="icon-box bg-warning bg-opacity-10 text-warning">
+                            <i class="fas fa-tasks fs-2"></i>
+                        </div>
+                        <h5 class="fw-bold mb-1">Quản lý Bài Tập</h5>
+                        <p class="text-muted small mb-3">Quản lý kho bài tập bổ trợ định kỳ.</p>
+                        <a href="/QuanLyDanhSachBaiTap/DanhSachQuanLyAdmin" class="btn btn-warning text-dark w-100 btn-rounded shadow-sm">
+                            <i class="fas fa-info-circle me-2"></i> Chi tiết
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-sm-6 col-lg-3">
+                <div class="card shadow-sm h-100 p-3 custom-card">
+                    <div class="card-body text-center">
+                        <div class="icon-box bg-danger bg-opacity-10 text-danger">
+                            <i class="fas fa-file-invoice fs-2"></i>
+                        </div>
+                        <h5 class="fw-bold mb-1">Quản lý Đề Thi</h5>
+                        <p class="text-muted small mb-3">Chỉnh sửa nội dung & đề kiểm tra HSK.</p>
+                        <a href="/QuanLyDeThi/DanhSachDeThiAdmin" class="btn btn-danger text-white w-100 btn-rounded shadow-sm">
+                            <i class="fas fa-list-ul me-2"></i> Danh sách đề
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-sm-6 col-lg-3">
+                <div class="card shadow-sm h-100 p-3 custom-card">
+                    <div class="card-body text-center">
+                        <div class="icon-box bg-danger bg-opacity-10 text-danger">
+                            <i class="fas fa-spell-check fs-2"></i>
+                        </div>
+                        <h5 class="fw-bold mb-1">Quản lý Ngữ Pháp</h5>
+                        <p class="text-muted small mb-3">Cấu trúc mẫu câu và bài tập ngữ pháp.</p>
+                        <a href="/QuanLyDanhSachNguPhap/DanhSachBaiTapAdmin" class="btn btn-danger text-white w-100 btn-rounded shadow-sm">
+                            <i class="fas fa-layer-group me-2"></i> Danh sách ngữ pháp
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-sm-6 col-lg-3">
+                <div class="card shadow-sm h-100 p-3 custom-card">
+                    <div class="card-body text-center">
+                        <div class="icon-box bg-primary bg-opacity-10 text-primary">
+                            <i class="fas fa-headphones fs-2"></i>
+                        </div>
+                        <h5 class="fw-bold mb-1">Luyện Nghe Audio</h5>
+                        <p class="text-muted small mb-3">Quản lý bài học, audio & hình ảnh HSK.</p>
+                        <a href="/LuyenNgheHinhAnh/DanhSachTieuDe?capdo=1" class="btn btn-primary text-white w-100 btn-rounded shadow-sm">
+                            <i class="fas fa-list-ul me-2"></i> Tiêu đề luyện nghe
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-sm-6 col-lg-3">
+                <div class="card shadow-sm h-100 p-3 custom-card">
+                    <div class="card-body text-center">
+                        <div class="icon-box bg-primary bg-opacity-10 text-primary">
+                            <i class="fas fa-book-open-reader fs-2"></i>
+                        </div>
+                        <h5 class="fw-bold mb-1">Chương Trình Đào Tạo</h5>
+                        <p class="text-muted small mb-3">Danh sách giáo trình & khung chương trình tĩnh.</p>
+                        <a href="/QuanLyDanhSachBaiHoc/DanhSachChuongTrinh" class="btn btn-primary text-white w-100 btn-rounded shadow-sm">
+                            <i class="fas fa-list-check me-2"></i> Danh sách chương trình
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-sm-6 col-lg-3">
+                <a href="@Url.Action("DanhSachTrungTam", "QuanLyTrungTam")" class="text-decoration-none text-dark d-block h-100">
+                    <div class="feature-box shadow-sm border">
+                        <div class="feature-icon-wrapper" style="background: rgba(13, 110, 253, 0.12); color: #0d6efd;">
+                            <i class="fa-solid fa-building-columns"></i>
+                        </div>
+                        <h5 class="fw-bold mb-2 fs-5 text-dark">Tất Cả Trung Tâm</h5>
+                        <p class="text-muted small mb-0">Quản trị toàn bộ mạng lưới chi nhánh, cơ sở trực thuộc hệ thống.</p>
+                    </div>
+                </a>
+            </div>
+        </div>
+
+        <!-- PHÂN HỆ NHẬP LIỆU EXCEL TỰ ĐỘNG -->
+        <h4 class="fw-bold text-secondary mb-3">
+            <i class="fas fa-cloud-upload-alt me-2 text-warning"></i>Phân Hệ Nhập Liệu Excel Hàng Loạt
+        </h4>
+        <div class="row g-4 mb-5">
+            <div class="col-sm-6 col-lg-3">
+                <div class="card shadow-sm h-100 p-3 custom-card">
+                    <div class="card-body text-center">
+                        <div class="icon-box bg-info bg-opacity-10 text-info">
+                            <i class="fas fa-language fs-2"></i>
+                        </div>
+                        <h5 class="fw-bold">Từ Vựng Mini</h5>
+                        <p class="small text-muted mb-4">Nhập danh sách từ vựng & câu ví dụ.</p>
+                        <button class="btn btn-info text-white w-100 btn-rounded shadow-sm" onclick="showModal('importTuVungModal')">
+                            <i class="fas fa-file-import me-2"></i>Nhập Từ Vựng
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-sm-6 col-lg-3">
+                <div class="card shadow-sm h-100 p-3 custom-card">
+                    <div class="card-body text-center">
+                        <div class="icon-box bg-info bg-opacity-10 text-info">
+                            <i class="fas fa-book-open fs-2"></i>
+                        </div>
+                        <h5 class="fw-bold">Ngữ Pháp</h5>
+                        <p class="small text-muted mb-4">Cấu trúc ngữ pháp phân loại theo cấp độ.</p>
+                        <button class="btn btn-outline-info w-100 btn-rounded shadow-sm" onclick="showModal('importExcelModal')">
+                            <i class="fas fa-file-excel me-2"></i>Nhập Ngữ Pháp
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-sm-6 col-lg-3">
+                <div class="card shadow-sm h-100 p-3 custom-card">
+                    <div class="card-body text-center">
+                        <div class="icon-box bg-success bg-opacity-10 text-success">
+                            <i class="fas fa-graduation-cap fs-2"></i>
+                        </div>
+                        <h5 class="fw-bold">Nhập Bài Học</h5>
+                        <p class="small text-muted mb-4">Nhập thông tin bài học và câu hỏi liên kết.</p>
+                        <button class="btn btn-success w-100 btn-rounded shadow-sm" onclick="showModal('importBaiHocMiniExcelModal')">
+                            <i class="fas fa-file-excel me-2"></i> Nhập Bài Học
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-sm-6 col-lg-3">
+                <div class="card shadow-sm h-100 p-3 custom-card">
+                    <div class="card-body text-center">
+                        <div class="icon-box bg-warning bg-opacity-10 text-warning">
+                            <i class="bi bi-layers-fill fs-2"></i>
+                        </div>
+                        <h5 class="fw-bold">Bài Tập Đa Tầng</h5>
+                        <p class="small text-muted mb-4">Xử lý: Chủ đề → Đoạn văn → Câu hỏi.</p>
+                        <button class="btn btn-warning text-dark w-100 btn-rounded shadow-sm" onclick="showModal('importFullModal')">
+                            <i class="bi bi-magic me-2"></i> Nhập Bài Tập
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-sm-6 col-lg-3">
+                <div class="card shadow-sm h-100 p-3 custom-card">
+                    <div class="card-body text-center">
+                        <div class="icon-box bg-danger bg-opacity-10 text-danger">
+                            <i class="bi bi-journal-plus fs-2"></i>
+                        </div>
+                        <h5 class="fw-bold">Đề Thi HSK</h5>
+                        <p class="small text-muted mb-4">Tạo đề thi hoàn chỉnh với cấu trúc phức tạp.</p>
+                        <button class="btn btn-danger w-100 btn-rounded shadow-sm" onclick="showModal('importModal')">
+                            <i class="bi bi-cloud-arrow-up me-2"></i> Nhập Đề Thi
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-sm-6 col-lg-3">
+                <div class="card shadow-sm h-100 p-3 custom-card">
+                    <div class="card-body text-center">
+                        <div class="icon-box bg-primary bg-opacity-10 text-primary">
+                            <i class="fas fa-headphones fs-2"></i>
+                        </div>
+                        <h5 class="fw-bold">Luyện Nghe Audio</h5>
+                        <p class="small text-muted mb-4">Nhập file Excel dữ liệu bài luyện nghe audio.</p>
+                        <button class="btn btn-primary text-white w-100 btn-rounded shadow-sm" onclick="showModal('importLuyenNgheHinhAnhModal')">
+                            <i class="fas fa-file-excel me-2"></i> Nhập Luyện Nghe
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-sm-6 col-lg-3">
+                <div class="card shadow-sm h-100 p-3 custom-card">
+                    <div class="card-body text-center">
+                        <div class="icon-box bg-primary bg-opacity-10 text-primary">
+                            <i class="fas fa-language fs-2"></i>
+                        </div>
+                        <h5 class="fw-bold">Dữ Liệu Bộ Thủ</h5>
+                        <p class="small text-muted mb-4">Nhập file Excel danh mục 214 bộ thủ chữ Hán.</p>
+                        <button class="btn btn-primary text-white w-100 btn-rounded shadow-sm" onclick="showModal('importBoThu')">
+                            <i class="fas fa-file-excel me-2"></i> Nhập Bộ Thủ
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- HỆ THỐNG & THỐNG KÊ -->
+        <h4 class="fw-bold text-secondary mb-3">
+            <i class="fas fa-chart-pie me-2 text-info"></i>Hệ Thống & Báo Cáo
+        </h4>
+        <div class="row g-4">
+            <div class="col-sm-6 col-lg-3">
+                <div class="card shadow-sm h-100 p-3 custom-card">
+                    <div class="card-body text-center">
+                        <div class="icon-box bg-primary bg-opacity-10 text-primary">
+                            <i class="fas fa-chart-line fs-2"></i>
+                        </div>
+                        <h5 class="fw-bold mb-1">Thống Kê Truy Cập</h5>
+                        <p class="text-muted small mb-3">Xem báo cáo lượt truy cập và biểu đồ học tập.</p>
+                        <a href="/QuanLyTaiKhoan/ThongKeTruyCap" class="btn btn-primary text-white w-100 btn-rounded shadow-sm">
+                            <i class="fas fa-eye me-2"></i> Xem chi tiết
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL IMPORT TỪ VỰNG -->
+    <div class="modal fade" id="importTuVungModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content shadow-lg">
+                <div class="modal-header border-0 bg-info text-white p-4">
+                    <h5 class="modal-title fw-bold"><i class="fas fa-language me-2"></i>Nhập Từ Vựng & Ví Dụ</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <label class="form-label text-muted small fw-bold">CHỌN FILE EXCEL (.XLSX, .XLS)</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="bi bi-file-earmark-excel"></i></span>
+                        <input type="file" id="fileTuVung" class="form-control form-control-custom" accept=".xlsx, .xls" />
+                    </div>
+                </div>
+                <div class="modal-footer border-0 p-4 pt-0">
+                    <button type="button" class="btn btn-light btn-rounded px-4" data-bs-dismiss="modal">Đóng</button>
+                    <button type="button" class="btn btn-info text-white btn-rounded shadow-sm"
+                            onclick="handleImport(event, 'fileTuVung', '@apiUrl/api/quanlytuvung/import-excel-mini')">
+                        Bắt đầu xử lý
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL IMPORT NGỮ PHÁP -->
+    <div class="modal fade" id="importExcelModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content shadow-lg">
+                <div class="modal-header border-0 bg-success text-white p-4">
+                    <h5 class="modal-title fw-bold"><i class="fas fa-book-open me-2"></i>Nhập Ngữ Pháp</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <label class="form-label text-muted small fw-bold">CHỌN FILE EXCEL (.XLSX, .XLS)</label>
+                    <input type="file" id="fileNguPhap" class="form-control btn-rounded" accept=".xlsx, .xls" />
+                </div>
+                <div class="modal-footer border-0 p-4 pt-0">
+                    <button type="button" class="btn btn-light btn-rounded" data-bs-dismiss="modal">Hủy</button>
+                    <button type="button" class="btn btn-success btn-rounded shadow-sm"
+                            onclick="handleImport(event, 'fileNguPhap', '@apiUrl/api/QuanLyNguPhap/nhap-excel')">
+                        Tải lên ngay
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL IMPORT BÀI TẬP -->
+    <div class="modal fade" id="importFullModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content shadow-lg">
+                <div class="modal-header border-0 bg-warning p-4">
+                    <h5 class="modal-title fw-bold text-dark"><i class="bi bi-layers-fill me-2"></i>Nhập Bài Tập Đa Tầng</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <label class="form-label text-muted small fw-bold">CHỌN FILE EXCEL (.XLSX, .XLS)</label>
+                    <input type="file" id="fileBaiTap" class="form-control btn-rounded" accept=".xlsx, .xls" />
+                </div>
+                <div class="modal-footer border-0 p-4 pt-0">
+                    <button type="button" class="btn btn-light btn-rounded" data-bs-dismiss="modal">Hủy</button>
+                    <button type="button" class="btn btn-warning btn-rounded shadow-sm"
+                            onclick="handleImport(event, 'fileBaiTap', '@apiUrl/api/quanlybaitap/import-excel-baitap')">
+                        Tiến hành nhập
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL IMPORT ĐỀ THI -->
+    <div class="modal fade" id="importModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content shadow-lg">
+                <div class="modal-header border-0 bg-primary text-white p-4">
+                    <h5 class="modal-title fw-bold"><i class="bi bi-journal-plus me-2"></i>Nhập Đề Thi HSK</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <label class="form-label text-muted small fw-bold">CHỌN FILE EXCEL (.XLSX, .XLS)</label>
+                    <input type="file" id="fileDeThi" class="form-control btn-rounded" accept=".xlsx, .xls" />
+                </div>
+                <div class="modal-footer border-0 p-4 pt-0">
+                    <button type="button" class="btn btn-light btn-rounded" data-bs-dismiss="modal">Hủy</button>
+                    <button type="button" class="btn btn-primary btn-rounded shadow-sm"
+                            onclick="handleImport(event, 'fileDeThi', '@apiUrl/api/quanlydethi/import-excel')">
+                        Tải lên hệ thống
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL IMPORT BÀI HỌC MINIEXCEL -->
+    <div class="modal fade" id="importBaiHocMiniExcelModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content shadow-lg">
+                <div class="modal-header border-0 bg-danger text-white p-4">
+                    <h5 class="modal-title fw-bold"><i class="fas fa-graduation-cap me-2"></i>Nhập Bài Học & Câu Hỏi</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <label class="form-label text-muted small fw-bold">CHỌN FILE CẤU TRÚC BÀI HỌC MINIEXCEL</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="bi bi-file-earmark-excel text-danger"></i></span>
+                        <input type="file" id="fileBaiHocMiniExcel" class="form-control form-control-custom" accept=".xlsx, .xls" />
+                    </div>
+                    <div class="mt-2 text-muted small">
+                        <i class="fas fa-info-circle me-1"></i> Hàng 1-4 chứa thông tin Bài Học, Hàng 6 trở đi chứa danh sách Câu hỏi.
+                    </div>
+                </div>
+                <div class="modal-footer border-0 p-4 pt-0">
+                    <button type="button" class="btn btn-light btn-rounded" data-bs-dismiss="modal">Hủy Ngay</button>
+                    <button type="button" class="btn btn-danger btn-rounded shadow-sm"
+                            onclick="handleImport(event, 'fileBaiHocMiniExcel', '@apiUrl/api/quanlybaihoc/import-excel-tao-bai-hoc')">
+                        Xử Lý Tải Lên
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL IMPORT LUYỆN NGHE AUDIO -->
+    <div class="modal fade" id="importLuyenNgheHinhAnhModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content shadow-lg">
+                <div class="modal-header border-0 bg-primary text-white p-4">
+                    <h5 class="modal-title fw-bold"><i class="fas fa-headphones me-2"></i>Nhập Excel Luyện Nghe Audio</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <label class="form-label text-muted small fw-bold">CHỌN FILE EXCEL (.XLSX, .XLS)</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="bi bi-file-earmark-excel text-primary"></i></span>
+                        <input type="file" id="fileLuyenNgheHinhAnh" class="form-control form-control-custom" accept=".xlsx, .xls" />
+                    </div>
+                </div>
+                <div class="modal-footer border-0 p-4 pt-0">
+                    <button type="button" class="btn btn-light btn-rounded px-4" data-bs-dismiss="modal">Đóng</button>
+                    <button type="button" class="btn btn-primary text-white btn-rounded shadow-sm"
+                            onclick="handleImport(event, 'fileLuyenNgheHinhAnh', '@apiUrl/api/luyennghehinhanh/import-excel')">
+                        Bắt đầu xử lý
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL IMPORT BỘ THỦ -->
+    <div class="modal fade" id="importBoThu" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content shadow-lg">
+                <div class="modal-header border-0 bg-primary text-white p-4">
+                    <h5 class="modal-title fw-bold"><i class="fas fa-language me-2"></i>Nhập Excel Bộ Thủ</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <label class="form-label text-muted small fw-bold">CHỌN FILE EXCEL (.XLSX, .XLS)</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="bi bi-file-earmark-excel text-primary"></i></span>
+                        <input type="file" id="fileBoThu" class="form-control form-control-custom" accept=".xlsx, .xls" />
+                    </div>
+                </div>
+                <div class="modal-footer border-0 p-4 pt-0">
+                    <button type="button" class="btn btn-light btn-rounded px-4" data-bs-dismiss="modal">Đóng</button>
+                    <button type="button" class="btn btn-primary text-white btn-rounded shadow-sm"
+                            onclick="handleImport(event, 'fileBoThu', '@apiUrl/api/phan-tich-tu-vung/import-excel')">
+                        Bắt đầu xử lý
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <script>
+            function showModal(modalId) {
+                const modalElement = document.getElementById(modalId);
+                if (modalElement) {
+                    const myModal = new bootstrap.Modal(modalElement);
+                    myModal.show();
+                }
+            }
+
+            async function handleImport(e, inputId, url) {
+                const fileInput = document.getElementById(inputId);
+                const file = fileInput.files[0];
+                const btn = e.currentTarget;
+
+                if (!file) {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Thiếu File!',
+                        text: 'Kính thưa Hoàng đế, ngài chưa chọn file Excel ạ!',
+                        confirmButtonColor: '#ffc107',
+                        customClass: { confirmButton: 'btn-rounded' }
+                    });
+                    return;
+                }
+
+                const originalText = btn.innerHTML;
+                btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Đang xử lý...';
+                btn.disabled = true;
+
+                const formData = new FormData();
+                formData.append('file', file);
+
+                try {
+                    const response = await fetch(url, {
+                        method: 'POST',
+                        body: formData,
+                        credentials: 'include'
+                    });
+
+                    let result;
+                    const contentType = response.headers.get("content-type");
+                    if (contentType && contentType.includes("application/json")) {
+                        result = await response.json();
+                    } else {
+                        const text = await response.text();
+                        result = { success: response.ok, message: text };
+                    }
+
+                    if (response.ok) {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Thành Công!',
+                            text: result.message || 'Dữ liệu đã được lưu vào kho lưu trữ hoàng gia.',
+                            confirmButtonColor: '#198754',
+                            timer: 3000
+                        });
+
+                        const modalEl = fileInput.closest('.modal');
+                        const modalInstance = bootstrap.Modal.getInstance(modalEl);
+                        if (modalInstance) modalInstance.hide();
+                        fileInput.value = '';
+                    } else {
+                        throw new Error(result.message || 'Lỗi hệ thống khi tải file lên máy chủ.');
+                    }
+                } catch (error) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Lỗi Xử Lý',
+                        text: error.message,
+                        confirmButtonColor: '#dc3545'
+                    });
+                } finally {
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                }
+            }
+    </script>
+</body>
+</html>

@@ -1,0 +1,1761 @@
+[
+  {
+    "ContainingType": "HocTiengTrung_3._0_T.ControllersAPI.QuanLyBaiHoc",
+    "Method": "CapNhatCauHoiBaiHoc",
+    "RelativePath": "api/quanlybaihoc/capnhat-cauhoi",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "HocTiengTrung_3._0_T.Models12.QuanLyBaiHoc.CapNhatCauHoiRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "HocTiengTrung_3._0_T.ControllersAPI.QuanLyBaiHoc",
+    "Method": "GetChiTietBaiHoc",
+    "RelativePath": "api/quanlybaihoc/chitietbaihoc/{idBaiHoc}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "idBaiHoc",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "HocTiengTrung_3._0_T.ControllersAPI.QuanLyBaiHoc",
+    "Method": "DanhSachBaiHoc",
+    "RelativePath": "api/quanlybaihoc/danhsachbaihoc/{iDCapDo}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "iDCapDo",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "page",
+        "Type": "System.Int32",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "HocTiengTrung_3._0_T.ControllersAPI.QuanLyBaiHoc",
+    "Method": "DoiTrangThaiBaiHoc",
+    "RelativePath": "api/quanlybaihoc/doitrangthai/{idBaiHoc}",
+    "HttpMethod": "PATCH",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "idBaiHoc",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "HocTiengTrung_3._0_T.ControllersAPI.QuanLyBaiHoc",
+    "Method": "ImportExcelBaiTapVaoBaiHoc",
+    "RelativePath": "api/quanlybaihoc/import-excel-baitap-vao-bai-hoc",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "file",
+        "Type": "Microsoft.AspNetCore.Http.IFormFile",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "HocTiengTrung_3._0_T.ControllersAPI.QuanLyBaiHoc",
+    "Method": "ImportExcelTaoBaiHocV2",
+    "RelativePath": "api/quanlybaihoc/import-excel-tao-bai-hoc",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "file",
+        "Type": "Microsoft.AspNetCore.Http.IFormFile",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "HocTiengTrung_3._0_T.ControllersAPI.QuanLyBaiHoc",
+    "Method": "ImportExcelTuVungVaoBaiHoc",
+    "RelativePath": "api/quanlybaihoc/import-excel-tuvung-vao-bai-hoc",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "file",
+        "Type": "Microsoft.AspNetCore.Http.IFormFile",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "HocTiengTrung_3._0_T.ControllersAPI.QuanLyBaiHoc",
+    "Method": "OnLuyenBaiHoc",
+    "RelativePath": "api/quanlybaihoc/on-luyen-bai-hoc",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "idBaiHoc",
+        "Type": "System.Int32",
+        "IsRequired": false
+      },
+      {
+        "Name": "loaiOnLuyen",
+        "Type": "System.Int32",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "HocTiengTrung_3._0_T.ControllersAPI.QuanLyBaiHoc",
+    "Method": "ThemTuVungVaoBaiHoc",
+    "RelativePath": "api/quanlybaihoc/themtuvung-baihoc",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "HocTiengTrung_3._0_T.Models12.QuanLyBaiHoc.ThemTuVungBaiHocRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "HocTiengTrung_3._0_T.ControllersAPI.QuanLyBaiHoc",
+    "Method": "XoaBaiHoc",
+    "RelativePath": "api/quanlybaihoc/xoabaihoc/{idBaiHoc}",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "idBaiHoc",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "HocTiengTrung_3._0_T.ControllersAPI.QuanLyBaiHoc",
+    "Method": "XoaHangLoat",
+    "RelativePath": "api/quanlybaihoc/xoahangloat",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "danhSachIdBaiHoc",
+        "Type": "System.Collections.Generic.List\u00601[[System.Int32, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "HocTiengTrung_3._0_T.ControllersAPI.QuanLyBaiHoc",
+    "Method": "XoaLienKetCauHoi",
+    "RelativePath": "api/quanlybaihoc/xoalienket-cauhoi/{idBaiHoc}/{idCauHoi}",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "idBaiHoc",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "idCauHoi",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "HocTiengTrung_3._0_T.ControllersAPI.QuanLyBaiHoc",
+    "Method": "XoaLienKetTuVung",
+    "RelativePath": "api/quanlybaihoc/xoalienket-tuvung/{idBaiHoc}/{idTuVung}",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "idBaiHoc",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "idTuVung",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "HocTiengTrung_3._0_T.ControllersAPI.QuanLyBaiTap",
+    "Method": "GetDanhSachLoaiBaiTapAdmin",
+    "RelativePath": "api/quanlybaitap/admin/danhsach-loaibaitap",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "HocTiengTrung_3._0_T.ControllersAPI.QuanLyBaiTap",
+    "Method": "SuaLoaiBaiTap",
+    "RelativePath": "api/quanlybaitap/admin/sua-loaibaitap/{id}",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "model",
+        "Type": "HocTiengTrung_3._0_T.Models12.BaiTap.LoaiBaiTapEdit",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "HocTiengTrung_3._0_T.ControllersAPI.QuanLyBaiTap",
+    "Method": "ThemLoaiBaiTap",
+    "RelativePath": "api/quanlybaitap/admin/them-loaibaitap",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "model",
+        "Type": "HocTiengTrung_3._0_T.Models12.BaiTap.LoaiBaiTapAdd",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "HocTiengTrung_3._0_T.ControllersAPI.QuanLyBaiTap",
+    "Method": "LayChiTietCauHoi",
+    "RelativePath": "api/quanlybaitap/chi-tiet-cau-hoi/{maCauHoi}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "maCauHoi",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "HocTiengTrung_3._0_T.ControllersAPI.QuanLyBaiTap",
+    "Method": "GetChiTietLichSu",
+    "RelativePath": "api/quanlybaitap/chi-tiet-lich-su/{idLichSu}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "idLichSu",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "HocTiengTrung_3._0_T.ControllersAPI.QuanLyBaiTap",
+    "Method": "GetLichSu",
+    "RelativePath": "api/quanlybaitap/danh-sach-lich-su",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "HocTiengTrung_3._0_T.ControllersAPI.QuanLyBaiTap",
+    "Method": "LayDanhSachQuanLy",
+    "RelativePath": "api/quanlybaitap/danh-sach-quan-ly",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "TrangThai",
+        "Type": "System.Boolean",
+        "IsRequired": false
+      },
+      {
+        "Name": "page",
+        "Type": "System.Int32",
+        "IsRequired": false
+      },
+      {
+        "Name": "idLoai",
+        "Type": "System.Nullable\u00601[[System.Int32, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "IsRequired": false
+      },
+      {
+        "Name": "idCapDo",
+        "Type": "System.Nullable\u00601[[System.Int32, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "HocTiengTrung_3._0_T.ControllersAPI.QuanLyBaiTap",
+    "Method": "LayDanhSachBaiTap",
+    "RelativePath": "api/quanlybaitap/danhsachloaibaitap",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "chuongTrinh",
+        "Type": "System.String",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "HocTiengTrung_3._0_T.ControllersAPI.QuanLyBaiTap",
+    "Method": "ImportExcelFull",
+    "RelativePath": "api/quanlybaitap/import-excel-baitap",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "file",
+        "Type": "Microsoft.AspNetCore.Http.IFormFile",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "HocTiengTrung_3._0_T.ControllersAPI.QuanLyBaiTap",
+    "Method": "KichHoatHangLoat",
+    "RelativePath": "api/quanlybaitap/kich-hoat-hang-loat",
+    "HttpMethod": "PATCH",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "ids",
+        "Type": "System.Collections.Generic.List\u00601[[System.Int32, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "HocTiengTrung_3._0_T.ControllersAPI.QuanLyBaiTap",
+    "Method": "LayDanhSachBaiTapTheoLoai",
+    "RelativePath": "api/quanlybaitap/lay-bai-tap/{idCapDo}/{idLoai}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "idCapDo",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "idLoai",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "shuffle",
+        "Type": "System.Boolean",
+        "IsRequired": false
+      },
+      {
+        "Name": "idTaiKhoan",
+        "Type": "System.Nullable\u00601[[System.Int32, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "HocTiengTrung_3._0_T.ControllersAPI.QuanLyBaiTap",
+    "Method": "LuuBaiTap",
+    "RelativePath": "api/quanlybaitap/luu-bai-tap",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "cauHoi",
+        "Type": "HocTiengTrung_3._0_T.Models12.BaiTap.CauHoiModels",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "HocTiengTrung_3._0_T.ControllersAPI.QuanLyBaiTap",
+    "Method": "LuuKetQua",
+    "RelativePath": "api/quanlybaitap/luu-ket-qua",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "dto",
+        "Type": "HocTiengTrung_3._0_T.Models12.LuuLichSu.PhienLamBaiDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "HocTiengTrung_3._0_T.ControllersAPI.QuanLyBaiTap",
+    "Method": "NopBaiVaChamDiemAiList",
+    "RelativePath": "api/quanlybaitap/nop-bai-nhieu-cau",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "submissions",
+        "Type": "System.Collections.Generic.List\u00601[[HocTiengTrung_3._0_T.Models.AI.BaiTapAi, HocTiengTrung_3.0_T, Version=1.0.0.0, Culture=neutral, PublicKeyToken=null]]",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "HocTiengTrung_3._0_T.ControllersAPI.QuanLyBaiTap",
+    "Method": "SuaCauHoi",
+    "RelativePath": "api/quanlybaitap/sua-cau-hoi/{id}",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "model",
+        "Type": "HocTiengTrung_3._0_T.Models12.BaiTap.EditBaiTap",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "HocTiengTrung_3._0_T.ControllersAPI.QuanLyBaiTap",
+    "Method": "VoHieuHoaHangLoat",
+    "RelativePath": "api/quanlybaitap/vo-hieu-hoa-hang-loat",
+    "HttpMethod": "PATCH",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "ids",
+        "Type": "System.Collections.Generic.List\u00601[[System.Int32, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "HocTiengTrung_3._0_T.ControllersAPI.QuanLyBaiTap",
+    "Method": "XoaCauHoi",
+    "RelativePath": "api/quanlybaitap/xoa-cau-hoi/{id}",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "HocTiengTrung_3._0_T.ControllersAPI.QuanLyDeThi",
+    "Method": "UpdateDeThi",
+    "RelativePath": "api/quanlydethi/cap-nhat-de-thi/{idDeThi}",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "idDeThi",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "updateModel",
+        "Type": "HocTiengTrung_3._0_T.Models.DeThi",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "HocTiengTrung_3._0_T.ControllersAPI.QuanLyDeThi",
+    "Method": "UpdateStatus",
+    "RelativePath": "api/quanlydethi/cap-nhat-trang-thai/{id}",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "dto",
+        "Type": "HocTiengTrung_3._0_T.ControllersAPI.QuanLyDeThi\u002BExamStatusDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "HocTiengTrung_3._0_T.ControllersAPI.QuanLyDeThi",
+    "Method": "GetChiTietDeThi",
+    "RelativePath": "api/quanlydethi/chi-tiet-de-thi/{idDeThi}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "idDeThi",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "HocTiengTrung_3._0_T.ControllersAPI.QuanLyDeThi",
+    "Method": "GetDanhSachDeThi",
+    "RelativePath": "api/quanlydethi/danh-sach-de-thi",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "idCapDo",
+        "Type": "System.Nullable\u00601[[System.Int32, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "HocTiengTrung_3._0_T.ControllersAPI.QuanLyDeThi",
+    "Method": "GetDanhSachLoaiDeThi",
+    "RelativePath": "api/quanlydethi/danh-sach-loai-de-thi",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "HocTiengTrung_3._0_T.ControllersAPI.QuanLyDeThi",
+    "Method": "ImportExcel",
+    "RelativePath": "api/quanlydethi/import-excel",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "file",
+        "Type": "Microsoft.AspNetCore.Http.IFormFile",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "HocTiengTrung_3._0_T.ControllersAPI.QuanLyDeThi",
+    "Method": "GetKetQuaChiTiet",
+    "RelativePath": "api/quanlydethi/ket-qua-chi-tiet/{idKetQua}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "idKetQua",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "HocTiengTrung_3._0_T.ControllersAPI.QuanLyDeThi",
+    "Method": "GetLichSuThi",
+    "RelativePath": "api/quanlydethi/lich-su-thi",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "HocTiengTrung_3._0_T.ControllersAPI.QuanLyDeThi",
+    "Method": "NopBai",
+    "RelativePath": "api/quanlydethi/nop-bai",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "HocTiengTrung_3._0_T.Models12.QuanLyDeThi.NopBaiRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "HocTiengTrung_3._0_T.ControllersAPI.QuanLyDeThi",
+    "Method": "DeleteDeThi",
+    "RelativePath": "api/quanlydethi/xoa-de-thi/{idDeThi}",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "idDeThi",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "HocTiengTrung_3._0_T.ControllersAPI.QuanLyLuyenNghe",
+    "Method": "AddVideo",
+    "RelativePath": "api/quanlyluyennghe/add-video",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "IdVideo",
+        "Type": "System.Int32",
+        "IsRequired": false
+      },
+      {
+        "Name": "TieuDe",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "VideoPath",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "IdCapDo",
+        "Type": "System.Nullable\u00601[[System.Int32, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "IsRequired": false
+      },
+      {
+        "Name": "MoTa",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "TenCapDo",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "NgayTao",
+        "Type": "System.Nullable\u00601[[System.DateTime, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "IsRequired": false
+      },
+      {
+        "Name": "VideoFile",
+        "Type": "Microsoft.AspNetCore.Http.IFormFile",
+        "IsRequired": false
+      },
+      {
+        "Name": "SubtitlesJson",
+        "Type": "System.String",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "HocTiengTrung_3._0_T.ControllersAPI.QuanLyLuyenNghe",
+    "Method": "DeleteVideo",
+    "RelativePath": "api/quanlyluyennghe/delete-video/{id}",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "HocTiengTrung_3._0_T.ControllersAPI.QuanLyLuyenNghe",
+    "Method": "GetAllVideos",
+    "RelativePath": "api/quanlyluyennghe/get-all-videos",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "idCapDo",
+        "Type": "System.Nullable\u00601[[System.Int32, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "HocTiengTrung_3._0_T.ControllersAPI.QuanLyLuyenNghe",
+    "Method": "GetVideoDetail",
+    "RelativePath": "api/quanlyluyennghe/get-video-detail/{id}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "HocTiengTrung_3._0_T.ControllersAPI.QuanLyLuyenNghe",
+    "Method": "ImportVideoExcel",
+    "RelativePath": "api/quanlyluyennghe/import-video-excel",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "file",
+        "Type": "Microsoft.AspNetCore.Http.IFormFile",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "HocTiengTrung_3._0_T.ControllersAPI.QuanLyLuyenNghe",
+    "Method": "SaveNotes",
+    "RelativePath": "api/quanlyluyennghe/save-notes",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "HocTiengTrung_3._0_T.ControllersAPI.QuanLyLuyenNghe\u002BNoteRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "HocTiengTrung_3._0_T.ControllersAPI.QuanLyLuyenNghe",
+    "Method": "UpdateVideo",
+    "RelativePath": "api/quanlyluyennghe/update-video/{id}",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "IdVideo",
+        "Type": "System.Int32",
+        "IsRequired": false
+      },
+      {
+        "Name": "TieuDe",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "IdCapDo",
+        "Type": "System.Int32",
+        "IsRequired": false
+      },
+      {
+        "Name": "MoTa",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "VideoFile",
+        "Type": "Microsoft.AspNetCore.Http.IFormFile",
+        "IsRequired": false
+      },
+      {
+        "Name": "SubtitlesJson",
+        "Type": "System.String",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "HocTiengTrung_3._0_T.ControllersAPI.QuanLyNguPhap",
+    "Method": "AdminGetDanhSachNguPhapKemBaiTap",
+    "RelativePath": "api/quanlynguphap/admin/danh-sach-kem-bai-tap",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "capdo",
+        "Type": "System.Nullable\u00601[[System.Int32, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "IsRequired": false
+      },
+      {
+        "Name": "page",
+        "Type": "System.Int32",
+        "IsRequired": false
+      },
+      {
+        "Name": "pagesize",
+        "Type": "System.Int32",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "HocTiengTrung_3._0_T.ControllersAPI.QuanLyNguPhap",
+    "Method": "NhapBaiTapExcel",
+    "RelativePath": "api/quanlynguphap/admin/nhap-bai-tap-excel",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "file",
+        "Type": "Microsoft.AspNetCore.Http.IFormFile",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "HocTiengTrung_3._0_T.ControllersAPI.QuanLyNguPhap",
+    "Method": "AdminThemCauHoi",
+    "RelativePath": "api/quanlynguphap/admin/them-cau-hoi/{idNguPhap}",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "idNguPhap",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "model",
+        "Type": "HocTiengTrung_3._0_T.Models12.BaiTap.CauHoiModels",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "HocTiengTrung_3._0_T.ControllersAPI.QuanLyNguPhap",
+    "Method": "AdminXoaCauHoi",
+    "RelativePath": "api/quanlynguphap/admin/xoa-cau-hoi/{idCauHoi}",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "idCauHoi",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "HocTiengTrung_3._0_T.ControllersAPI.QuanLyNguPhap",
+    "Method": "AdminXoaNguPhap",
+    "RelativePath": "api/quanlynguphap/admin/xoa-ngu-phap/{idNguPhap}",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "idNguPhap",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "HocTiengTrung_3._0_T.ControllersAPI.QuanLyNguPhap",
+    "Method": "GetBaiTapTheoNguPhap",
+    "RelativePath": "api/quanlynguphap/bai-tap-theo-ngu-phap/{id}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "idLoai",
+        "Type": "System.Nullable\u00601[[System.Int32, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "HocTiengTrung_3._0_T.ControllersAPI.QuanLyNguPhap",
+    "Method": "CapNhatCauHoi",
+    "RelativePath": "api/quanlynguphap/cap-nhat-cau-hoi/{id}",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "dto",
+        "Type": "HocTiengTrung_3._0_T.Models12.NguPhap.CauHoiUpdateDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "HocTiengTrung_3._0_T.ControllersAPI.QuanLyNguPhap",
+    "Method": "CapNhat",
+    "RelativePath": "api/quanlynguphap/cap-nhat/{id}",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "updata",
+        "Type": "HocTiengTrung_3._0_T.Models12.NguPhap.NguPhapUpdata",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "HocTiengTrung_3._0_T.ControllersAPI.QuanLyNguPhap",
+    "Method": "ChiTiet",
+    "RelativePath": "api/quanlynguphap/chi-tiet/{id}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "HocTiengTrung_3._0_T.ControllersAPI.QuanLyNguPhap",
+    "Method": "DanhSachNguPhap",
+    "RelativePath": "api/quanlynguphap/danh-sach-ngu-phap",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "capdo",
+        "Type": "System.Nullable\u00601[[System.Int32, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "IsRequired": false
+      },
+      {
+        "Name": "search",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "pagesize",
+        "Type": "System.Int32",
+        "IsRequired": false
+      },
+      {
+        "Name": "page",
+        "Type": "System.Int32",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "HocTiengTrung_3._0_T.ControllersAPI.QuanLyNguPhap",
+    "Method": "NhapExcel",
+    "RelativePath": "api/quanlynguphap/nhap-excel",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "file",
+        "Type": "Microsoft.AspNetCore.Http.IFormFile",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "HocTiengTrung_3._0_T.ControllersAPI.QuanLyTaiKhoanNguoiDung",
+    "Method": "AdminCapLaiMatKhau",
+    "RelativePath": "api/quanlytaikhoannguoidung/admin/cap-lai-mat-khau",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "HocTiengTrung_3._0_T.Models12.QuanLyTaiKhoan.CapLaiMatKhauRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "HocTiengTrung_3._0_T.ControllersAPI.QuanLyTaiKhoanNguoiDung",
+    "Method": "CapNhatThongTin",
+    "RelativePath": "api/quanlytaikhoannguoidung/cap-nhat-thong-tin",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "HocTiengTrung_3._0_T.Models12.QuanLyTaiKhoan.UpdateProfileRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "HocTiengTrung_3._0_T.ControllersAPI.QuanLyTaiKhoanNguoiDung",
+    "Method": "CheckAuthInfo",
+    "RelativePath": "api/quanlytaikhoannguoidung/check-auth-info",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "HocTiengTrung_3._0_T.ControllersAPI.QuanLyTaiKhoanNguoiDung",
+    "Method": "GetChiTietNguoiDung",
+    "RelativePath": "api/quanlytaikhoannguoidung/chi-tiet-tai-khoan/{id}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "HocTiengTrung_3._0_T.ControllersAPI.QuanLyTaiKhoanNguoiDung",
+    "Method": "DangKyMuaVip",
+    "RelativePath": "api/quanlytaikhoannguoidung/dang-ky-mua",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "HocTiengTrung_3._0_T.ControllersAPI.QuanLyTaiKhoanNguoiDung",
+    "Method": "TaiKhoanDangNhap",
+    "RelativePath": "api/quanlytaikhoannguoidung/dang-nhap-tai-khoan",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "HocTiengTrung_3._0_T.Models12.QuanLyTaiKhoan.LoginRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "HocTiengTrung_3._0_T.ControllersAPI.QuanLyTaiKhoanNguoiDung",
+    "Method": "DangXuat",
+    "RelativePath": "api/quanlytaikhoannguoidung/dang-xuat",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "HocTiengTrung_3._0_T.ControllersAPI.QuanLyTaiKhoanNguoiDung",
+    "Method": "GetAllBangGia",
+    "RelativePath": "api/quanlytaikhoannguoidung/danh-sach-bang-gia",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "HocTiengTrung_3._0_T.ControllersAPI.QuanLyTaiKhoanNguoiDung",
+    "Method": "LayDanhSachNguoiDung",
+    "RelativePath": "api/quanlytaikhoannguoidung/danh-sach-tai-khoan",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "isVip",
+        "Type": "System.Nullable\u00601[[System.Boolean, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "IsRequired": false
+      },
+      {
+        "Name": "searchTerm",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "page",
+        "Type": "System.Int32",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "HocTiengTrung_3._0_T.ControllersAPI.QuanLyTaiKhoanNguoiDung",
+    "Method": "DoiMatKhau",
+    "RelativePath": "api/quanlytaikhoannguoidung/doi-mat-khau",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "HocTiengTrung_3._0_T.Models12.QuanLyTaiKhoan.DoiMatKhauRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "HocTiengTrung_3._0_T.ControllersAPI.QuanLyTaiKhoanNguoiDung",
+    "Method": "GhiNhanTruyCap",
+    "RelativePath": "api/quanlytaikhoannguoidung/ghi-nhan-truy-cap",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "HocTiengTrung_3._0_T.ControllersAPI.QuanLyTaiKhoanNguoiDung",
+    "Method": "KichHoatVipHoangDe",
+    "RelativePath": "api/quanlytaikhoannguoidung/kich-hoat-vip-hoang-de/{idTaiKhoan}",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "idTaiKhoan",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "HocTiengTrung_3._0_T.ControllersAPI.QuanLyTaiKhoanNguoiDung",
+    "Method": "KiemTraHanVip",
+    "RelativePath": "api/quanlytaikhoannguoidung/kiem-tra-han-vip",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "HocTiengTrung_3._0_T.ControllersAPI.QuanLyTaiKhoanNguoiDung",
+    "Method": "KiemTraTrangThai",
+    "RelativePath": "api/quanlytaikhoannguoidung/kiem-tra-trang-thai/{maGiaoDich}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "maGiaoDich",
+        "Type": "System.String",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "HocTiengTrung_3._0_T.ControllersAPI.QuanLyTaiKhoanNguoiDung",
+    "Method": "QuenMatKhau",
+    "RelativePath": "api/quanlytaikhoannguoidung/quen-mat-khau",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "HocTiengTrung_3._0_T.Models12.QuanLyTaiKhoan.ForgotPasswordRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "HocTiengTrung_3._0_T.ControllersAPI.QuanLyTaiKhoanNguoiDung",
+    "Method": "SoTienThanhToan",
+    "RelativePath": "api/quanlytaikhoannguoidung/so-tien-thanh-toan",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "HocTiengTrung_3._0_T.ControllersAPI.QuanLyTaiKhoanNguoiDung",
+    "Method": "TaoTaiKhoan",
+    "RelativePath": "api/quanlytaikhoannguoidung/tao-tai-khoan",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "HocTiengTrung_3._0_T.Models12.QuanLyTaiKhoan.RegisterRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "HocTiengTrung_3._0_T.ControllersAPI.QuanLyTaiKhoanNguoiDung",
+    "Method": "GetAccessStats",
+    "RelativePath": "api/quanlytaikhoannguoidung/thong-ke-truy-cap",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "tuNgay",
+        "Type": "System.Nullable\u00601[[System.DateTime, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "IsRequired": false
+      },
+      {
+        "Name": "denNgay",
+        "Type": "System.Nullable\u00601[[System.DateTime, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "HocTiengTrung_3._0_T.ControllersAPI.QuanLyTaiKhoanNguoiDung",
+    "Method": "GetHoSo",
+    "RelativePath": "api/quanlytaikhoannguoidung/thong-tin-ho-so",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "HocTiengTrung_3._0_T.ControllersAPI.QuanLyTaiKhoanNguoiDung",
+    "Method": "ThuHoiVipHoangDe",
+    "RelativePath": "api/quanlytaikhoannguoidung/thu-hoi-vip-hoang-de/{idTaiKhoan}",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "idTaiKhoan",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "HocTiengTrung_3._0_T.ControllersAPI.QuanLyTaiKhoanNguoiDung",
+    "Method": "UpdateBangGia",
+    "RelativePath": "api/quanlytaikhoannguoidung/update-version",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "model",
+        "Type": "HocTiengTrung_3._0_T.Models12.QuanLyTaiKhoan.BangGiaTaiKhoanModels",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "HocTiengTrung_3._0_T.ControllersAPI.QuanLyTaiKhoanNguoiDung",
+    "Method": "WebhookNganHang",
+    "RelativePath": "api/quanlytaikhoannguoidung/webhook-ngan-hang",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "body",
+        "Type": "HocTiengTrung_3._0_T.ControllersAPI.QuanLyTaiKhoanNguoiDung\u002BBankTransferWebhookModel",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "HocTiengTrung_3._0_T.ControllersAPI.QuanLyTuVung",
+    "Method": "UpdateCapDo",
+    "RelativePath": "api/quanlytuvung/CapNhatCapDo/{id}",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "capDoDto",
+        "Type": "HocTiengTrung_3._0_T.Models12.TuVung.CapDoDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "HocTiengTrung_3._0_T.ControllersAPI.QuanLyTuVung",
+    "Method": "ChiTietTuVung",
+    "RelativePath": "api/quanlytuvung/chi-tiet-tu-vung/{id}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "HocTiengTrung_3._0_T.ControllersAPI.QuanLyTuVung",
+    "Method": "ClearVocabularyCache",
+    "RelativePath": "api/quanlytuvung/clear-vocabulary-cache",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "HocTiengTrung_3._0_T.ControllersAPI.QuanLyTuVung",
+    "Method": "DanhDauTuVung",
+    "RelativePath": "api/quanlytuvung/danh-dau-tu-vung",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "idTuVung",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "HocTiengTrung_3._0_T.ControllersAPI.QuanLyTuVung",
+    "Method": "LayDanhSachDaThuoc",
+    "RelativePath": "api/quanlytuvung/danhsach-dathuoc",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "page",
+        "Type": "System.Int32",
+        "IsRequired": false
+      },
+      {
+        "Name": "searchTerm",
+        "Type": "System.String",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "HocTiengTrung_3._0_T.ControllersAPI.QuanLyTuVung",
+    "Method": "LayDanhSachCapDo",
+    "RelativePath": "api/quanlytuvung/danhsachcapdo",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "status",
+        "Type": "System.Nullable\u00601[[System.Boolean, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "HocTiengTrung_3._0_T.ControllersAPI.QuanLyTuVung",
+    "Method": "LayDanhSachTuVungTheoCapDo",
+    "RelativePath": "api/quanlytuvung/danhsachtuvung/{capdo}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "capdo",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "page",
+        "Type": "System.Int32",
+        "IsRequired": false
+      },
+      {
+        "Name": "loaiTu",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "searchTerm",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "trangThai",
+        "Type": "System.String",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "HocTiengTrung_3._0_T.ControllersAPI.QuanLyTuVung",
+    "Method": "ImportExcelMini",
+    "RelativePath": "api/quanlytuvung/import-excel-mini",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "file",
+        "Type": "Microsoft.AspNetCore.Http.IFormFile",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "HocTiengTrung_3._0_T.ControllersAPI.QuanLyTuVung",
+    "Method": "KiemTraDapAn",
+    "RelativePath": "api/quanlytuvung/kiem-tra-dap-an",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "request",
+        "Type": "HocTiengTrung_3._0_T.Models12.TuVung.KiemTraDapAnRequest",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "HocTiengTrung_3._0_T.ControllersAPI.QuanLyTuVung",
+    "Method": "DanhSachLoaiCauHoi",
+    "RelativePath": "api/quanlytuvung/loai-cau-hoi",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "HocTiengTrung_3._0_T.ControllersAPI.QuanLyTuVung",
+    "Method": "LuuKetQuaOnLuyen",
+    "RelativePath": "api/quanlytuvung/luu-ket-qua-on-luyen",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "listIdTuVungDung",
+        "Type": "System.Collections.Generic.List\u00601[[System.Int32, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "HocTiengTrung_3._0_T.ControllersAPI.QuanLyTuVung",
+    "Method": "OnLuyenNgauNhien",
+    "RelativePath": "api/quanlytuvung/on-luyen-ngau-nhien",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "idCapDo",
+        "Type": "System.Nullable\u00601[[System.Int32, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "IsRequired": false
+      },
+      {
+        "Name": "loaiOnLuyen",
+        "Type": "System.Int32",
+        "IsRequired": false
+      },
+      {
+        "Name": "soLuong",
+        "Type": "System.Nullable\u00601[[System.Int32, System.Private.CoreLib, Version=8.0.0.0, Culture=neutral, PublicKeyToken=7cec85d7bea7798e]]",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "HocTiengTrung_3._0_T.ControllersAPI.QuanLyTuVung",
+    "Method": "SuaTuVung",
+    "RelativePath": "api/quanlytuvung/sua-tu-vung/{id}",
+    "HttpMethod": "PUT",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      },
+      {
+        "Name": "model",
+        "Type": "HocTiengTrung_3._0_T.Models12.TuVung.EditTuVung",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "HocTiengTrung_3._0_T.ControllersAPI.QuanLyTuVung",
+    "Method": "TaoBaiTapThuCong",
+    "RelativePath": "api/quanlytuvung/tao-bai-tap-thu-cong",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "capDo",
+        "Type": "System.String",
+        "IsRequired": false
+      },
+      {
+        "Name": "loaiMa",
+        "Type": "System.Int32",
+        "IsRequired": false
+      },
+      {
+        "Name": "soLuong",
+        "Type": "System.Int32",
+        "IsRequired": false
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "HocTiengTrung_3._0_T.ControllersAPI.QuanLyTuVung",
+    "Method": "CreateCapDo",
+    "RelativePath": "api/quanlytuvung/ThemCapDo",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "capDoDto",
+        "Type": "HocTiengTrung_3._0_T.Models12.TuVung.CapDoDto",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "HocTiengTrung_3._0_T.ControllersAPI.QuanLyTuVung",
+    "Method": "XoaTuVung",
+    "RelativePath": "api/quanlytuvung/xoa-tu-vung/{id}",
+    "HttpMethod": "DELETE",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "id",
+        "Type": "System.Int32",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "HocTiengTrung_3._0_T.ControllersAPI.ThanhToan",
+    "Method": "DangKyMuaVip",
+    "RelativePath": "api/thanh-toan/dang-ky-mua",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "HocTiengTrung_3._0_T.ControllersAPI.ThanhToan",
+    "Method": "KiemTraTrangThai",
+    "RelativePath": "api/thanh-toan/kiem-tra-trang-thai/{maGiaoDich}",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "maGiaoDich",
+        "Type": "System.String",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "HocTiengTrung_3._0_T.ControllersAPI.ThanhToan",
+    "Method": "SoTienThanhToan",
+    "RelativePath": "api/thanh-toan/so-tien-thanh-toan",
+    "HttpMethod": "GET",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [],
+    "ReturnTypes": []
+  },
+  {
+    "ContainingType": "HocTiengTrung_3._0_T.ControllersAPI.ThanhToan",
+    "Method": "WebhookPayOS",
+    "RelativePath": "api/thanh-toan/webhook-payos",
+    "HttpMethod": "POST",
+    "IsController": true,
+    "Order": 0,
+    "Parameters": [
+      {
+        "Name": "webhookBody",
+        "Type": "PayOS.Models.Webhooks.Webhook",
+        "IsRequired": true
+      }
+    ],
+    "ReturnTypes": []
+  }
+]

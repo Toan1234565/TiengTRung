@@ -1,0 +1,1152 @@
+﻿<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phân Tích Cấu Tạo Chữ Hán & Bộ Thủ</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Serif+SC:wght@600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <script src="https://cdn.jsdelivr.net/npm/hanzi-writer@3.5/dist/hanzi-writer.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/gitbrent/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
+
+    <style>
+            :root {
+                --primary: #be123c;
+                --primary-hover: #9f1239;
+                --primary-light: #ffe4e6;
+                --bg-main: #eef2f6;
+                --surface: #ffffff;
+                --text-main: #0f172a;
+                --text-sub: #64748b;
+                --border: #e2e8f0;
+                --accent: #2563eb;
+                --accent-light: #eff6ff;
+                --radius-lg: 16px;
+                --radius-md: 10px;
+                --shadow-sm: 0 1px 3px rgba(0,0,0,0.05);
+                --shadow-lg: 0 10px 25px -5px rgba(0,0,0,0.05);
+                --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            }
+
+            * {
+                box-sizing: border-box;
+                margin: 0;
+                padding: 0;
+            }
+
+            body {
+                font-family: 'Inter', sans-serif;
+                background-color: var(--bg-main);
+                color: var(--text-main);
+                padding: 30px 15px;
+                min-height: 100vh;
+            }
+
+            .app-container {
+                max-width: 1080px;
+                margin: 0 auto;
+            }
+
+            .header {
+                text-align: center;
+                margin-bottom: 30px;
+            }
+
+                .header h1 {
+                    font-family: 'Noto Serif SC', serif;
+                    color: var(--primary);
+                    font-size: 2.2rem;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    gap: 10px;
+                }
+
+                .header p {
+                    color: var(--text-sub);
+                    margin-top: 6px;
+                    font-size: 1rem;
+                }
+
+            .card-input {
+                background: var(--surface);
+                border-radius: var(--radius-lg);
+                box-shadow: var(--shadow-lg);
+                padding: 24px;
+                margin-bottom: 30px;
+            }
+
+            .tab-group {
+                display: flex;
+                gap: 10px;
+                background: #f1f5f9;
+                padding: 6px;
+                border-radius: var(--radius-md);
+                margin-bottom: 20px;
+            }
+
+            .tab-btn {
+                flex: 1;
+                padding: 12px;
+                border: none;
+                background: transparent;
+                font-weight: 600;
+                color: var(--text-sub);
+                cursor: pointer;
+                border-radius: 8px;
+                transition: var(--transition);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 8px;
+            }
+
+                .tab-btn.active {
+                    background: var(--surface);
+                    color: var(--primary);
+                    box-shadow: var(--shadow-sm);
+                }
+
+            .tab-content {
+                display: none;
+            }
+
+                .tab-content.active {
+                    display: block;
+                }
+
+            .input-box {
+                display: flex;
+                gap: 12px;
+            }
+
+            .input-field {
+                flex: 1;
+                padding: 14px 18px;
+                border: 1.5px solid var(--border);
+                border-radius: var(--radius-md);
+                font-size: 1rem;
+                outline: none;
+                transition: var(--transition);
+                background: #f8fafc;
+            }
+
+                .input-field:focus {
+                    border-color: var(--primary);
+                    background: var(--surface);
+                    box-shadow: 0 0 0 3px var(--primary-light);
+                }
+
+            .btn-submit {
+                background: var(--primary);
+                color: #fff;
+                border: none;
+                padding: 0 28px;
+                border-radius: var(--radius-md);
+                font-weight: 600;
+                cursor: pointer;
+                transition: var(--transition);
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            }
+
+                .btn-submit:hover {
+                    background: var(--primary-hover);
+                }
+
+            .file-dropzone {
+                border: 2px dashed var(--border);
+                border-radius: var(--radius-md);
+                padding: 30px;
+                text-align: center;
+                cursor: pointer;
+                background: #f8fafc;
+            }
+
+            /* --- BỐ CỤC THEO THIẾT KẾ TRONG ẢNH --- */
+            .analysis-card {
+                background: var(--surface);
+                border-radius: var(--radius-lg);
+                padding: 28px;
+                margin-bottom: 30px;
+                box-shadow: var(--shadow-lg);
+                border: 1px solid #e2e8f0;
+            }
+
+            /* Top Header Badges */
+            .top-bar {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 20px;
+            }
+
+            .badge-tag {
+                background: #ffe4e6;
+                color: var(--primary);
+                font-size: 0.75rem;
+                font-weight: 700;
+                padding: 4px 10px;
+                border-radius: 6px;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+            }
+
+            .main-title-group {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                font-size: 1.35rem;
+                font-weight: 800;
+                color: var(--text-main);
+            }
+
+            .meta-badges {
+                display: flex;
+                gap: 10px;
+            }
+
+            .meta-badge {
+                background: #f1f5f9;
+                color: var(--text-sub);
+                font-size: 0.8rem;
+                font-weight: 600;
+                padding: 6px 12px;
+                border-radius: 20px;
+                display: flex;
+                align-items: center;
+                gap: 6px;
+            }
+
+            /* Grid Layout 2 Cột */
+            .content-grid {
+                display: grid;
+                grid-template-columns: 280px 1fr;
+                gap: 24px;
+            }
+
+            /* Cột Trái */
+            .left-col {
+                display: flex;
+                flex-direction: column;
+                gap: 16px;
+            }
+
+            .character-display-box {
+                background: #ffffff;
+                border: 1px solid var(--border);
+                border-radius: var(--radius-md);
+                padding: 20px;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                position: relative;
+            }
+
+            .stroke-box {
+                width: 180px;
+                height: 180px;
+                background-color: #ffffff;
+                position: relative;
+                cursor: pointer;
+                background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='180' height='180'><line x1='0' y1='0' x2='180' y2='180' stroke='%23e2e8f0' stroke-width='1.5' stroke-dasharray='5 5'/><line x1='180' y1='0' x2='0' y2='180' stroke='%23e2e8f0' stroke-width='1.5' stroke-dasharray='5 5'/><line x1='90' y1='0' x2='90' y2='180' stroke='%23cbd5e1' stroke-width='1.5' stroke-dasharray='5 5'/><line x1='0' y1='90' x2='180' y2='90' stroke='%23cbd5e1' stroke-width='1.5' stroke-dasharray='5 5'/></svg>");
+            }
+
+            .word-info-table {
+                background: #f8fafc;
+                border-radius: var(--radius-md);
+                padding: 16px;
+                font-size: 0.9rem;
+                display: flex;
+                flex-direction: column;
+                gap: 8px;
+            }
+
+            .info-row {
+                display: flex;
+                justify-content: space-between;
+            }
+
+            .info-label {
+                color: var(--text-sub);
+            }
+
+            .info-value {
+                font-weight: 600;
+                color: var(--text-main);
+            }
+
+                .info-value.highlight {
+                    color: var(--primary);
+                    font-weight: 700;
+                }
+
+            .mnemonics-box {
+                background: #0f172a;
+                color: #ffffff;
+                border-radius: var(--radius-md);
+                padding: 16px;
+                font-size: 0.85rem;
+                line-height: 1.5;
+            }
+
+            .mnemonics-title {
+                color: #38bdf8;
+                font-weight: 700;
+                font-size: 0.8rem;
+                display: flex;
+                align-items: center;
+                gap: 6px;
+                margin-bottom: 8px;
+                text-transform: uppercase;
+            }
+
+            /* Cột Phải */
+            .right-col {
+                display: flex;
+                flex-direction: column;
+                gap: 24px;
+            }
+
+            .section-header {
+                font-size: 0.85rem;
+                font-weight: 700;
+                color: var(--text-sub);
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+                margin-bottom: 12px;
+                display: flex;
+                align-items: center;
+                gap: 8px;
+            }
+
+            /* List Cấu Tạo Chữ Hán */
+            .components-list {
+                display: flex;
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            .component-item {
+                background: #f8fafc;
+                border: 1px solid var(--border);
+                border-radius: var(--radius-md);
+                padding: 12px 16px;
+                display: flex;
+                align-items: center;
+                gap: 16px;
+            }
+
+            .component-icon-box {
+                width: 44px;
+                height: 44px;
+                background: #eff6ff;
+                color: #2563eb;
+                border-radius: 8px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                font-size: 1.2rem;
+                font-weight: 700;
+                flex-shrink: 0;
+            }
+
+            .component-details {
+                flex: 1;
+            }
+
+            .component-title {
+                font-weight: 700;
+                font-size: 0.95rem;
+                color: var(--text-main);
+                margin-bottom: 2px;
+            }
+
+            .component-desc {
+                font-size: 0.85rem;
+                color: var(--text-sub);
+                line-height: 1.3;
+            }
+
+            /* Tu Cung (Compound Words) */
+            .compounds-grid {
+                display: grid;
+                grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+                gap: 10px;
+            }
+
+            .compound-card {
+                background: #f8fafc;
+                border: 1px solid var(--border);
+                border-radius: 8px;
+                padding: 10px 14px;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            }
+
+            .compound-hanzi {
+                font-weight: 700;
+                font-size: 1rem;
+                margin-right: 6px;
+            }
+
+            .compound-pinyin {
+                color: var(--accent);
+                font-size: 0.85rem;
+            }
+
+            .compound-meaning {
+                font-size: 0.85rem;
+                color: var(--text-sub);
+            }
+
+            /* Sentence Example Box */
+            .example-card {
+                background: #f8fafc;
+                border: 1px solid var(--border);
+                border-radius: var(--radius-md);
+                padding: 16px;
+            }
+
+            .example-hanzi {
+                font-size: 1.15rem;
+                font-weight: 700;
+                color: var(--text-main);
+                margin-bottom: 4px;
+            }
+
+            .example-pinyin {
+                color: var(--accent);
+                font-size: 0.9rem;
+                font-weight: 500;
+                margin-bottom: 4px;
+            }
+
+            .example-viet {
+                color: var(--text-sub);
+                font-size: 0.9rem;
+            }
+
+            .action-bar {
+                margin-top: 15px;
+                display: flex;
+                justify-content: flex-end;
+            }
+
+            .btn-export {
+                background: #059669;
+                color: white;
+                border: none;
+                padding: 8px 16px;
+                border-radius: 6px;
+                font-weight: 600;
+                cursor: pointer;
+                display: flex;
+                align-items: center;
+                gap: 6px;
+                font-size: 0.85rem;
+            }
+
+            .loader {
+                display: none;
+                text-align: center;
+                padding: 30px;
+            }
+
+            .spinner {
+                border: 3px solid #e2e8f0;
+                border-top: 3px solid var(--primary);
+                border-radius: 50%;
+                width: 36px;
+                height: 36px;
+                animation: spin 0.8s linear infinite;
+                margin: 0 auto 10px;
+            }
+
+            @@keyframes spin {
+                100% {
+                    transform: rotate(360deg);
+                }
+            }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <div class="header">
+            <h1><i class="fa-solid fa-pen-nib"></i> Phân Tích Từ Vựng</h1>
+            <p>Tra cứu cấu tạo bộ thủ, thứ tự nét viết trực quan chuẩn giao diện học tập</p>
+        </div>
+
+        <div class="card-input">
+            <div class="tab-group">
+                <button class="tab-btn active" onclick="switchTab('single')"><i class="fa-solid fa-magnifying-glass"></i> Tra Từ Vựng</button>
+                <button class="tab-btn" onclick="switchTab('excel')"><i class="fa-solid fa-file-excel"></i> Nhập File Excel</button>
+            </div>
+
+            <div id="tab-single" class="tab-content active">
+                <div class="input-box">
+                    <input type="text" id="inputChuHan" class="input-field" placeholder="Nhập từ vựng (Ví dụ: 学习, 保持, 睡)..." onkeypress="handleKeyPress(event)">
+                    <button class="btn-submit" onclick="analyzeSingle()"><i class="fa-solid fa-bolt"></i> Phân Tích</button>
+                </div>
+            </div>
+
+            <div id="tab-excel" class="tab-content">
+                <div class="input-box" style="flex-direction: column;">
+                    <input type="file" id="inputExcel" accept=".xlsx, .xls" style="display: none;" onchange="updateFileName(this)">
+                    <div class="file-dropzone" onclick="document.getElementById('inputExcel').click()" style="cursor: pointer;">
+                        <i class="fa-solid fa-cloud-arrow-up" style="font-size: 2.5rem; color: var(--primary, #be123c); margin-bottom: 8px;"></i>
+                        <p id="fileNameText" style="font-weight: 500;">Bấm vào đây để chọn file Excel (.xlsx)</p>
+                    </div>
+                    <button type="button" class="btn-submit" id="btnAnalyzeExcel" onclick="analyzeExcel()" style="width: 100%; justify-content: center; padding: 12px; margin-top: 10px;">
+                        <i class="fa-solid fa-upload"></i> Tải Lên & Phân Tích
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div id="loader" class="loader" style="display: none;">
+            <div class="spinner"></div>
+            <p style="color: var(--text-sub, #64748b); font-size: 0.9rem;">Hệ thống đang phân tích dữ liệu...</p>
+        </div>
+
+        <div id="resultContainer"></div>
+    </div>
+
+   
+    <script>
+            const API_BASE = '/api/phan-tich-tu-vung';
+            const writerInstances = {};
+            let currentResultsData = [];
+
+            function switchTab(tab) {
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+
+                if (tab === 'single') {
+                    document.querySelectorAll('.tab-btn')[0].classList.add('active');
+                    document.getElementById('tab-single').classList.add('active');
+                } else {
+                    document.querySelectorAll('.tab-btn')[1].classList.add('active');
+                    document.getElementById('tab-excel').classList.add('active');
+                }
+            }
+
+            function handleKeyPress(e) {
+                if (e.key === 'Enter') analyzeSingle();
+            }
+
+            function updateFileName(input) {
+                const fileNameText = document.getElementById('fileNameText');
+                if (input.files && input.files.length > 0) {
+                    fileNameText.innerHTML = `<span style="color: var(--primary, #be123c);">📄 ${input.files[0].name}</span>`;
+                } else {
+                    fileNameText.textContent = "Bấm vào đây để chọn file Excel (.xlsx)";
+                }
+            }
+
+            function toggleLoading(show) {
+                const loader = document.getElementById('loader');
+                if (loader) loader.style.display = show ? 'block' : 'none';
+            }
+
+            // 1. PHÂN TÍCH TỪ ĐƠN / CỤM TỪ (GIỮ NGUYÊN TỪ GHÉP NHƯ 学习 TRONG 1 THỰC THỂ)
+            async function analyzeSingle() {
+                const text = document.getElementById('inputChuHan').value.trim();
+                if (!text) return alert('Vui lòng nhập từ vựng Hán ngữ!');
+
+                // Tách các từ cách nhau bởi dấu phẩy, tuyệt đối không tách từng ký tự con
+                let words = text.split(/[,，]/)
+                    .map(w => w.trim())
+                    .filter(w => w.length > 0);
+
+                const uniqueWords = [...new Set(words)];
+                if (uniqueWords.length === 0) return alert('Vui lòng nhập chữ Hán hợp lệ!');
+
+                toggleLoading(true);
+                document.getElementById('resultContainer').innerHTML = '';
+
+                try {
+                    const validData = [];
+
+                    for (const word of uniqueWords) {
+                        try {
+                            const res = await fetch(`${API_BASE}/tu-don`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ chuHan: word })
+                            });
+
+                            if (!res.ok) {
+                                console.warn(`Lỗi server với từ "${word}": ${res.status}`);
+                                continue;
+                            }
+
+                            const json = await res.json();
+                            const dataObj = json.data || (json.success ? json : json);
+                            if (dataObj) {
+                                validData.push(dataObj);
+                            }
+                        } catch (err) {
+                            console.error(`Lỗi mạng/kết nối khi phân tích từ "${word}":`, err);
+                        }
+                    }
+
+                    if (validData.length > 0) {
+                        renderResults(validData);
+                    } else {
+                        renderMockData(uniqueWords);
+                    }
+                } catch (error) {
+                    console.error("Lỗi hệ thống:", error);
+                    renderMockData(uniqueWords);
+                } finally {
+                    toggleLoading(false);
+                }
+            }
+
+            // 2. PHÂN TÍCH FILE EXCEL
+            async function analyzeExcel() {
+                const fileInput = document.getElementById('inputExcel');
+                const btnSubmit = document.getElementById('btnAnalyzeExcel');
+
+                if (!fileInput || !fileInput.files.length) {
+                    alert("Vui lòng chọn file Excel trước khi phân tích!");
+                    return;
+                }
+
+                const formData = new FormData();
+                formData.append("file", fileInput.files[0]);
+
+                const originalBtnHtml = btnSubmit.innerHTML;
+                btnSubmit.disabled = true;
+                btnSubmit.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> Đang phân tích...`;
+                toggleLoading(true);
+                document.getElementById('resultContainer').innerHTML = '';
+
+                try {
+                    const response = await fetch(`${API_BASE}/excel-tu-vung`, {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    if (!response.ok) throw new Error(`Lỗi máy chủ (${response.status})`);
+
+                    const res = await response.json();
+                    const list = res.data || res;
+                    if (Array.isArray(list) && list.length > 0) {
+                        renderResults(list);
+                    } else {
+                        alert(res.message || "Không thể phân tích file Excel!");
+                    }
+                } catch (err) {
+                    console.error("Lỗi gửi file Excel:", err);
+                    alert("Đã xảy ra lỗi kết nối hoặc xử lý file thất bại!");
+                } finally {
+                    btnSubmit.disabled = false;
+                    btnSubmit.innerHTML = originalBtnHtml;
+                    toggleLoading(false);
+                }
+            }
+
+            function renderMockData(words) {
+                const mockList = words.map((word) => ({
+                    chuHan: word,
+                    pinyin: "xuéxí",
+                    amHanViet: "Học tập",
+                    tuLoai: "Động từ",
+                    nghiaTiengViet: "Học tập, nghiên cứu và rèn luyện",
+                    boThuChinh: "子",
+                    cauTaoKyTu: [
+                        {
+                            kyTu: word[0] || "学",
+                            danhSachBoThu: [
+                                { kyHieu: "宀", tenGoi: "Bộ Miên", yNghia: "Mái nhà", vaiTro: "Biểu ý" },
+                                { kyHieu: "子", tenGoi: "Bộ Tử", yNghia: "Đứa con", vaiTro: "Biểu ý" }
+                            ]
+                        }
+                    ],
+                    giaiThichTrietTu: "Hình ảnh rèn luyện dưới mái trường.",
+                    meoGhiNho: "Đứa trẻ (子) học bài dưới mái nhà (宀).",
+                    danhSachViDu: [
+                        { noiDungHan: `学习${word}。`, noiDungPinyin: `Xuéxí ${word}.`, noiDungViet: `Học từ ${word}.` }
+                    ]
+                }));
+                renderResults(mockList);
+            }
+
+            // ================= RENDER GIAO DIỆN WEB (CÓ TRIẾT TỰ & MẸO NHỚ) =================
+            function renderResults(list) {
+                const container = document.getElementById('resultContainer');
+                if (!list || list.length === 0) return;
+
+                currentResultsData = list;
+
+                let html = `
+                        <div id="actionToolbar" style="display: flex; justify-content: flex-end; gap: 12px; margin-bottom: 20px;">
+                            <button onclick="exportAllPPT()" style="background: #be123c; color: white; border: none; padding: 12px 24px; border-radius: 10px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                                <i class="fa-solid fa-file-powerpoint" style="font-size: 1.1rem;"></i> Xuất Tất Cả PPT
+                            </button>
+                            <button onclick="exportAllPDF()" style="background: #dc2626; color: white; border: none; padding: 12px 24px; border-radius: 10px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                                <i class="fa-solid fa-file-pdf" style="font-size: 1.1rem;"></i> Xuất Tất Cả PDF
+                            </button>
+                        </div>
+                    `;
+
+                list.forEach((item, itemIdx) => {
+                    const itemData = encodeURIComponent(JSON.stringify(item));
+
+                    const chuHan = item.chuHan || item.ChuHan || '';
+                    const pinyin = item.pinyin || item.Pinyin || 'N/A';
+                    const amHan = item.amHanViet || item.AmHanViet || item.amHan || item.AmHan || 'N/A';
+                    const loaiTu = item.tuLoai || item.TuLoai || item.loaiTu || item.LoaiTu || 'N/A';
+                    const nghiaViet = item.nghiaTiengViet || item.NghiaTiengViet || item.nghiaViet || item.NghiaViet || item.nghiaChinh || 'N/A';
+                    const boChinh = item.boThuChinh || item.BoThuChinh || item.boChinh || item.BoChinh || 'N/A';
+
+                    const giaiThichTrietTu = item.giaiThichTrietTu || item.GiaiThichTrietTu || '';
+                    const meoGhiNho = item.meoGhiNho || item.MeoGhiNho || '';
+                    const danhSachViDu = item.danhSachViDu || item.DanhSachViDu || [];
+
+                    // Chuẩn hóa danh sách ký tự cấu tạo
+                    let charactersList = [];
+                    if (item.cauTaoKyTu && item.cauTaoKyTu.length > 0) {
+                        charactersList = item.cauTaoKyTu;
+                    } else if (item.thanhPhanCauTao && item.thanhPhanCauTao.length > 0) {
+                        charactersList = [{ kyTu: chuHan[0] || chuHan, danhSachBoThu: item.thanhPhanCauTao }];
+                    } else {
+                        charactersList = chuHan.split('').map(c => ({ kyTu: c, danhSachBoThu: [] }));
+                    }
+
+                    // 1. Khối hiển thị HanziWriter và các bộ thủ cấu thành từng chữ
+                    let charactersHtml = `<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 15px; margin-bottom: 20px;">`;
+                    charactersList.forEach((charObj, charIdx) => {
+                        const charChar = charObj.kyTu || charObj.KyTu || chuHan[charIdx] || '';
+                        const writerId = `hanzi-writer-${itemIdx}-${charIdx}`;
+                        const radList = charObj.danhSachBoThu || charObj.DanhSachBoThu || [];
+
+                        let boThuListHtml = '<div style="color:#94a3b8; font-size: 0.85rem;">Không có dữ liệu bộ thủ</div>';
+                        if (radList.length > 0) {
+                            boThuListHtml = radList.map(b => {
+                                const symbol = b.kyHieu || b.KyHieu || b.boThu || b.BoThu || '';
+                                const tenGoi = b.tenGoi || b.TenGoi || b.hanViet || b.HanViet || 'Chưa rõ';
+                                const bPinyin = b.pinyin || b.Pinyin || '';
+                                const yNghia = b.yNghia || b.YNghia || '';
+                                const vaiTro = b.vaiTro || b.VaiTro || '';
+
+                                return `
+                                        <div style="background: #ffffff; border: 1px solid #f1f5f9; border-radius: 12px; padding: 10px; display: flex; gap: 10px; align-items: flex-start; margin-bottom: 8px;">
+                                            <div style="width: 32px; height: 32px; background: #eff6ff; color: #2563eb; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; font-weight: bold; flex-shrink: 0;">
+                                                ${symbol}
+                                            </div>
+                                            <div style="flex: 1;">
+                                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                                    <span style="font-size: 0.9rem; font-weight: 700; color: #0f172a;">
+                                                        ${tenGoi} ${bPinyin ? `<span style="font-weight: 400; color: #64748b; font-size: 0.8rem;">(${bPinyin})</span>` : ''}
+                                                    </span>
+                                                    ${vaiTro ? `<span style="background: #fef2f2; color: #be123c; font-size: 0.72rem; padding: 2px 6px; border-radius: 4px; font-weight: 600;">${vaiTro}</span>` : ''}
+                                                </div>
+                                                <div style="font-size: 0.8rem; color: #475569; margin-top: 2px; line-height: 1.3;">
+                                                    ${yNghia}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    `;
+                            }).join('');
+                        }
+
+                        charactersHtml += `
+                                <div style="background: #fff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 18px; display: flex; gap: 16px; align-items: flex-start;">
+                                    <div style="width: 110px; height: 110px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; border-right: 1px dashed #cbd5e1; padding-right: 16px;">
+                                        <div id="${writerId}" onclick="replayAnimation('${writerId}')" style="cursor: pointer;" title="Bấm xem thứ tự nét"></div>
+                                    </div>
+                                    <div style="flex: 1;">
+                                        <div style="font-size: 0.85rem; font-weight: 700; color: #64748b; margin-bottom: 8px;">
+                                            🧩 CẤU TẠO CHỮ '${charChar}'
+                                        </div>
+                                        ${boThuListHtml}
+                                    </div>
+                                </div>
+                            `;
+                    });
+                    charactersHtml += `</div>`;
+
+                    // 2. Phân tích chuyên sâu (Triết tự & Mẹo nhớ)
+                    let trietTuMeoNhoHtml = '';
+                    if (giaiThichTrietTu || meoGhiNho) {
+                        trietTuMeoNhoHtml = `
+                                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px; margin-bottom: 20px;">
+                                    ${giaiThichTrietTu ? `
+                                        <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 15px;">
+                                            <div style="font-size: 0.85rem; font-weight: 700; color: #be123c; margin-bottom: 6px;">📖 GIẢI THÍCH TRIẾT TỰ (LỤC THƯ)</div>
+                                            <div style="font-size: 0.88rem; color: #334155; line-height: 1.5;">${giaiThichTrietTu}</div>
+                                        </div>
+                                    ` : ''}
+                                    ${meoGhiNho ? `
+                                        <div style="background: #fefce8; border: 1px solid #fef08a; border-radius: 12px; padding: 15px;">
+                                            <div style="font-size: 0.85rem; font-weight: 700; color: #854d0e; margin-bottom: 6px;">💡 MẸO GHI NHỚ</div>
+                                            <div style="font-size: 0.88rem; color: #713f12; line-height: 1.5;">${meoGhiNho}</div>
+                                        </div>
+                                    ` : ''}
+                                </div>
+                            `;
+                    }
+
+                    // 3. Khối ví dụ duy nhất từ Database
+                    const viDuData = (danhSachViDu && danhSachViDu.length > 0) ? danhSachViDu[0] : {
+                        noiDungHan: `学习${chuHan}。`,
+                        noiDungPinyin: `Xuéxí ${pinyin}.`,
+                        noiDungViet: `Học từ ${chuHan}.`
+                    };
+
+                    const viDuHtml = `
+                            <div style="margin-bottom: 20px;">
+                                <div style="font-size: 0.85rem; font-weight: 700; color: #64748b; margin-bottom: 8px;">💬 CÂU VÍ DỤ ỨNG DỤNG (DATABASE)</div>
+                                <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 16px 20px;">
+                                    <div style="font-size: 1.25rem; font-weight: 800; color: #0f172a; margin-bottom: 4px; font-family: 'Noto Serif SC', serif;">${viDuData.noiDungHan || viDuData.NoiDungHan || ''}</div>
+                                    <div style="font-size: 0.95rem; font-weight: 600; color: #2563eb; margin-bottom: 4px;">${viDuData.noiDungPinyin || viDuData.NoiDungPinyin || ''}</div>
+                                    <div style="font-size: 0.9rem; color: #475569;">${viDuData.noiDungViet || viDuData.NoiDungViet || ''}</div>
+                                </div>
+                            </div>
+                        `;
+
+                    html += `
+                            <div class="analysis-card" style="background: #f8fafc; padding: 25px; border-radius: 20px; font-family: system-ui, -apple-system, sans-serif; margin-bottom: 30px; border: 1px solid #e2e8f0; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                                    <div style="font-size: 1.6rem; font-weight: 800; color: #0f172a;">
+                                        Phân Tích Từ Vựng: <span style="color: #be123c; font-family: 'Noto Serif SC', serif;">${chuHan}</span>
+                                    </div>
+                                    <div style="background: #f1f5f9; color: #475569; padding: 6px 16px; border-radius: 20px; font-size: 0.85rem; font-weight: 600;">
+                                        Bộ chính: <b style="color: #be123c;">${boChinh}</b>
+                                    </div>
+                                </div>
+
+                                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; background: #ffffff; padding: 16px 20px; border-radius: 12px; border: 1px solid #e2e8f0; margin-bottom: 20px;">
+                                    <div>
+                                        <div style="color: #64748b; font-size: 0.8rem; margin-bottom: 4px;">Phiên âm (Pinyin)</div>
+                                        <div style="font-size: 1.05rem; font-weight: 700; color: #0f172a;">${pinyin}</div>
+                                    </div>
+                                    <div>
+                                        <div style="color: #64748b; font-size: 0.8rem; margin-bottom: 4px;">Âm Hán Việt</div>
+                                        <div style="font-size: 1.05rem; font-weight: 700; color: #0f172a;">${amHan}</div>
+                                    </div>
+                                    <div>
+                                        <div style="color: #64748b; font-size: 0.8rem; margin-bottom: 4px;">Từ loại</div>
+                                        <div style="font-size: 1.05rem; font-weight: 700; color: #0f172a;">${loaiTu}</div>
+                                    </div>
+                                    <div>
+                                        <div style="color: #64748b; font-size: 0.8rem; margin-bottom: 4px;">Ý nghĩa chính</div>
+                                        <div style="font-size: 1.05rem; font-weight: 700; color: #0f172a;">${nghiaViet}</div>
+                                    </div>
+                                </div>
+
+                                ${charactersHtml}
+                                ${trietTuMeoNhoHtml}
+                                ${viDuHtml}
+
+                                <div class="card-export-btn" style="text-align: right;">
+                                    <button style="background: #be123c; color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer;" data-item="${itemData}" onclick="handleExportPPT(this)">
+                                        <i class="fa-solid fa-file-powerpoint"></i> Xuất Slide (PPT)
+                                    </button>
+                                </div>
+                            </div>
+                        `;
+                });
+
+                container.innerHTML = html;
+
+                // Khởi tạo HanziWriter cho từng ký tự
+                list.forEach((item, itemIdx) => {
+                    const chuHan = item.chuHan || item.ChuHan || '';
+                    let charactersList = item.cauTaoKyTu || [];
+                    if (charactersList.length === 0) {
+                        charactersList = chuHan.split('').map(c => ({ kyTu: c }));
+                    }
+
+                    charactersList.forEach((charObj, charIdx) => {
+                        const writerId = `hanzi-writer-${itemIdx}-${charIdx}`;
+                        const charChar = charObj.kyTu || charObj.KyTu || chuHan[charIdx];
+                        if (typeof HanziWriter !== 'undefined' && charChar) {
+                            try {
+                                const targetEl = document.getElementById(writerId);
+                                if (targetEl) {
+                                    targetEl.innerHTML = '';
+                                    writerInstances[writerId] = HanziWriter.create(writerId, charChar, {
+                                        width: 100,
+                                        height: 100,
+                                        padding: 5,
+                                        showOutline: true,
+                                        strokeColor: '#be123c'
+                                    });
+                                    writerInstances[writerId].animateCharacter();
+                                }
+                            } catch (e) {
+                                console.error("Lỗi khởi tạo HanziWriter:", e);
+                            }
+                        }
+                    });
+                });
+            }
+
+            function replayAnimation(writerId) {
+                if (writerInstances[writerId]) {
+                    writerInstances[writerId].animateCharacter();
+                }
+            }
+
+            // ================= HÀM XUẤT ALL TO PDF =================
+            async function exportAllPDF() {
+                const container = document.getElementById('resultContainer');
+                if (!container || !container.children.length) return alert("Không có dữ liệu để xuất PDF!");
+
+                if (typeof html2pdf === 'undefined') {
+                    toggleLoading(true);
+                    try {
+                        await new Promise((resolve, reject) => {
+                            const script = document.createElement('script');
+                            script.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
+                            script.onload = resolve;
+                            script.onerror = reject;
+                            document.head.appendChild(script);
+                        });
+                    } catch (e) {
+                        toggleLoading(false);
+                        return alert("Lỗi tải thư viện hỗ trợ xuất PDF!");
+                    }
+                }
+
+                toggleLoading(true);
+
+                const toolbar = document.getElementById('actionToolbar');
+                const exportBtns = container.querySelectorAll('.card-export-btn');
+                if (toolbar) toolbar.style.display = 'none';
+                exportBtns.forEach(btn => btn.style.display = 'none');
+
+                const opt = {
+                    margin: [10, 10, 10, 10],
+                    filename: `DanhSach_PhanTich_TuVung_${new Date().toISOString().slice(0, 10)}.pdf`,
+                    image: { type: 'jpeg', quality: 0.98 },
+                    html2canvas: { scale: 2, useCORS: true, logging: false },
+                    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+                };
+
+                try {
+                    await html2pdf().set(opt).from(container).save();
+                } catch (err) {
+                    console.error("Lỗi xuất PDF:", err);
+                    alert("Đã xảy ra lỗi khi tạo file PDF!");
+                } finally {
+                    if (toolbar) toolbar.style.display = 'flex';
+                    exportBtns.forEach(btn => btn.style.display = 'block');
+                    toggleLoading(false);
+                }
+            }
+
+            async function ensurePptxLoaded() {
+                if (window.pptxgen || window.PptxGenJS) return true;
+                toggleLoading(true);
+                try {
+                    await new Promise((resolve, reject) => {
+                        const script = document.createElement('script');
+                        script.src = 'https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js';
+                        script.onload = resolve;
+                        script.onerror = reject;
+                        document.head.appendChild(script);
+                    });
+                    return true;
+                } catch (e) {
+                    alert("Không thể tải thư viện PptxGenJS!");
+                    return false;
+                } finally {
+                    toggleLoading(false);
+                }
+            }
+
+            function handleExportPPT(btn) {
+                const rawData = btn.getAttribute('data-item');
+                const item = JSON.parse(decodeURIComponent(rawData));
+                exportPPT(item);
+            }
+
+            // ================= HÀM VẼ SLIDE PPTX (GOM CHUNG 1 TỪ VỰNG TRÊN 1 SLIDE, LẤY ĐÚNG 1 VÍ DỤ TỪ DATABASE) =================
+            function addWordSlide(pptx, item) {
+                let slide = pptx.addSlide();
+                slide.background = { color: "F8FAFC" }; // Nền xám xanh cực nhạt, sang trọng
+
+                // BẢNG MÀU TƯƠNG PHẢN CAO & HIỆN ĐẠI
+                const colors = {
+                    primary: "BE123C",     // Đỏ mận chủ đạo
+                    blue: "1E3A8A",        // Xanh navy đậm cho Hán tự
+                    blueLight: "1D4ED8",   // Xanh dương cho Pinyin
+                    black: "000000",       // Đen tuyền 100% cho chữ hiển thị chính
+                    blackLight: "334155",  // Đen xám dịu cho các tiêu đề phụ (giúp nổi bật nội dung chính)
+                    bgCard: "FFFFFF",      // Nền thẻ trắng
+                    bgTag: "F1F5F9",       // Nền tag nhạt
+                    border: "CBD5E1",      // Viền thẻ tinh tế
+                    divider: "E2E8F0"      // Đường kẻ đứt phân cách
+                };
+
+                const chuHan = item.chuHan || item.ChuHan || '';
+                const pinyin = item.pinyin || item.Pinyin || 'N/A';
+                const amHan = item.amHanViet || item.AmHanViet || item.amHan || item.AmHan || 'N/A';
+                const loaiTu = item.tuLoai || item.TuLoai || item.loaiTu || item.LoaiTu || 'N/A';
+                const nghiaViet = item.nghiaTiengViet || item.NghiaTiengViet || item.nghiaViet || item.NghiaViet || item.nghiaChinh || 'N/A';
+                const boChinh = item.boThuChinh || item.BoThuChinh || item.boChinh || item.BoChinh || 'N/A';
+                const danhSachViDu = item.danhSachViDu || item.DanhSachViDu || [];
+
+                // 1. HEADER (Căn chỉnh cân đối hơn)
+                slide.addText([
+                    { text: "Phân Tích Từ Vựng: ", options: { color: colors.black, bold: true, fontSize: 18, fontFace: "Arial" } },
+                    { text: chuHan, options: { color: colors.primary, bold: true, fontSize: 26, fontFace: "Microsoft YaHei" } }
+                ], { x: 0.5, y: 0.22, w: 6.0, h: 0.5 });
+
+                slide.addShape(pptx.ShapeType.roundRect, { x: 7.0, y: 0.26, w: 2.5, h: 0.38, fill: { color: colors.bgTag }, line: { color: colors.border, width: 1 }, rectRadius: 0.1 });
+                slide.addText(`Bộ chính: ${boChinh}`, { x: 7.0, y: 0.26, w: 2.5, h: 0.38, fontSize: 11, color: colors.primary, align: "center", bold: true });
+
+                // 2. BẢNG THÔNG TIN TỔNG QUAN (Layout rộng rãi hơn)
+                let sumY = 0.85;
+                slide.addShape(pptx.ShapeType.roundRect, { x: 0.5, y: sumY, w: 9.0, h: 0.72, fill: { color: colors.bgCard }, line: { color: colors.border, width: 1 }, rectRadius: 0.08 });
+
+                const sumCols = [
+                    { title: "Phiên âm (Pinyin)", val: pinyin },
+                    { title: "Âm Hán Việt", val: amHan },
+                    { title: "Từ loại", val: loaiTu },
+                    { title: "Ý nghĩa chính", val: nghiaViet }
+                ];
+
+                sumCols.forEach((col, idx) => {
+                    let colX = 0.7 + (idx * 2.22);
+                    // Tiêu đề nhỏ màu dịu để tôn phần giá trị lên
+                    slide.addText(col.title, { x: colX, y: sumY + 0.08, w: 2.1, h: 0.2, fontSize: 9.5, color: colors.blackLight, bold: true });
+                    // Giá trị chính màu đen tuyền to rõ
+                    slide.addText(col.val, { x: colX, y: sumY + 0.32, w: 2.1, h: 0.34, fontSize: 12, color: colors.black, bold: true, wrap: true });
+                });
+
+                // 3. KHỐI HIỂN THỊ CÁC CHỮ CON & BỘ THỦ TRONG TỪ
+                let chars = (item.cauTaoKyTu && item.cauTaoKyTu.length > 0) ? item.cauTaoKyTu : [{ kyTu: chuHan, danhSachBoThu: item.thanhPhanCauTao || [] }];
+                let displayChars = chars.slice(0, 2);
+
+                let charBoxY = 1.75;
+                let charBoxH = 2.15;
+                let charBoxW = displayChars.length === 1 ? 9.0 : 4.35;
+
+                displayChars.forEach((charItem, idx) => {
+                    let boxX = displayChars.length === 1 ? 0.5 : (0.5 + (idx * 4.65));
+                    let charChar = charItem.kyTu || charItem.KyTu || chuHan[idx] || '';
+                    let radList = charItem.danhSachBoThu || charItem.DanhSachBoThu || [];
+
+                    slide.addShape(pptx.ShapeType.roundRect, { x: boxX, y: charBoxY, w: charBoxW, h: charBoxH, fill: { color: colors.bgCard }, line: { color: colors.border, width: 1 }, rectRadius: 0.08 });
+
+                    // Chữ Hán to, căn giữa bên trái thẻ
+                    slide.addText(charChar, { x: boxX + 0.1, y: charBoxY + 0.15, w: 1.35, h: 1.85, fontSize: 58, color: colors.blue, fontFace: "KaiTi", align: "center", valign: "middle" });
+                    slide.addShape(pptx.ShapeType.line, { x: boxX + 1.5, y: charBoxY + 0.2, w: 0, h: 1.75, line: { color: colors.divider, width: 1, dashType: "sysDash" } });
+
+                    // Tiêu đề nhỏ tinh tế
+                    slide.addText(`CẤU TẠO CHỮ '${charChar}'`, { x: boxX + 1.65, y: charBoxY + 0.12, w: charBoxW - 1.75, h: 0.22, fontSize: 9.5, color: colors.blackLight, bold: true });
+
+                    if (radList.length > 0) {
+                        let maxRads = Math.min(radList.length, 3);
+                        let rowH = (charBoxH - 0.42) / maxRads;
+
+                        for (let rIdx = 0; rIdx < maxRads; rIdx++) {
+                            let rad = radList[rIdx];
+                            let radY = (charBoxY + 0.38) + (rIdx * rowH);
+
+                            let symbol = rad.kyHieu || rad.KyHieu || rad.boThu || rad.BoThu || '';
+                            let tenGoi = rad.tenGoi || rad.TenGoi || rad.hanViet || rad.HanViet || 'Bộ thủ';
+                            let radPinyin = rad.pinyin || rad.Pinyin || '';
+                            let radYNghia = rad.yNghia || rad.YNghia || '';
+
+                            // Hộp ký hiệu bộ thủ (Icon box)
+                            slide.addShape(pptx.ShapeType.roundRect, { x: boxX + 1.65, y: radY, w: 0.42, h: 0.42, fill: { color: "EFF6FF" }, line: { color: "BFDBFE", width: 1 }, rectRadius: 0.08 });
+                            slide.addText(symbol, { x: boxX + 1.65, y: radY, w: 0.42, h: 0.42, fontSize: 16, color: colors.blueLight, bold: true, align: "center", valign: "middle", fontFace: "Microsoft YaHei" });
+
+                            let textX = boxX + 2.2;
+                            let textW = charBoxW - 2.3;
+
+                            // Tên bộ thủ & Pinyin (Nằm sát nhau)
+                            slide.addText([
+                                { text: tenGoi + " ", options: { bold: true, fontSize: 10, color: colors.black } },
+                                { text: radPinyin ? `(${radPinyin})` : '', options: { bold: true, fontSize: 9, color: colors.blueLight } }
+                            ], { x: textX, y: radY - 0.02, w: textW, h: 0.22 }); // Đẩy nhẹ lên trên
+
+                            // Ý nghĩa bộ thủ: MÀU ĐEN TUYỀN (colors.black) và NẰM GẦN HƠN (y = radY + 0.16)
+                            slide.addText(radYNghia, { x: textX, y: radY + 0.16, w: textW, h: rowH - 0.2, fontSize: 9.5, color: colors.black, wrap: true });
+                        }
+                    } else {
+                        slide.addText("Không có dữ liệu bộ thủ chi tiết.", { x: boxX + 1.65, y: charBoxY + 0.5, w: charBoxW - 1.8, h: 0.3, fontSize: 10, color: colors.black });
+                    }
+                });
+
+                // 4. KHỐI VÍ DỤ ỨNG DỤNG LẤY TỪ DATABASE
+                let botY = 4.05;
+                let botH = 1.45;
+
+                slide.addShape(pptx.ShapeType.roundRect, { x: 0.5, y: botY, w: 9.0, h: botH, fill: { color: colors.bgCard }, line: { color: colors.border, width: 1 }, rectRadius: 0.08 });
+
+                slide.addText("💬 CÂU VÍ DỤ ỨNG DỤNG", { x: 0.7, y: botY + 0.1, w: 8.6, h: 0.22, fontSize: 10, color: colors.primary, bold: true });
+
+                const viDuItem = (danhSachViDu && danhSachViDu.length > 0) ? danhSachViDu[0] : {
+                    noiDungHan: `学习${chuHan}。`,
+                    noiDungPinyin: `Xuéxí ${pinyin}.`,
+                    noiDungViet: `Học từ ${chuHan}.`
+                };
+
+                // 1. Chữ Hán câu ví dụ
+                slide.addText(viDuItem.noiDungHan || viDuItem.NoiDungHan || '', {
+                    x: 0.7, y: botY + 0.35, w: 8.6, h: 0.38,
+                    fontSize: 18, color: colors.black, bold: true, fontFace: "Microsoft YaHei"
+                });
+
+                // 2. Phiên âm Pinyin ví dụ
+                slide.addText(viDuItem.noiDungPinyin || viDuItem.NoiDungPinyin || '', {
+                    x: 0.7, y: botY + 0.75, w: 8.6, h: 0.26,
+                    fontSize: 12.5, color: colors.blueLight, bold: true, fontFace: "Arial"
+                });
+
+                // 3. Dịch nghĩa tiếng Việt ví dụ (Màu đen, rõ nét)
+                slide.addText(viDuItem.noiDungViet || viDuItem.NoiDungViet || '', {
+                    x: 0.7, y: botY + 1.02, w: 8.6, h: 0.36,
+                    fontSize: 12, color: colors.black, bold: true, fontFace: "Arial"
+                });
+            }
+
+            // ================= HÀM XUẤT TẤT CẢ SLIDES =================
+            async function exportAllPPT() {
+                if (!currentResultsData || currentResultsData.length === 0) {
+                    return alert("Không có dữ liệu từ vựng để xuất PowerPoint!");
+                }
+
+                const loaded = await ensurePptxLoaded();
+                if (!loaded) return;
+
+                let PPTXClass = window.pptxgen || window.PptxGenJS;
+                let pptx = new PPTXClass();
+                pptx.layout = 'LAYOUT_16x9';
+
+                currentResultsData.forEach(item => {
+                    addWordSlide(pptx, item);
+                });
+
+                const dateStr = new Date().toISOString().slice(0, 10);
+                pptx.writeFile({ fileName: `DanhSach_PhanTich_TuVung_${dateStr}.pptx` });
+            }
+
+            // ================= HÀM XUẤT LẺ TỪNG CARD =================
+            async function exportPPT(item) {
+                const loaded = await ensurePptxLoaded();
+                if (!loaded) return;
+
+                let PPTXClass = window.pptxgen || window.PptxGenJS;
+                let pptx = new PPTXClass();
+                pptx.layout = 'LAYOUT_16x9';
+
+                addWordSlide(pptx, item);
+
+                const chuHan = item.chuHan || item.ChuHan || 'TuVung';
+                pptx.writeFile({ fileName: `PhanTich_${chuHan}.pptx` });
+            }
+    </script>
+</body>

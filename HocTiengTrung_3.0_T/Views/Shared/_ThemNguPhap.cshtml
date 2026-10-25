@@ -1,0 +1,104 @@
+﻿<div class="modal fade" id="nguPhapModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 20px;">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold" id="modalTitle">Thêm ngữ pháp & Câu hỏi</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="nguPhapForm">
+                    <input type="hidden" id="IdNguPhap" />
+                    <div class="row g-3">
+                        <div class="col-md-8">
+                            <label class="form-label fw-semibold small">Tên ngữ pháp</label>
+                            <input type="text" class="form-control rounded-3" id="TenNguPhap" placeholder="Ví dụ: 虽然... nhưng..." required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold small">Cấp độ HSK</label>
+                            <select class="form-select rounded-3" id="IdCapDo">
+                                @for (int i = 1; i <= 6; i++)
+                                {
+                                    <option value="@i" selected="@(i == (ViewBag.CurrentCapDo ?? 1))">HSK @i</option>
+                                }
+                            </select>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold small">Cấu trúc</label>
+                            <input type="text" class="form-control rounded-3" id="CauTruc" placeholder="Cấu trúc ngữ pháp..." required>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-semibold small">Giải thích</label>
+                            <textarea class="form-control rounded-3" id="GiaiThich" rows="2" placeholder="Cách dùng và ý nghĩa..."></textarea>
+                        </div>
+                        <div class="col-12 mb-3">
+                            <label class="form-label fw-semibold small">Ví dụ minh họa</label>
+                            <textarea class="form-control rounded-3" id="ViDu" rows="2" placeholder="Mỗi ví dụ một dòng..."></textarea>
+                        </div>
+
+                        <hr />
+
+                        <div class="col-12">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h6 class="fw-bold mb-0"><i class="fas fa-question-circle me-2"></i>Câu hỏi đính kèm</h6>
+                                <button type="button" class="btn btn-sm btn-outline-primary rounded-pill" onclick="addQuestionRow()">
+                                    <i class="fas fa-plus me-1"></i> Thêm câu hỏi
+                                </button>
+                            </div>
+
+                            <div id="questionContainer" class="accordion">
+                                <div class="text-center py-4 text-muted border rounded-3 border-dashed" id="noQuestionLabel">
+                                    Chưa có câu hỏi nào được thêm.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Hủy</button>
+                <button type="button" class="btn btn-danger rounded-pill px-4" onclick="saveNguPhap()">Lưu dữ liệu</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<template id="questionTemplate">
+    <div class="accordion-item border rounded-3 mb-3 question-item shadow-sm">
+        <h2 class="accordion-header">
+            <button class="accordion-button collapsed fw-bold py-2" type="button" data-bs-toggle="collapse">
+                Câu hỏi #
+            </button>
+        </h2>
+        <div class="accordion-collapse collapse">
+            <div class="accordion-body bg-light-subtle">
+                <div class="row g-2">
+                    <div class="col-md-9">
+                        <label class="small fw-bold">Nội dung câu hỏi (Dùng ___ cho chỗ trống)</label>
+                        <input type="text" class="form-control form-control-sm q-noiDung" placeholder="VD: 我___去过中国。" required>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="small fw-bold">Loại bài tập</label>
+                        <select class="form-select form-select-sm q-loai">
+                            <option value="1">Trắc nghiệm</option>
+                            <option value="2">Sắp xếp câu</option>
+                        </select>
+                    </div>
+                    <div class="col-12">
+                        <label class="small fw-bold">Đáp án (Check vào nút tròn để chọn đáp án đúng)</label>
+                        <div class="options-container">
+                        </div>
+                        <button type="button" class="btn btn-link btn-sm p-0 mt-1 text-decoration-none add-option-btn">
+                            + Thêm đáp án
+                        </button>
+                    </div>
+                    <div class="col-12 text-end">
+                        <button type="button" class="btn btn-sm btn-outline-danger border-0" onclick="removeQuestion(this)">
+                            <i class="fas fa-trash me-1"></i> Xóa câu này
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</template>
+

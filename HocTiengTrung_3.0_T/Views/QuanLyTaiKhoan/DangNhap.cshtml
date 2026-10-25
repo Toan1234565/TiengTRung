@@ -1,0 +1,205 @@
+﻿@model HocTiengTrung_3._0_T.Models12.QuanLyTaiKhoan.LoginRequest
+
+<div class="row justify-content-center mt-5">
+    <div class="col-md-5">
+        <div class="card shadow-lg border-0 rounded-4 overflow-hidden">
+            <div class="card-header border-0 py-4 text-center"
+                 style="background: linear-gradient(135deg, #0984e3, #00cec9);">
+                <h3 class="text-white fw-bold mb-0">Chào Mừng Trở Lại!</h3>
+                <p class="text-white-50 small mb-0">Đăng nhập để tiếp tục hành trình</p>
+            </div>
+
+            <div class="card-body p-4 p-lg-5">
+                @if (ViewBag.Error != null && (ViewBag.IsLocked == null || !(bool)ViewBag.IsLocked))
+                {
+                    <div class="alert alert-danger border-0 shadow-sm mb-3">
+                        <i class="fa-solid fa-circle-exclamation me-2"></i>@ViewBag.Error
+                    </div>
+                }
+
+                <form asp-action="DangNhap" asp-route-returnUrl="@ViewBag.ReturnUrl" method="post">
+                    @Html.AntiForgeryToken()
+
+                    <div class="form-floating mb-3">
+                        <input asp-for="TenDangNhap" class="form-control" placeholder="Tên đăng nhập" required />
+                        <label asp-for="TenDangNhap"><i class="fa-regular fa-user me-2"></i>Tên đăng nhập</label>
+                    </div>
+
+                    <div class="form-floating mb-3">
+                        <input asp-for="MatKhau" type="password" class="form-control" placeholder="Mật khẩu" required />
+                        <label asp-for="MatKhau"><i class="fa-solid fa-lock me-2"></i>Mật khẩu</label>
+                    </div>
+
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="rememberMe">
+                            <label class="form-check-label small text-muted" for="rememberMe">Ghi nhớ</label>
+                        </div>
+                        <a href="#" class="small text-primary text-decoration-none" data-bs-toggle="modal" data-bs-target="#forgotPasswordModal">Quên mật khẩu?</a>
+                    </div>
+
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary btn-lg fw-bold shadow-sm py-3 w-100"
+                                style="border-radius: 12px; background-color: #0984e3; border: none;">
+                            ĐĂNG NHẬP
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="card-footer bg-light border-0 py-3 text-center">
+                <p class="mb-0 small text-muted">
+                    Chưa có tài khoản? <a asp-action="DangKy" class="text-primary fw-bold text-decoration-none">Tạo ngay</a>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL QUÊN MẬT KHẨU -->
+<div class="modal fade" id="forgotPasswordModal" data-bs-backdrop="static" tabindex="-1" aria-labelledby="forgotPasswordModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 16px;">
+            <div class="modal-header text-white border-0 py-3" style="background: linear-gradient(135deg, #0984e3, #00cec9); border-top-left-radius: 16px; border-top-right-radius: 16px;">
+                <h5 class="modal-title fw-bold" id="forgotPasswordModalLabel"><i class="fa-solid fa-key me-2"></i>Khôi Phục Mật Khẩu</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close" id="btnKhongDongForm"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div id="forgotAlert" class="alert d-none border-0 shadow-sm mb-3" role="alert"></div>
+
+                <form id="forgotPasswordForm">
+                    <p class="text-muted small mb-3">Vui lòng nhập đúng thông tin tài khoản và email xác nhận để hệ thống cấp lại mật khẩu mới.</p>
+
+                    <div class="form-floating mb-3">
+                        <input type="text" class="form-control" id="forgotTenDangNhap" placeholder="Tên đăng nhập" required>
+                        <label for="forgotTenDangNhap"><i class="fa-regular fa-user me-2"></i>Tên đăng nhập</label>
+                    </div>
+
+                    <div class="form-floating mb-3">
+                        <input type="email" class="form-control" id="forgotEmail" placeholder="Email của bạn" required>
+                        <label for="forgotEmail"><i class="fa-regular fa-envelope me-2"></i>Email xác nhận</label>
+                    </div>
+
+                    <div class="d-grid gap-2 mt-4">
+                        <button type="submit" id="btnGuiYeuCau" class="btn btn-primary fw-bold py-2.5" style="border-radius: 10px; background-color: #0984e3; border: none;">
+                            <span id="spinnerGui" class="spinner-border spinner-border-sm d-none me-2" role="status" aria-hidden="true"></span>
+                            <span id="textNutGui">GỬI YÊU CẦU</span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL THÔNG BÁO TÀI KHOẢN BỊ KHÓA -->
+<div class="modal fade" id="accountLockedModal" data-bs-backdrop="static" tabindex="-1" aria-labelledby="accountLockedModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg text-center p-3" style="border-radius: 16px;">
+            <div class="modal-body py-4">
+                <div class="text-danger mb-3">
+                    <i class="fa-solid fa-user-lock fa-3x animate__animated animate__bounceIn"></i>
+                </div>
+                <h4 class="fw-bold text-dark mb-2">Tài Khoản Đã Bị Khóa</h4>
+                <p class="text-muted small mb-4" id="lockedMessage">
+                    @(ViewBag.Error ?? "Tài khoản của bạn hiện đang bị khóa. Vui lòng liên hệ quản trị viên để biết thêm chi tiết.")
+                </p>
+                <div class="d-grid">
+                    <button type="button" class="btn btn-danger fw-bold py-2" data-bs-dismiss="modal" style="border-radius: 10px;">
+                        ĐÃ HIỂU
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            // 1. Kiểm tra nếu tài khoản bị khóa thì tự động hiển thị Modal Khóa tài khoản
+            var isLocked = '@(ViewBag.IsLocked != null && (bool)ViewBag.IsLocked ? "true" : "false")';
+            if (isLocked === "true") {
+                var lockedModal = new bootstrap.Modal(document.getElementById('accountLockedModal'));
+                lockedModal.show();
+            }
+
+            // 2. Ghi nhận vết truy cập hệ thống
+            const traceApiUrl = "/api/quanlytaikhoannguoidung/ghi-nhan-truy-cap";
+            fetch(traceApiUrl, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                mode: "cors"
+            })
+                .then(response => {
+                    if (response.ok) { console.log("Đã ghi nhận vết truy cập hệ thống."); }
+                })
+                .catch(error => {
+                    console.error("Lỗi khi ghi nhận truy cập:", error);
+                });
+
+            // 3. Xử lý tương tác API Quên Mật Khẩu
+            const forgotForm = document.getElementById("forgotPasswordForm");
+            const forgotAlert = document.getElementById("forgotAlert");
+            const btnGuiYeuCau = document.getElementById("btnGuiYeuCau");
+            const spinnerGui = document.getElementById("spinnerGui");
+            const textNutGui = document.getElementById("textNutGui");
+
+            forgotForm.addEventListener("submit", function (e) {
+                e.preventDefault();
+
+                const tenDangNhap = document.getElementById("forgotTenDangNhap").value.trim();
+                const email = document.getElementById("forgotEmail").value.trim();
+
+                btnGuiYeuCau.disabled = true;
+                textNutGui.innerText = "ĐANG XỬ LÝ...";
+                spinnerGui.classList.remove("d-none");
+                forgotAlert.classList.add("d-none");
+
+                const quenMatKhauApiUrl = "/api/quanlytaikhoannguoidung/quen-mat-khau";
+
+                fetch(quenMatKhauApiUrl, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        TenDangNhap: tenDangNhap,
+                        Email: email
+                    })
+                })
+                    .then(async response => {
+                        const data = await response.json();
+
+                        if (response.ok) {
+                            forgotAlert.className = "alert alert-success border-0 shadow-sm text-start";
+                            forgotAlert.innerHTML = `<i class="fa-solid fa-circle-check me-2"></i> ${data.message}`;
+                            forgotAlert.classList.remove("d-none");
+                            forgotForm.reset();
+                        } else {
+                            forgotAlert.className = "alert alert-danger border-0 shadow-sm text-start";
+                            forgotAlert.innerHTML = `<i class="fa-solid fa-circle-exclamation me-2"></i> ${data.message || 'Yêu cầu không hợp lệ.'}`;
+                            forgotAlert.classList.remove("d-none");
+                        }
+                    })
+                    .catch(error => {
+                        forgotAlert.className = "alert alert-danger border-0 shadow-sm text-start";
+                        forgotAlert.innerHTML = `<i class="fa-solid fa-triangle-exclamation me-2"></i> Không thể kết nối tới máy chủ. Vui lòng kiểm tra lại đường truyền mạng.`;
+                        forgotAlert.classList.remove("d-none");
+                        console.error("Lỗi Fetch API:", error);
+                    })
+                    .finally(() => {
+                        btnGuiYeuCau.disabled = false;
+                        textNutGui.innerText = "GỬI YÊU CẦU";
+                        spinnerGui.classList.add("d-none");
+                    });
+            });
+
+            const myModalEl = document.getElementById('forgotPasswordModal');
+            myModalEl.addEventListener('hidden.bs.modal', function () {
+                forgotAlert.classList.add("d-none");
+                forgotForm.reset();
+            });
+        });
+    </script>
+}

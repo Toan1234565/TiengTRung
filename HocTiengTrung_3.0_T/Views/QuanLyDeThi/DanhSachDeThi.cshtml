@@ -1,0 +1,147 @@
+﻿@model List<HocTiengTrung_3._0_T.Models12.QuanLyDeThi.DeThiModels>
+@{
+    ViewData["Title"] = "Danh sách đề thi HSK " + ViewBag.IdCapDo ;
+    var user = Context.User;
+    var session = Context.Session;
+
+    if (user?.Identity?.IsAuthenticated == true && string.IsNullOrEmpty(session.GetString("MaNguoiDung")))
+    {
+        var userId = user.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        if (!string.IsNullOrEmpty(userId))
+        {
+            session.SetString("MaNguoiDung", userId);
+        }
+    }
+}
+
+<div class="container mt-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a asp-action="DanhSachCapDo">Cấp độ</a></li>
+            <li class="breadcrumb-item active">HSK @ViewBag.IdCapDo </li>
+        </ol>
+    </nav>
+
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold"><i class="fa-solid fa-file-lines me-2 text-primary"></i>Đề thi HSK @ViewBag.IdCapDo chương trình 2.0</h2>
+            <span class="badge bg-soft-primary text-primary border border-primary px-3 py-2">
+                Tổng số: @(Model?.Count ?? 0) đề thi
+            </span>
+        </div>
+        @if (Context.Session.GetString("MaNguoiDung") == "3")
+        {
+            <button type="button" class="btn btn-success shadow-sm" data-bs-toggle="modal" data-bs-target="#importModal">
+                <i class="fa-solid fa-file-import me-2"></i>Thêm đề thi mới (Excel)
+            </button>
+        }
+
+        
+    </div>
+
+    <div class="row">
+        @if (Model != null && Model.Any())
+        {
+            @foreach (var deThi in Model)
+            {
+                <div class="col-md-6 col-lg-4 mb-4">
+                    <div class="card shadow-sm border-0 h-100">
+                        <div class="card-body">
+                            <h5 class="card-title fw-bold">@deThi.TenDe</h5>
+                            <div class="mt-3 mb-4">
+                                <div class="small text-muted mb-2">
+                                    <i class="fa-regular fa-clock me-2"></i>Thời gian: @deThi.ThoiGianLamBai phút
+                                </div>
+                                <div class="small text-muted mb-2">
+                                    <i class="fa-solid fa-list-check me-2"></i>Số câu hỏi: @deThi.TongSoCau câu
+                                </div>
+                                <div class="small text-muted">
+                                    <i class="fa-regular fa-calendar me-2"></i>Ngày tạo: @deThi.NgayTao?.ToString("dd/MM/yyyy")
+                                </div>
+                            </div>
+                            <a asp-action="LamBaiThi" asp-route-id="@deThi.IdDeThi"
+                               class="btn btn-primary w-100 rounded-pill">
+                                Bắt đầu làm bài
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+        else
+        {
+            <div class="text-center py-5">
+                <img src="~/images/empty.png" style="width: 150px; opacity: 0.5" />
+                <p class="mt-3 text-muted">Hiện chưa có đề thi nào cho cấp độ này.</p>
+            </div>
+        }
+    </div>
+</div>
+
+<div class="modal fade" id="importModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Import đề thi từ Excel</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="importForm" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <label class="form-label">Chọn file Excel (.xlsx)</label>
+                        <input type="file" name="file" class="form-control" accept=".xlsx, .xls" required>
+                        <div class="form-text">Lưu ý: File phải đúng định dạng cấu trúc đề thi.</div>
+                    </div>
+                    <div id="importStatus" class="mt-2"></div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                <button type="button" id="btnUpload" class="btn btn-primary">Tải lên ngay</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.getElementById('btnUpload').addEventListener('click', async function() {
+            const form = document.getElementById('importForm');
+            const fileInput = form.querySelector('input[type="file"]');
+            const statusDiv = document.getElementById('importStatus');
+
+            if (!fileInput.files[0]) {
+                alert("Vui lòng chọn một file!");
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+
+            // Vô hiệu hóa nút và hiển thị loading
+            this.disabled = true;
+            this.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Đang xử lý...';
+
+            try {
+                const response = await fetch('/api/quanlydethi/import-excel', { // Đảm bảo URL này khớp với Route trong Controller
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (response.ok && result.success) {
+                    alert(result.message);
+                    location.reload(); // Load lại trang để thấy đề thi mới
+                } else {
+                    statusDiv.innerHTML = `<div class="alert alert-danger">${result.message || 'Có lỗi xảy ra'}</div>`;
+                }
+            } catch (error) {
+                statusDiv.innerHTML = `<div class="alert alert-danger">Lỗi kết nối máy chủ.</div>`;
+            } finally {
+                this.disabled = false;
+                this.innerHTML = 'Tải lên ngay';
+            }
+        });
+    </script>
+}

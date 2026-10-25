@@ -1,0 +1,630 @@
+﻿@using Newtonsoft.Json
+@model HocTiengTrung_3._0_T.Controllers.QuanLyDeThi.ExamDataResponse
+
+
+<div class="container-fluid px-4">
+    <h1 class="mt-4">Quản lý Đề thi</h1>
+    <ol class="breadcrumb mb-4">
+        <li class="breadcrumb-item"><a href="@Url.Action("DanhSachDeThiAdmin")">Danh sách đề thi</a></li>
+        <li class="breadcrumb-item active">@Model.Info.TenDe</li>
+    </ol>
+
+    <!-- 1. Thông tin tổng quan đề thi -->
+    <!-- 1. Thông tin tổng quan đề thi -->
+<div class="card mb-4 shadow-sm border-left-primary">
+    <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+        <div><i class="fas fa-info-circle me-1"></i> Thông tin chung</div>
+        <div class="btn-group">
+            <button class="btn btn-sm btn-warning fw-bold" onclick="openEditInfoModal()">
+                <i class="fas fa-edit"></i> Sửa thông tin
+            </button>
+            <button class="btn btn-sm btn-light" onclick="location.reload()">
+                <i class="fas fa-sync"></i> Làm mới
+            </button>
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="row align-items-center">
+            <div class="col-md-4">
+                <p class="mb-1 text-muted small">Tên đề thi</p>
+                <h5 class="fw-bold text-primary" id="displayTenDe">@Model.Info.TenDe</h5>
+            </div>
+            <div class="col-md-2 text-center border-start">
+                <p class="mb-1 text-muted small">Cấp độ (HSK)</p>
+                <span class="badge bg-info fs-6" id="displayCapDo">@Model.Info.IdCapDo</span>
+            </div>
+            <div class="col-md-6 border-start">
+                <div class="row text-center">
+                    <div class="col-3">
+                        <p class="mb-0 text-muted small">Nghe</p>
+                        <b id="displayTGN">@Model.Info.ThoiGianNghe</b><small>p</small>
+                    </div>
+                    <div class="col-3">
+                        <p class="mb-0 text-muted small">Đọc</p>
+                        <b id="displayTGD">@Model.Info.ThoiGianDoc</b><small>p</small>
+                    </div>
+                    <div class="col-3">
+                        <p class="mb-0 text-muted small">Viết</p>
+                        <b id="displayTGV">@Model.Info.ThoiGianViet</b><small>p</small>
+                    </div>
+                    <div class="col-3">
+                        <p class="mb-0 text-muted small">Tổng câu</p>
+                        <span class="badge bg-dark" id="displayTongCau">@Model.Info.TongSoCau</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+    <!-- 2. Danh sách câu hỏi -->
+    <div class="card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <div><i class="fas fa-table me-1"></i> Danh sách chi tiết câu hỏi</div>
+            <div class="btn-group">
+                <button type="button" id="btnDeleteSelected" class="btn btn-danger btn-sm">
+                    <i class="fas fa-trash"></i> Xóa mục đã chọn
+                </button>
+            </div>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0" id="tableQuestions">
+                    <thead class="table-light">
+                        <tr>
+                            <th style="width: 40px;" class="text-center">
+                                <input type="checkbox" id="selectAll" class="form-check-input">
+                            </th>
+                            <th style="width: 60px;">TT</th>
+                            <th style="width: 120px;">Kỹ năng</th>
+                            <th>Nội dung / Hình ảnh / Âm thanh</th>
+                            <th style="width: 150px;">Loại / Đáp án</th>
+                            
+                            <th style="width: 120px;" class="text-center">Thao tác</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model.Questions)
+                        {
+                            <tr>
+                                <td class="text-center">
+                                    <input type="checkbox" class="form-check-input item-checkbox" value="@item.IdChiTiet">
+                                </td>
+                                <td class="fw-bold">@item.ThuTu</td>
+                                <td>
+                                    @switch (item.KyNang)
+                                    {
+                                        case 1:
+                                            <span class="badge bg-info text-dark w-100">Nghe</span>
+                                            break;
+                                        case 2:
+
+                                            <span class="badge bg-success w-100">Đọc</span>
+                                            break;
+                                        case 3:
+
+                                            <span class="badge bg-warning text-dark w-100">Viết</span>
+                                            break;
+                                        default:
+
+                                            <span class="badge bg-secondary w-100">Khác</span>
+                                            break;
+                                    }
+                                </td>
+                                <td>
+                                    <div class="mb-1">@item.NoiDungJson</div>
+                                    <div class="d-flex gap-2 align-items-center">
+                                        @if (!string.IsNullOrEmpty(item.AmThanhPath))
+                                        {
+                                            <button onclick="playAudio('@item.AmThanhPath', this)" class="btn btn-outline-primary btn-sm px-3">
+                                                <i class="fas fa-volume-up me-1"></i> Nghe
+                                            </button>
+                                        }
+                                        @if (!string.IsNullOrEmpty(item.HinhAnhPath))
+                                        {
+                                            <a href="@item.HinhAnhPath" target="_blank" class="btn btn-outline-secondary btn-sm">
+                                                <i class="fas fa-image"></i> Ảnh
+                                            </a>
+                                        }
+                                    </div>
+                                </td>
+                                <td>
+                                    <small class="text-muted d-block">@item.TenLoai</small>
+                                    <strong class="text-success">@item.DapAnDung</strong>
+                                </td>
+                                
+                                <td class="text-center">
+                                    <button class="btn btn-sm btn-primary" onclick="openEditModal(@item.IdChiTiet)">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-danger" onclick="confirmDeleteBulk([@item.IdChiTiet])">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Sửa Thông Tin Chung -->
+<div class="modal fade" id="editInfoModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header bg-warning">
+                <h5 class="modal-title fw-bold"><i class="fas fa-edit me-2"></i>Sửa thông tin đề thi</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Tên đề thi</label>
+                    <input type="text" id="infoTenDe" class="form-control">
+                </div>
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">Cấp độ (ID)</label>
+                        <input type="number" id="infoCapDo" class="form-control">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold">Tổng số câu</label>
+                        <input type="number" id="infoTongCau" class="form-control">
+                    </div>
+                </div>
+                <div class="row g-2">
+                    <div class="col-3">
+                        <label class="small fw-bold">Nghe (p)</label>
+                        <input type="number" id="infoTGN" class="form-control">
+                    </div>
+                    <div class="col-3">
+                        <label class="small fw-bold">Đọc (p)</label>
+                        <input type="number" id="infoTGD" class="form-control">
+                    </div>
+                    <div class="col-3">
+                        <label class="small fw-bold">Viết (p)</label>
+                        <input type="number" id="infoTGV" class="form-control">
+                    </div>
+                    <div class="col-3">
+                        <label class="small fw-bold">Chuyển (p)</label>
+                        <input type="number" id="infoTGCT" class="form-control">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                <button type="button" class="btn btn-warning fw-bold" onclick="saveInfoChange()">Cập nhật tạm thời</button>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Modal Sửa Câu Hỏi (Bootstrap 5) -->
+<!-- Modal Sửa Câu Hỏi -->
+<div class="modal fade" id="editModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">Cập nhật câu hỏi số <span id="displayThuTu"></span></h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="editIdChiTiet">
+                <input type="hidden" id="editThuTu">
+
+                <div class="row">
+                    <!-- Phần JSON Content -->
+                    <div class="col-md-12 mb-3">
+                        <label class="form-label fw-bold text-danger">Câu hỏi chính (CauHoi)</label>
+                        <textarea id="jsonCauHoi" class="form-control fw-bold" rows="5" placeholder="Nhập nội dung câu hỏi tiếng Trung..."></textarea>
+                    </div>
+                    <div class="col-md-12 mb-3">
+                        <label class="form-label fw-bold">Ghi chú (JSON)</label>
+                        <input type="text" id="jsonGhiChu" class="form-control">
+                    </div>
+                    <div class="col-md-12 mb-3">
+                        <label class="form-label fw-bold">Ví dụ (JSON)</label>
+                        <textarea id="jsonViDu" class="form-control" rows="5"></textarea>
+                    </div>
+
+                    <div class="col-md-12 mb-3">
+                        <label class="form-label fw-bold">Các tùy chọn (Options)</label>
+                        <div class="row g-2" id="jsonOptionsContainer">
+                            <!-- JS sẽ render A, B, C, D... tại đây -->
+                        </div>
+                    </div>
+
+                    <hr />
+
+                    <!-- Các trường hệ thống -->
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label fw-bold">Đáp án đúng</label>
+                        <input type="text" id="editDapAnDung" class="form-control" placeholder="Vd: A hoặc B">
+                    
+                    </div>
+
+                    <!-- TRƯỜNG MỚI: Giải thích đáp án -->
+                    <div class="col-md-12 mb-3">
+                        <label class="form-label fw-bold text-success"><i class="fas fa-lightbulb me-1"></i> Giải thích đáp án</label>
+                        <textarea id="editGiaiThich" class="form-control border-success" rows="5" placeholder="Giải thích tại sao chọn đáp án này hoặc dịch nghĩa câu hỏi..."></textarea>
+                    </div>
+
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label fw-bold">Kỹ năng</label>
+                        <select id="editKyNang" class="form-select">
+                            <option value="1">Nghe</option>
+                            <option value="2">Đọc</option>
+                            <option value="3">Viết</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label fw-bold">Đường dẫn âm thanh</label>
+                        <input type="text" id="editAmThanhPath" class="form-control">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                <button type="button" class="btn btn-primary" onclick="saveQuestionChange()">Xác nhận sửa</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+    // ================================================================
+    // 1. KHỞI TẠO DỮ LIỆU TỪ MODEL
+    // ================================================================
+
+    let currentQuestions = @Html.Raw(JsonConvert.SerializeObject(Model.Questions));
+    let deThiInfo = @Html.Raw(JsonConvert.SerializeObject(Model.Info));
+    let currentAudio = null;
+
+    $(document).ready(function () {
+        // Xử lý Checkbox chọn tất cả
+        $('#selectAll').on('change', function () {
+            $('.item-checkbox').prop('checked', this.checked);
+        });
+
+        // Tự động bỏ check SelectAll nếu có 1 checkbox con bị bỏ chọn
+        $(document).on('change', '.item-checkbox', function () {
+            if (!this.checked) {
+                $('#selectAll').prop('checked', false);
+            }
+        });
+    });
+
+    // ================================================================
+    // 2. QUẢN LÝ THÔNG TIN CHUNG ĐỀ THI
+    // ================================================================
+    
+    // Mở Modal Thông tin chung
+    function openEditInfoModal() {
+        // Sử dụng toán tử || để lấy giá trị nếu thuộc tính viết hoa bị undefined
+        $('#infoTenDe').val(deThiInfo.TenDe || deThiInfo.tenDe);
+        $('#infoCapDo').val(deThiInfo.IdCapDo || deThiInfo.idCapDo);
+
+        $('#infoTongCau').val(deThiInfo.TongSoCau || deThiInfo.tongSoCau);
+        $('#infoTGN').val(deThiInfo.ThoiGianNghe || deThiInfo.thoiGianNghe);
+        $('#infoTGD').val(deThiInfo.ThoiGianDoc || deThiInfo.thoiGianDoc);
+        $('#infoTGV').val(deThiInfo.ThoiGianViet || deThiInfo.thoiGianViet);
+        $('#infoTGCT').val(deThiInfo.ThoiGianChuyenTiep || deThiInfo.thoiGianChuyenTiep);
+
+        const modal = new bootstrap.Modal(document.getElementById('editInfoModal'));
+        modal.show();
+    }
+
+    // Lưu thay đổi thông tin chung vào biến nhớ tạm
+    function saveInfoChange() {
+        deThiInfo.TenDe = $('#infoTenDe').val();
+        deThiInfo.IdCapDo = parseInt($('#infoCapDo').val());
+        deThiInfo.TongSoCau = parseInt($('#infoTongCau').val());
+        deThiInfo.ThoiGianNghe = parseInt($('#infoTGN').val());
+        deThiInfo.ThoiGianDoc = parseInt($('#infoTGD').val());
+        deThiInfo.ThoiGianViet = parseInt($('#infoTGV').val());
+        deThiInfo.ThoiGianChuyenTiep = parseInt($('#infoTGCT').val());
+        
+        // Tính lại tổng thời gian làm bài
+        deThiInfo.ThoiGianLamBai = deThiInfo.ThoiGianNghe + deThiInfo.ThoiGianDoc + deThiInfo.ThoiGianViet + deThiInfo.ThoiGianChuyenTiep;
+
+        // Cập nhật giao diện bên ngoài card (UI Sync)
+        $('#displayTenDe').text(deThiInfo.TenDe);
+        $('#displayCapDo').text(deThiInfo.IdCapDo);
+        $('#displayTongCau').text(deThiInfo.TongSoCau);
+        $('#displayTGN').text(deThiInfo.ThoiGianNghe);
+        $('#displayTGD').text(deThiInfo.ThoiGianDoc);
+        $('#displayTGV').text(deThiInfo.ThoiGianViet);
+
+        // Đóng modal
+        const modalElement = document.getElementById('editInfoModal');
+        const modal = bootstrap.Modal.getInstance(modalElement);
+        modal.hide();
+
+        Swal.fire({
+            icon: 'success',
+            title: 'Đã cập nhật thông tin chung',
+            text: 'Nhấn "LƯU TOÀN BỘ ĐỀ THI" ở cuối trang để hoàn tất thay đổi vào DB.',
+            timer: 2000,
+            showConfirmButton: false
+        });
+    }
+
+    // ================================================================
+    // 3. QUẢN LÝ CHI TIẾT CÂU HỎI
+    // ================================================================
+
+    // Vẽ lại bảng câu hỏi dựa trên mảng currentQuestions
+    function renderTable() {
+        const tbody = $('#tableQuestions tbody');
+        tbody.empty();
+
+        currentQuestions.forEach(item => {
+            let badgeClass = "bg-secondary";
+            let skillName = "Khác";
+            if (item.KyNang === 1) { badgeClass = "bg-info text-dark"; skillName = "Nghe"; }
+            else if (item.KyNang === 2) { badgeClass = "bg-success"; skillName = "Đọc"; }
+            else if (item.KyNang === 3) { badgeClass = "bg-warning text-dark"; skillName = "Viết"; }
+
+            const row = `
+                <tr>
+                    <td class="text-center"><input type="checkbox" class="form-check-input item-checkbox" value="${item.IdChiTiet}"></td>
+                    <td class="fw-bold text-center">${item.ThuTu}</td>
+                    <td><span class="badge ${badgeClass} w-100">${skillName}</span></td>
+                    <td>
+                        <div class="mb-1" style="max-height: 60px; overflow: hidden; text-overflow: ellipsis;">${item.NoiDungJson}</div>
+                        <div class="d-flex gap-2 align-items-center mt-2">
+                            ${item.AmThanhPath ? `<button onclick="playAudio('${item.AmThanhPath}', this)" class="btn btn-outline-primary btn-sm px-3"><i class="fas fa-volume-up"></i> Nghe</button>` : ''}
+                            ${item.HinhAnhPath ? `<a href="${item.HinhAnhPath}" target="_blank" class="btn btn-outline-secondary btn-sm"><i class="fas fa-image"></i> Ảnh</a>` : ''}
+                        </div>
+                    </td>
+                    <td>
+                        <small class="text-muted d-block">${item.TenLoai || ''}</small>
+                        <strong class="text-success">${item.DapAnDung}</strong>
+                    </td>
+                    <td class="text-center">
+                        <div class="btn-group">
+                            <button class="btn btn-sm btn-primary" onclick="openEditModal(${item.IdChiTiet})" title="Sửa"><i class="fas fa-edit"></i></button>
+                            <button class="btn btn-sm btn-outline-danger" onclick="confirmDeleteBulk([${item.IdChiTiet}])" title="Xóa"><i class="fas fa-trash"></i></button>
+                        </div>
+                    </td>
+                </tr>`;
+            tbody.append(row);
+        });
+    }
+
+    // Mở Modal sửa chi tiết câu hỏi
+    function openEditModal(idChiTiet) {
+        const item = currentQuestions.find(q => q.IdChiTiet == idChiTiet);
+        if (!item) return;
+
+        $('#editIdChiTiet').val(item.IdChiTiet);
+        $('#editThuTu').val(item.ThuTu);
+        $('#displayThuTu').text(item.ThuTu);
+        $('#editDapAnDung').val(item.DapAnDung);
+        $('#editKyNang').val(item.KyNang);
+        $('#editAmThanhPath').val(item.AmThanhPath);
+        $('#editGiaiThich').val(item.GiaiThich || "");
+
+        try {
+            const jsonContent = JSON.parse(item.NoiDungJson);
+            $('#jsonCauHoi').val(jsonContent.CauHoi || "");
+            $('#jsonGhiChu').val(jsonContent.GhiChu || "");
+            $('#jsonViDu').val(jsonContent.ViDu || "");
+
+            let optionsHtml = '';
+            if (jsonContent.Options) {
+                Object.keys(jsonContent.Options).forEach(key => {
+                    optionsHtml += `
+                        <div class="col-md-6 mb-2">
+                            <div class="input-group">
+                                <span class="input-group-text fw-bold bg-light">${key}</span>
+                                <input type="text" class="form-control opt-input" data-key="${key}" value="${jsonContent.Options[key]}">
+                            </div>
+                        </div>`;
+                });
+            }
+            $('#jsonOptionsContainer').html(optionsHtml);
+        } catch (e) {
+            $('#jsonOptionsContainer').html('<div class="text-danger">Lỗi dữ liệu JSON!</div>');
+        }
+
+        const modal = new bootstrap.Modal(document.getElementById('editModal'));
+        modal.show();
+    }
+
+    // Lưu thay đổi câu hỏi vào mảng nhớ tạm
+    function saveQuestionChange() {
+        const id = $('#editIdChiTiet').val();
+        const itemIndex = currentQuestions.findIndex(q => q.IdChiTiet == id);
+
+        let options = {};
+        $('.opt-input').each(function() {
+            options[$(this).data('key')] = $(this).val();
+        });
+
+        const newJsonObj = {
+            CauHoi: $('#jsonCauHoi').val(),
+            GhiChu: $('#jsonGhiChu').val(),
+            ViDu: $('#jsonViDu').val(),
+            Options: options
+        };
+
+        currentQuestions[itemIndex].NoiDungJson = JSON.stringify(newJsonObj);
+        currentQuestions[itemIndex].DapAnDung = $('#editDapAnDung').val().toUpperCase();
+        currentQuestions[itemIndex].KyNang = parseInt($('#editKyNang').val());
+        currentQuestions[itemIndex].AmThanhPath = $('#editAmThanhPath').val();
+        currentQuestions[itemIndex].GiaiThich = $('#editGiaiThich').val();
+
+        bootstrap.Modal.getInstance(document.getElementById('editModal')).hide();
+        
+        Swal.fire({
+            title: "Đã cập nhật câu hỏi!",
+            icon: "success",
+            timer: 1500,
+            showConfirmButton: false
+        });
+
+        renderTable();
+    }
+
+    // ================================================================
+    // 4. XỬ LÝ XÓA VÀ MEDIA
+    // ================================================================
+
+    function confirmDeleteBulk(ids) {
+        Swal.fire({
+            title: 'Xác nhận xóa?',
+            text: "Câu hỏi sẽ được loại bỏ khỏi danh sách tạm thời.",
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            confirmButtonText: 'Xóa ngay'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                currentQuestions = currentQuestions.filter(q => !ids.includes(q.IdChiTiet));
+                renderTable();
+                Swal.fire("Đã xóa!", "Đừng quên nhấn Lưu toàn bộ để cập nhật Database.", "success");
+            }
+        });
+    }
+
+    $('#btnDeleteSelected').on('click', function() {
+        const selectedIds = $('.item-checkbox:checked').map(function() {
+            return parseInt($(this).val());
+        }).get();
+
+        if (selectedIds.length === 0) {
+            Swal.fire("Lỗi", "Vui lòng chọn ít nhất một mục.", "error");
+            return;
+        }
+        confirmDeleteBulk(selectedIds);
+    });
+
+    function playAudio(url, btn) {
+        if (currentAudio) {
+            currentAudio.pause();
+            const oldBtn = $(currentAudio).data('btn');
+            if (oldBtn) oldBtn.innerHTML = '<i class="fas fa-volume-up"></i> Nghe';
+        }
+
+        const audio = new Audio(url);
+        currentAudio = audio;
+        $(audio).data('btn', btn);
+
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        audio.play().catch(e => {
+            Swal.fire("Lỗi", "Không thể phát âm thanh. Kiểm tra lại đường dẫn.", "error");
+            btn.innerHTML = '<i class="fas fa-volume-up"></i> Nghe';
+        });
+
+        audio.onended = () => {
+            btn.innerHTML = '<i class="fas fa-volume-up"></i> Nghe';
+            currentAudio = null;
+        };
+    }
+
+    // ================================================================
+    // 5. GỬI DỮ LIỆU VỀ SERVER (API CALL)
+    // ================================================================
+
+   async function submitUpdateDeThi() {
+    // 1. Lấy ID đề thi (xử lý cả trường hợp CamelCase và PascalCase)
+    const idDeThi = deThiInfo.IdDeThi || deThiInfo.idDeThi;
+
+    if (!idDeThi) {
+        Swal.fire("Lỗi", "Không tìm thấy ID đề thi để cập nhật.", "error");
+        return;
+    }
+
+    // 2. Chuẩn bị Object dữ liệu khớp hoàn toàn với Class DeThi trong C#
+    // Đảm bảo các trường số luôn là kiểu Number để tránh lỗi 400 Bad Request
+    const dataToSend = {
+        IdDeThi: parseInt(idDeThi),
+        TenDe: deThiInfo.TenDe || deThiInfo.tenDe,
+        IdCapDo: parseInt(deThiInfo.IdCapDo || deThiInfo.idCapDo) || 0,
+        TongSoCau: parseInt(deThiInfo.TongSoCau || deThiInfo.tongSoCau) || 0,
+        ThoiGianNghe: parseInt(deThiInfo.ThoiGianNghe || deThiInfo.thoiGianNghe) || 0,
+        ThoiGianDoc: parseInt(deThiInfo.ThoiGianDoc || deThiInfo.thoiGianDoc) || 0,
+        ThoiGianViet: parseInt(deThiInfo.ThoiGianViet || deThiInfo.thoiGianViet) || 0,
+        ThoiGianChuyenTiep: parseInt(deThiInfo.ThoiGianChuyenTiep || deThiInfo.thoiGianChuyenTiep) || 0,
+        ThoiGianLamBai: parseInt(deThiInfo.ThoiGianLamBai || deThiInfo.thoiGianLamBai) || 0,
+        
+        // Gán danh sách câu hỏi vào đúng thuộc tính ChiTietDeThis mà API yêu cầu
+        ChiTietDeThis: currentQuestions.map(q => ({
+            IdChiTiet: q.IdChiTiet || q.idChiTiet || 0,
+            IdDeThi: parseInt(idDeThi),
+            ThuTu: parseInt(q.ThuTu || q.thuTu),
+            NoiDungJson: q.NoiDungJson || q.noiDungJson,
+            AmThanhPath: q.AmThanhPath || q.amThanhPath,
+            HinhAnhPath: q.HinhAnhPath || q.hinhAnhPath,
+            DapAnDung: q.DapAnDung || q.dapAnDung,
+            IdLoai: q.IdLoai || q.idLoai || 1,
+            GiaiThich: q.GiaiThich || q.giaiThich,
+            KyNang: parseInt(q.KyNang || q.kyNang),
+            GhiChu: q.GhiChu || q.ghiChu
+        }))
+    };
+
+    // 3. Hiển thị xác nhận trước khi lưu
+    const resultConfirm = await Swal.fire({
+        title: 'LƯU TOÀN BỘ ĐỀ THI?',
+        text: "Mọi thay đổi về thông tin chung và danh sách câu hỏi sẽ được cập nhật vào Database.",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#198754', // Màu xanh Success
+        cancelButtonColor: '#6c757d',
+        confirmButtonText: '<i class="fas fa-save me-1"></i> Đồng ý lưu',
+        cancelButtonText: 'Hủy'
+    });
+
+    if (resultConfirm.isConfirmed) {
+        // Hiển thị trạng thái Loading
+        Swal.fire({
+            title: 'Đang xử lý...',
+            html: 'Vui lòng chờ trong giây lát',
+            allowOutsideClick: false,
+            didOpen: () => { Swal.showLoading(); }
+        });
+
+        try {
+            // 4. Gọi API PUT
+            const response = await fetch(`/api/quanlydethi/cap-nhat-de-thi/${idDeThi}`, {
+                method: 'PUT',
+                headers: { 
+                    'Content-Type': 'application/json'
+                    // Nếu có token hãy thêm vào đây: 'Authorization': 'Bearer ...'
+                },
+                body: JSON.stringify(dataToSend)
+            });
+
+            const result = await response.json();
+
+            // 5. Xử lý kết quả trả về
+            if (response.ok && result.success) {
+                await Swal.fire({
+                    icon: 'success',
+                    title: 'Thành công!',
+                    text: result.message || 'Dữ liệu đã được cập nhật vĩnh viễn.',
+                    confirmButtonText: 'Tuyệt vời'
+                });
+                // Tải lại trang để đồng bộ dữ liệu mới nhất từ Server
+                location.reload();
+            } else {
+                // Trường hợp Server trả về lỗi logic (VD: Validation failed)
+                Swal.fire("Thất bại", result.message || "Đã có lỗi xảy ra khi lưu.", "error");
+            }
+        } catch (error) {
+            // Trường hợp lỗi kết nối hoặc lỗi Runtime JS
+            console.error("Fetch Error:", error);
+            Swal.fire("Lỗi kết nối", "Không thể kết nối đến máy chủ. Vui lòng kiểm tra API Server.", "error");
+        }
+    }
+}
+</script>
+<!-- Thêm nút Lưu tổng ở cuối trang -->
+<div class="card-footer text-end mb-5">
+    <button class="btn btn-success btn-lg px-5 shadow" onclick="submitUpdateDeThi()">
+        <i class="fas fa-save me-2"></i> LƯU TOÀN BỘ ĐỀ THI
+    </button>
+</div>

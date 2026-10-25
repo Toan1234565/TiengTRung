@@ -1,0 +1,19 @@
+﻿@model ErrorViewModel
+
+<h1 class="text-danger">Đã xảy ra lỗi.</h1>
+<h2 class="text-danger">Hệ thống gặp sự cố trong quá trình xử lý yêu cầu của bạn.</h2>
+
+@if (Model?.ShowRequestId == true)
+{
+    <p>
+        <strong>Mã định danh yêu cầu (Request ID):</strong> <code>@Model.RequestId</code>
+    </p>
+}
+
+<h3>Chế độ Phát triển (Development Mode)</h3>
+<p>
+    Việc chuyển sang môi trường <strong>Phát triển</strong> sẽ hiển thị thông tin chi tiết hơn về lỗi đã xảy ra.
+</p>
+<p class="text-muted small">
+    <em>Lưu ý: Không nên kích hoạt chế độ phát triển trên môi trường chạy thực tế (Production) vì có thể làm lộ thông tin bảo mật.</em>
+</p>

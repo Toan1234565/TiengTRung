@@ -1,0 +1,1157 @@
+﻿@{
+    ViewData["Title"] = "Đấu Trường Xếp Hạng HSK 3.0";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+
+    var currentUserName = User.Identity?.IsAuthenticated == true
+        ? (User.FindFirst("FullName")?.Value ?? User.Identity.Name)
+        : "Thí sinh " + new Random().Next(100, 999);
+}
+
+<!-- Google Fonts & FontAwesome -->
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+<style>
+    :root {
+        --primary: #4f46e5;
+        --primary-hover: #4338ca;
+        --bg-main: #f0f4ff;
+        --card-bg: #ffffff;
+        --text-main: #1e293b;
+        --text-muted: #64748b;
+        --success: #10b981;
+        --warning: #f59e0b;
+        --danger: #ef4444;
+        --radius-lg: 20px;
+        --radius-md: 14px;
+        --shadow-sm: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+        --shadow-md: 0 10px 25px -5px rgba(79, 70, 229, 0.12);
+    }
+
+    body {
+        background: linear-gradient(135deg, #f0f4ff 0%, #eef2f6 100%);
+        color: var(--text-main);
+        font-family: 'Plus Jakarta Sans', sans-serif;
+        min-height: 100vh;
+    }
+
+    .arena-container {
+        max-width: 1140px;
+        margin: 0 auto;
+        padding: 20px 15px;
+    }
+
+    .screen-section {
+        display: none;
+        min-height: 75vh;
+        animation: fadeIn 0.3s ease-in-out;
+    }
+
+    .screen-active {
+        display: block;
+    }
+
+    @@keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    /* CARD & BADGES */
+    .smart-card {
+        background: var(--card-bg);
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-md);
+        border: 1px solid rgba(226, 232, 240, 0.8);
+        padding: 28px;
+        margin-bottom: 20px;
+    }
+
+    .room-header {
+        background: #ffffff;
+        border-radius: var(--radius-md);
+        padding: 16px 24px;
+        box-shadow: var(--shadow-sm);
+        border: 1px solid #e2e8f0;
+    }
+
+    .room-badge {
+        background: #e0e7ff;
+        color: var(--primary);
+        font-weight: 800;
+        letter-spacing: 2px;
+        padding: 6px 16px;
+        border-radius: 12px;
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .btn-copy {
+        background: transparent;
+        border: none;
+        color: var(--primary);
+        cursor: pointer;
+        transition: transform 0.2s;
+    }
+
+        .btn-copy:hover {
+            transform: scale(1.2);
+        }
+
+    /* PLAYER SLOTS */
+    .player-card {
+        background: #ffffff;
+        border: 2px dashed #cbd5e1;
+        border-radius: var(--radius-md);
+        text-align: center;
+        padding: 15px 10px;
+        position: relative;
+        min-height: 160px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+        .player-card.occupied {
+            border-style: solid;
+            border-color: #e2e8f0;
+            box-shadow: var(--shadow-sm);
+        }
+
+            .player-card.occupied:hover {
+                transform: translateY(-4px);
+                box-shadow: var(--shadow-md);
+            }
+
+        .player-card.is-ready {
+            border-color: var(--success);
+            background: #f0fdf4;
+            box-shadow: 0 10px 20px -5px rgba(16, 185, 129, 0.25);
+        }
+
+        .player-card .avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            border: 3px solid #cbd5e1;
+            object-fit: cover;
+            background: #f1f5f9;
+            margin-bottom: 8px;
+        }
+
+        .player-card.is-ready .avatar {
+            border-color: var(--success);
+        }
+
+    .host-crown {
+        position: absolute;
+        top: -10px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: linear-gradient(135deg, #fbbf24, #f59e0b);
+        color: #fff;
+        width: 26px;
+        height: 26px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        box-shadow: 0 4px 8px rgba(245, 158, 11, 0.4);
+    }
+
+    .btn-kick {
+        position: absolute;
+        top: 6px;
+        right: 6px;
+        background: #fee2e2;
+        color: var(--danger);
+        border: none;
+        width: 22px;
+        height: 22px;
+        border-radius: 50%;
+        font-size: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s;
+    }
+
+        .btn-kick:hover {
+            background: var(--danger);
+            color: #fff;
+        }
+
+    /* BUTTONS */
+    .btn-smart-primary {
+        background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+        color: #ffffff;
+        border: none;
+        font-weight: 700;
+        padding: 12px 30px;
+        border-radius: var(--radius-md);
+        box-shadow: 0 8px 18px rgba(79, 70, 229, 0.3);
+        transition: all 0.25s;
+    }
+
+        .btn-smart-primary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 22px rgba(79, 70, 229, 0.4);
+            color: #fff;
+        }
+
+        .btn-smart-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+    .btn-smart-success {
+        background: linear-gradient(135deg, #10b981, #059669);
+        color: #ffffff;
+        border: none;
+        font-weight: 700;
+        padding: 12px 30px;
+        border-radius: var(--radius-md);
+        box-shadow: 0 8px 18px rgba(16, 185, 129, 0.3);
+        transition: all 0.25s;
+    }
+
+    .btn-smart-warning {
+        background: linear-gradient(135deg, #f59e0b, #d97706);
+        color: #ffffff;
+        border: none;
+        font-weight: 700;
+        padding: 12px 30px;
+        border-radius: var(--radius-md);
+        box-shadow: 0 8px 18px rgba(245, 158, 11, 0.3);
+        transition: all 0.25s;
+    }
+
+    .join-room-box {
+        display: flex;
+        gap: 10px;
+        max-width: 380px;
+        margin: 0 auto;
+    }
+
+        .join-room-box input {
+            border: 2px solid #e2e8f0;
+            border-radius: var(--radius-md);
+            padding: 10px 16px;
+            font-size: 1.1rem;
+            font-weight: 700;
+            text-align: center;
+            letter-spacing: 2px;
+            outline: none;
+            text-transform: uppercase;
+        }
+
+            .join-room-box input:focus {
+                border-color: var(--primary);
+                box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1);
+            }
+
+    /* QUESTION ARENA STYLES */
+    .question-card {
+        background: #ffffff;
+        border-radius: var(--radius-lg);
+        box-shadow: var(--shadow-md);
+        padding: 30px;
+        border: 1px solid #e2e8f0;
+    }
+
+    .option-btn {
+        background: #f8fafc;
+        border: 2px solid #e2e8f0;
+        border-radius: var(--radius-md);
+        padding: 16px 20px;
+        text-align: left;
+        font-size: 1.05rem;
+        font-weight: 600;
+        color: var(--text-main);
+        transition: all 0.2s;
+        width: 100%;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+        .option-btn:hover:not(:disabled) {
+            border-color: var(--primary);
+            background: #e0e7ff;
+            color: var(--primary);
+        }
+
+        .option-btn.selected {
+            background: #e0e7ff;
+            border-color: var(--primary);
+        }
+
+        .option-btn.correct {
+            background: var(--success) !important;
+            color: white !important;
+            border-color: var(--success) !important;
+        }
+
+        .option-btn.wrong {
+            background: var(--danger) !important;
+            color: white !important;
+            border-color: var(--danger) !important;
+            opacity: 0.8;
+        }
+
+    .timer-badge {
+        font-size: 1.2rem;
+        font-weight: 800;
+        color: #ef4444;
+        background: #fee2e2;
+        padding: 8px 18px;
+        border-radius: 20px;
+    }
+
+    .scoreboard-card {
+        background: #ffffff;
+        border-radius: var(--radius-md);
+        padding: 15px;
+        box-shadow: var(--shadow-sm);
+        border: 1px solid #e2e8f0;
+    }
+
+    .score-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px 0;
+        border-bottom: 1px dashed #e2e8f0;
+    }
+
+        .score-item:last-child {
+            border-bottom: none;
+        }
+
+    .pulse-btn {
+        animation: pulse 1.5s infinite;
+    }
+
+    @@keyframes pulse {
+        0% {
+            transform: scale(1);
+        }
+
+        50% {
+            transform: scale(1.04);
+        }
+
+        100% {
+            transform: scale(1);
+        }
+    }
+
+    /* PODIUM STYLES */
+    .podium-container {
+        display: flex;
+        align-items: flex-end;
+        justify-content: center;
+        gap: 15px;
+        margin-top: 20px;
+        height: 250px;
+    }
+
+    .podium-place {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        width: 100px;
+    }
+
+        .podium-place .avatar {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            border: 4px solid #fff;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            margin-bottom: -15px;
+            z-index: 2;
+            background: #f1f5f9;
+            object-fit: cover;
+        }
+
+    .podium-block {
+        width: 100%;
+        border-radius: 10px 10px 0 0;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        color: white;
+        font-weight: bold;
+        padding-top: 20px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+
+    .place-1 .podium-block {
+        height: 160px;
+        background: linear-gradient(135deg, #fbbf24, #f59e0b);
+    }
+
+    .place-2 .podium-block {
+        height: 120px;
+        background: linear-gradient(135deg, #94a3b8, #64748b);
+    }
+
+    .place-3 .podium-block {
+        height: 90px;
+        background: linear-gradient(135deg, #d97706, #b45309);
+    }
+</style>
+
+<div class="arena-container">
+    <input type="hidden" id="currentMaPhong" value="" />
+
+    <!-- MÀN HÌNH 0: TRANG CHỦ -->
+    <div id="home-screen" class="screen-section screen-active text-center pt-4">
+        <div class="mb-4">
+            <h2 class="fw-extrabold text-primary mb-1" style="font-weight: 800; color: var(--primary);">
+                <i class="fas fa-fire me-2 text-warning"></i>ĐẤU TRƯỜNG HSK 3.0
+            </h2>
+            <p class="text-muted">Xin chào <strong>@currentUserName</strong>! Thử thách từ vựng & ngữ pháp trực tuyến</p>
+        </div>
+
+        <div class="smart-card mx-auto" style="max-width: 520px;">
+            <h6 class="fw-bold text-uppercase text-muted mb-3" style="font-size: 0.85rem; letter-spacing: 1px;">Tham gia bằng mã</h6>
+            <div class="join-room-box mb-4">
+                <input type="text" id="txtMaPhongInput" class="form-control" placeholder="MÃ 6 SỐ" maxlength="6">
+                <button class="btn btn-smart-primary px-4" onclick="vaoPhong()">
+                    <i class="fas fa-arrow-right"></i>
+                </button>
+            </div>
+
+            <div class="position-relative my-4">
+                <hr class="text-muted">
+                <span class="position-absolute top-50 start-50 translate-middle bg-white px-3 text-muted" style="font-size: 0.85rem;">HOẶC TẠO PHÒNG MỚI</span>
+            </div>
+
+            <!-- CHỌN CẤP ĐỘ, SỐ CÂU, THỜI GIAN & LOẠI BÀI TẬP -->
+            <div class="text-start mb-3">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold small text-secondary">Cấp độ HSK</label>
+                        <select id="selectCapDo" class="form-select">
+                            <option value="1">HSK 1 (Sơ cấp)</option>
+                            <option value="2">HSK 2 (Sơ cấp)</option>
+                            <option value="3" selected>HSK 3 (Trung cấp)</option>
+                            <option value="4">HSK 4 (Trung cấp)</option>
+                            <option value="5">HSK 5 (Cao cấp)</option>
+                            <option value="6">HSK 6 (Cao cấp)</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold small text-secondary">Số lượng câu hỏi</label>
+                        <select id="selectSoCau" class="form-select">
+                            <option value="5">5 Câu (Nhanh)</option>
+                            <option value="10" selected>10 Câu (Tiêu chuẩn)</option>
+                            <option value="15">15 Câu (Thử thách)</option>
+                            <option value="20">20 Câu (Chuyên sâu)</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold small text-secondary">Thời gian / Câu</label>
+                        <select id="selectThoiGian" class="form-select">
+                            <option value="10">10 Giây (Cực nhanh)</option>
+                            <option value="15" selected>15 Giây (Tiêu chuẩn)</option>
+                            <option value="20">20 Giây (Thong thả)</option>
+                            <option value="30">30 Giây (Suy ngẫm)</option>
+                        </select>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label fw-bold small text-secondary">Loại bài tập</label>
+                        <select id="select-loai" class="form-select">
+                            <option value="">Tất cả loại bài</option>
+                            <option value="1005">Trắc nghiệm Từ Vựng</option>
+                            <option value="1008">Dịch thuật Trung - Việt</option>
+                            <option value="1009">Dịch thuật Việt - Trung</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <button class="btn btn-smart-success w-100 py-3 fs-6 mt-3" onclick="taoPhong()">
+                <i class="fas fa-plus-circle me-2"></i>TẠO PHÒNG MỚI
+            </button>
+        </div>
+    </div>
+
+    <!-- MÀN HÌNH 1: SẢNH CHỜ (LOBBY) -->
+    <div id="lobby-screen" class="screen-section">
+        <div class="room-header d-flex justify-content-between align-items-center mb-4">
+            <div class="d-flex align-items-center gap-3">
+                <span class="text-muted fw-bold">MÃ PHÒNG:</span>
+                <div class="room-badge fs-4">
+                    <span id="lblMaPhong">------</span>
+                    <button class="btn-copy" onclick="copyMaPhong()" title="Sao chép mã"><i class="far fa-copy"></i></button>
+                </div>
+            </div>
+            <button class="btn btn-outline-danger btn-sm fw-bold rounded-pill px-3" onclick="roiPhong()">
+                <i class="fas fa-sign-out-alt me-1"></i> Rời Phòng
+            </button>
+        </div>
+
+        <div class="smart-card">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h6 class="fw-bold text-secondary mb-0">
+                    <i class="fas fa-users me-2"></i>DANH SÁCH (<span id="lblPlayerCount">0/15</span>)
+                </h6>
+                <span class="badge bg-light text-dark border" id="lblRoomInfo">HSK 3 - 10 Câu - 15s</span>
+            </div>
+
+            <div class="row g-3" id="player-list">
+                <!-- Slots người chơi sẽ được render bằng JS -->
+            </div>
+        </div>
+
+        <div class="text-center mt-4">
+            <button id="btnSanSang" class="btn btn-lg btn-smart-success px-5" onclick="toggleSanSang()">
+                <i class="fas fa-check-circle me-2"></i>SẴN SÀNG
+            </button>
+            <button id="btnBatDau" class="btn btn-lg btn-smart-primary px-5 d-none pulse-btn" onclick="batDauTranDau()" disabled>
+                <i class="fas fa-play me-2"></i>BẮT ĐẦU ĐẤU
+            </button>
+        </div>
+    </div>
+
+    <!-- MÀN HÌNH 2: GIAO DIỆN THI ĐẤU -->
+    <div id="game-screen" class="screen-section">
+        <div class="row g-4">
+            <!-- Nội dung Câu hỏi -->
+            <div class="col-lg-8">
+                <div class="question-card">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <span class="badge bg-primary fs-6 px-3 py-2" id="lblCauHieuHienTai">Câu 1 / 10</span>
+                        <div class="timer-badge">
+                            <i class="fas fa-clock me-1"></i><span id="lblTimer">15</span>s
+                        </div>
+                    </div>
+
+                    <div class="mb-4 text-center py-3">
+                        <h3 class="fw-bold text-dark mb-2" id="lblNoiDungCauHoi">Đang tải câu hỏi...</h3>
+                        <p class="text-muted fs-5 mb-0" id="lblPinyinOrMeaning"></p>
+                    </div>
+
+                    <div class="row g-3" id="options-container">
+                        <div class="col-12"><button class="option-btn" data-key="A" onclick="chonDapAn('A', this)"><span class="badge bg-light text-dark border fs-6 me-2">A</span><span class="option-text">...</span></button></div>
+                        <div class="col-12"><button class="option-btn" data-key="B" onclick="chonDapAn('B', this)"><span class="badge bg-light text-dark border fs-6 me-2">B</span><span class="option-text">...</span></button></div>
+                        <div class="col-12"><button class="option-btn" data-key="C" onclick="chonDapAn('C', this)"><span class="badge bg-light text-dark border fs-6 me-2">C</span><span class="option-text">...</span></button></div>
+                        <div class="col-12"><button class="option-btn" data-key="D" onclick="chonDapAn('D', this)"><span class="badge bg-light text-dark border fs-6 me-2">D</span><span class="option-text">...</span></button></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bảng xếp hạng trực tiếp -->
+            <div class="col-lg-4">
+                <div class="scoreboard-card">
+                    <h6 class="fw-bold text-primary mb-3 border-bottom pb-2">
+                        <i class="fas fa-trophy text-warning me-2"></i>BXH TRỰC TIẾP
+                    </h6>
+                    <div id="live-scoreboard">
+                        <!-- Điểm số cập nhật realtime -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MÀN HÌNH 3: KẾT QUẢ CHUNG CUỘC -->
+    <div id="result-screen" class="screen-section text-center pt-4">
+        <h2 class="fw-extrabold text-warning mb-2" style="font-size: 2.5rem; text-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+            <i class="fas fa-crown"></i> TỔNG KẾT TRẬN ĐẤU
+        </h2>
+        <p class="text-muted mb-4">Chúc mừng các thí sinh đã hoàn thành xuất sắc!</p>
+
+        <div class="smart-card mx-auto" style="max-width: 600px;">
+            <div id="final-podium" class="podium-container mb-4">
+                <!-- Render Podium vinh danh Top 1, 2, 3 -->
+            </div>
+
+            <div id="final-leaderboard" class="text-start mb-4">
+                <!-- Danh sách thứ hạng đầy đủ -->
+            </div>
+
+            <button class="btn btn-smart-primary px-5 py-3 w-100 fs-6" onclick="veTrangChu()">
+                <i class="fas fa-home me-2"></i>TRỞ VỀ TRANG CHỦ
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- SignalR Library -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
+
+<script>
+    const MAX_SLOTS = 15;
+    const realUserName = "@currentUserName";
+
+    const currentUser = {
+        IdNguoiChoi: "USER_" + Math.floor(Math.random() * 10000),
+        TenNguoiChoi: realUserName,
+        Avatar: "https://api.dicebear.com/7.x/bottts/svg?seed=" + encodeURIComponent(realUserName),
+        IsHost: false,
+        TrangThai: 0,
+        Score: 0
+    };
+
+    let currentRoomId = "";
+    let timerInterval = null;
+    let timeRemaining = 15;
+    let timePerQuestion = 15;
+    let selectedOption = null;
+    let dapAnDung = null;
+    let hasAnsweredCurrentQuestion = false;
+
+    window.gameQuestions = [];
+    window.currentQuestionIndex = 0;
+    window.roomPlayers = [];
+
+    // ==========================================
+    // 1. KẾT NỐI SIGNALR (Realtime Hub)
+    // ==========================================
+    const connection = new signalR.HubConnectionBuilder()
+        .withUrl("/dautruong-th2-hub")
+        .withAutomaticReconnect([0, 2000, 10000, 30000])
+        .build();
+
+    connection.start()
+        .then(() => console.log("SignalR Connected Successfully."))
+        .catch(err => console.error("SignalR Connection Error: ", err));
+
+    connection.on("RoomUpdated", (roomData) => renderLobby(roomData));
+
+    connection.on("KickedFromRoom", (msg) => {
+        alert(msg || "Bạn đã bị chủ phòng mời ra khỏi phòng!");
+        veTrangChu();
+    });
+
+    connection.on("GameStarted", (matchData) => {
+        const payload = matchData?.data || matchData;
+        const questions = payload?.danhSachCauHoi || payload?.DanhSachCauHoi || [];
+
+        if (questions.length > 0) {
+            window.gameQuestions = questions;
+            window.currentQuestionIndex = 0;
+
+            // Khởi tạo điểm số người chơi
+            window.roomPlayers.forEach(p => p.Score = 0);
+
+            chuyenManHinh("game-screen");
+            renderScoreboard();
+            loadCurrentQuestion();
+        } else {
+            alert("Không thể tải danh sách câu hỏi cho trận đấu!");
+        }
+    });
+
+    connection.on("UpdateScoreboard", (scores) => {
+        if (scores && Array.isArray(scores)) {
+            scores.forEach(s => {
+                const p = window.roomPlayers.find(x => (x.idNguoiChoi || x.IdNguoiChoi) === s.IdNguoiChoi);
+                if (p) p.Score = s.Score;
+            });
+        }
+        renderScoreboard();
+    });
+
+    // ==========================================
+    // 2. CÁC HÀM XỬ LÝ PHÒNG & THI ĐẤU
+    // ==========================================
+    async function taoPhong() {
+        const idCapDo = document.getElementById("selectCapDo").value;
+        const soCau = document.getElementById("selectSoCau").value;
+        const thoiGian = document.getElementById("selectThoiGian")?.value;
+        const idLoai = document.getElementById("select-loai")?.value;
+
+        try {
+            const res = await fetch("/api/dau-truong/th2/tao-phong", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    IdNguoiChoi: currentUser.IdNguoiChoi,
+                    TenNguoiChoi: currentUser.TenNguoiChoi,
+                    Avatar: currentUser.Avatar,
+                    IdCapDo: parseInt(idCapDo),
+                    SoLuongCauHoi: parseInt(soCau),
+                    ThoiGianMoiCau: thoiGian ? parseInt(thoiGian) : 15,
+                    IdLoaiBaiTap: idLoai ? parseInt(idLoai) : null
+                })
+            });
+
+            const responseData = await res.json();
+            if (!res.ok || !responseData.success) {
+                throw new Error(responseData.message || "Tạo phòng thất bại!");
+            }
+
+            const room = responseData.data;
+            currentRoomId = room.maPhong || room.MaPhong;
+            timePerQuestion = room.thoiGianMoiCau || room.ThoiGianMoiCau || parseInt(thoiGian) || 15;
+
+            currentUser.IsHost = true;
+            currentUser.TrangThai = 1;
+
+            await joinSignalRGroup(currentRoomId);
+            renderLobby(room);
+            chuyenManHinh("lobby-screen");
+
+        } catch (error) {
+            console.error("Lỗi tạo phòng:", error);
+            alert(error.message || "Không thể tạo phòng lúc này. Vui lòng thử lại!");
+        }
+    }
+
+    async function vaoPhong() {
+        const maPhongInput = document.getElementById("txtMaPhongInput");
+        const maPhong = maPhongInput.value.trim().toUpperCase();
+
+        if (maPhong.length !== 6) {
+            alert("Vui lòng nhập đúng Mã phòng gồm 6 ký tự!");
+            return;
+        }
+
+        try {
+            const res = await fetch("/api/dau-truong/th2/vao-phong", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    MaPhong: maPhong,
+                    IdNguoiChoi: currentUser.IdNguoiChoi,
+                    TenNguoiChoi: currentUser.TenNguoiChoi,
+                    Avatar: currentUser.Avatar
+                })
+            });
+
+            const responseData = await res.json();
+            if (!res.ok || !responseData.success) {
+                alert(responseData.message || "Không thể truy cập phòng!");
+                return;
+            }
+
+            const room = responseData.data;
+            currentRoomId = room.maPhong || room.MaPhong;
+            timePerQuestion = room.thoiGianMoiCau || room.ThoiGianMoiCau || 15;
+            currentUser.IsHost = false;
+            currentUser.TrangThai = 0;
+
+            await joinSignalRGroup(currentRoomId);
+            renderLobby(room);
+            chuyenManHinh("lobby-screen");
+        } catch (error) {
+            console.error("Lỗi vào phòng:", error);
+            alert("Đã xảy ra lỗi khi tham gia phòng!");
+        }
+    }
+
+    async function toggleSanSang() {
+        currentUser.TrangThai = currentUser.TrangThai === 1 ? 0 : 1;
+        await fetch("/api/dau-truong/th2/san-sang", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                MaPhong: currentRoomId,
+                IdNguoiChoi: currentUser.IdNguoiChoi,
+                IsSanSang: currentUser.TrangThai === 1
+            })
+        });
+    }
+
+    async function kickNguoiChoi(idNguoiChoiBiKick) {
+        if (!confirm("Bạn có chắc muốn mời người chơi này ra ngoài?")) return;
+        await fetch("/api/dau-truong/th2/kick", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                MaPhong: currentRoomId,
+                IdNguoiChoi: currentUser.IdNguoiChoi,
+                IdNguoiChoiBiKick: idNguoiChoiBiKick
+            })
+        });
+    }
+
+    async function roiPhong() {
+        if (currentRoomId) {
+            await fetch("/api/dau-truong/th2/roi-phong", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    MaPhong: currentRoomId,
+                    IdNguoiChoi: currentUser.IdNguoiChoi
+                })
+            });
+            connection.invoke("LeaveRoom", currentRoomId).catch(err => console.error(err));
+        }
+        veTrangChu();
+    }
+
+    function veTrangChu() {
+        clearInterval(timerInterval);
+        currentRoomId = "";
+        currentUser.IsHost = false;
+        currentUser.TrangThai = 0;
+        currentUser.Score = 0;
+        window.gameQuestions = [];
+        window.currentQuestionIndex = 0;
+        document.getElementById("txtMaPhongInput").value = "";
+        chuyenManHinh("home-screen");
+    }
+
+    async function batDauTranDau() {
+        if (!currentRoomId) return;
+        const btn = document.getElementById("btnBatDau");
+        btn.disabled = true;
+        btn.innerHTML = `<i class="fas fa-spinner fa-spin me-2"></i>ĐANG BẮT ĐẦU...`;
+
+        try {
+            const res = await fetch("/api/dau-truong/th2/bat-dau", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    MaPhong: currentRoomId,
+                    IdNguoiChoi: currentUser.IdNguoiChoi
+                })
+            });
+
+            const data = await res.json();
+            if (!res.ok || !data.success) {
+                alert(data.message || "Không thể bắt đầu trận đấu!");
+                btn.disabled = false;
+                btn.innerHTML = `<i class="fas fa-play me-2"></i>BẮT ĐẦU ĐẤU`;
+            }
+        } catch (error) {
+            console.error("Lỗi kết nối:", error);
+            btn.disabled = false;
+            btn.innerHTML = `<i class="fas fa-play me-2"></i>BẮT ĐẦU ĐẤU`;
+        }
+    }
+
+    async function joinSignalRGroup(roomId) {
+        if (connection && connection.state === signalR.HubConnectionState.Connected) {
+            await connection.invoke("JoinRoom", roomId);
+        }
+    }
+
+    function copyMaPhong() {
+        if (!currentRoomId) return;
+        navigator.clipboard.writeText(currentRoomId);
+        alert("Đã chép mã phòng: " + currentRoomId);
+    }
+
+    function chuyenManHinh(screenId) {
+        document.querySelectorAll(".screen-section").forEach(s => s.classList.remove("screen-active"));
+        const target = document.getElementById(screenId);
+        if (target) target.classList.add("screen-active");
+    }
+
+    // ==========================================
+    // 3. RENDER LOBBY (SẢNH CHỜ)
+    // ==========================================
+    function renderLobby(phong) {
+        if (!phong) return;
+        const room = phong.data ? phong.data : phong;
+
+        const maPhong = room.maPhong || room.MaPhong || "";
+        const dsNguoiChoi = room.danhSachNguoiChoi || room.DanhSachNguoiChoi || [];
+        const capDo = room.idCapDo || room.IdCapDo || 3;
+        const soCau = room.soLuongCauHoi || room.SoLuongCauHoi || 10;
+        timePerQuestion = room.thoiGianMoiCau || room.ThoiGianMoiCau || 15;
+        const loaiBai = room.tenLoaiBaiTap || room.TenLoaiBaiTap || "Tất cả loại";
+
+        window.roomPlayers = dsNguoiChoi.map(p => ({
+            idNguoiChoi: p.idNguoiChoi || p.IdNguoiChoi,
+            tenNguoiChoi: p.tenNguoiChoi || p.TenNguoiChoi,
+            avatar: p.avatar || p.Avatar,
+            isHost: p.isHost || p.IsHost || false,
+            isReady: p.trangThai === 1 || p.TrangThai === 1 || p.isReady || p.IsReady,
+            Score: p.Score || 0
+        }));
+
+        document.getElementById("lblMaPhong").innerText = maPhong;
+        document.getElementById("lblPlayerCount").innerText = `${dsNguoiChoi.length}/${MAX_SLOTS}`;
+        document.getElementById("lblRoomInfo").innerText = `HSK ${capDo} - ${soCau} Câu - ${timePerQuestion}s - ${loaiBai}`;
+
+        const me = window.roomPlayers.find(p => p.idNguoiChoi === currentUser.IdNguoiChoi);
+        if (me) currentUser.IsHost = me.isHost;
+
+        const btnSanSang = document.getElementById("btnSanSang");
+        const btnBatDau = document.getElementById("btnBatDau");
+
+        if (currentUser.IsHost) {
+            btnSanSang.classList.add("d-none");
+            btnBatDau.classList.remove("d-none");
+            const allReady = window.roomPlayers.every(p => p.isHost || p.isReady);
+            btnBatDau.disabled = !allReady || window.roomPlayers.length < 1;
+        } else {
+            btnSanSang.classList.remove("d-none");
+            btnBatDau.classList.add("d-none");
+            const isReady = me && me.isReady;
+            if (isReady) {
+                btnSanSang.className = "btn btn-lg btn-smart-warning px-5";
+                btnSanSang.innerHTML = `<i class="fas fa-times-circle me-2"></i>HỦY SẴN SÀNG`;
+            } else {
+                btnSanSang.className = "btn btn-lg btn-smart-success px-5";
+                btnSanSang.innerHTML = `<i class="fas fa-check-circle me-2"></i>SẴN SÀNG`;
+            }
+        }
+
+        const playerListContainer = document.getElementById("player-list");
+        playerListContainer.innerHTML = "";
+
+        for (let i = 0; i < MAX_SLOTS; i++) {
+            const p = window.roomPlayers[i];
+            const col = document.createElement("div");
+            col.className = "col-6 col-sm-4 col-md-3 col-lg-2.4";
+
+            if (p) {
+                const isMe = p.idNguoiChoi === currentUser.IdNguoiChoi;
+                col.innerHTML = `
+                        <div class="player-card occupied ${p.isReady ? 'is-ready' : ''}">
+                            ${p.isHost ? '<div class="host-crown"><i class="fas fa-crown"></i></div>' : ''}
+                            ${(currentUser.IsHost && !p.isHost) ? `<button class="btn-kick" onclick="kickNguoiChoi('${p.idNguoiChoi}')"><i class="fas fa-times"></i></button>` : ''}
+                            <img src="${p.avatar}" class="avatar" alt="avatar">
+                            <div class="fw-bold text-truncate w-100 px-1" style="font-size:0.9rem;">${p.tenNguoiChoi} ${isMe ? '(Bạn)' : ''}</div>
+                            <span class="badge ${p.isReady ? 'bg-success' : 'bg-secondary'} mt-2">${p.isHost ? 'Chủ phòng' : (p.isReady ? 'Sẵn sàng' : 'Chờ')}</span>
+                        </div>
+                    `;
+            } else {
+                col.innerHTML = `
+                        <div class="player-card">
+                            <i class="fas fa-user-plus text-muted fs-3 mb-2"></i>
+                            <span class="text-muted small">Vị trí trống</span>
+                        </div>
+                    `;
+            }
+            playerListContainer.appendChild(col);
+        }
+    }
+
+    // ==========================================
+    // 4. HIỂN THỊ CÂU HỎI & XỬ LÝ LÀM BÀI
+    // ==========================================
+    function loadCurrentQuestion() {
+        const total = window.gameQuestions.length;
+        if (window.currentQuestionIndex >= total) {
+            ketThucTrangDau();
+            return;
+        }
+
+        const q = window.gameQuestions[window.currentQuestionIndex];
+        hasAnsweredCurrentQuestion = false;
+        selectedOption = null;
+        dapAnDung = q.dapAnDung || q.DapAnDung;
+
+        document.getElementById("lblCauHieuHienTai").innerText = `Câu ${window.currentQuestionIndex + 1} / ${total}`;
+        document.getElementById("lblNoiDungCauHoi").innerText = q.noiDung || q.NoiDung || "Nội dung câu hỏi";
+        document.getElementById("lblPinyinOrMeaning").innerText = q.phi phiênAm || q.PhienAm || q.giaiNghia || q.GiaiNghia || "";
+
+        const options = q.danhSachDapAn || q.DanhSachDapAn || [
+            { key: "A", text: q.dapAnA || q.DapAnA },
+            { key: "B", text: q.dapAnB || q.DapAnB },
+            { key: "C", text: q.dapAnC || q.DapAnC },
+            { key: "D", text: q.dapAnD || q.DapAnD }
+        ];
+
+        const container = document.getElementById("options-container");
+        container.innerHTML = "";
+
+        options.forEach(opt => {
+            const key = opt.key || opt.Key;
+            const text = opt.text || opt.Text;
+            const col = document.createElement("div");
+            col.className = "col-12";
+            col.innerHTML = `
+                    <button class="option-btn" data-key="${key}" onclick="chonDapAn('${key}', this)">
+                        <span class="badge bg-light text-dark border fs-6 me-2">${key}</span>
+                        <span class="option-text">${text}</span>
+                    </button>
+                `;
+            container.appendChild(col);
+        });
+
+        startTimer();
+    }
+
+    function startTimer() {
+        clearInterval(timerInterval);
+        timeRemaining = timePerQuestion;
+        document.getElementById("lblTimer").innerText = timeRemaining;
+
+        timerInterval = setInterval(() => {
+            timeRemaining--;
+            document.getElementById("lblTimer").innerText = timeRemaining;
+
+            if (timeRemaining <= 0) {
+                clearInterval(timerInterval);
+                xuLyKetThucCauHoi();
+            }
+        }, 1000);
+    }
+
+    function chonDapAn(key, btnElement) {
+        if (hasAnsweredCurrentQuestion) return;
+        hasAnsweredCurrentQuestion = true;
+        selectedOption = key;
+
+        document.querySelectorAll(".option-btn").forEach(btn => btn.classList.remove("selected"));
+        btnElement.classList.add("selected");
+    }
+
+    function xuLyKetThucCauHoi() {
+        document.querySelectorAll(".option-btn").forEach(btn => {
+            btn.disabled = true;
+            const key = btn.getAttribute("data-key");
+            if (key === dapAnDung) {
+                btn.classList.add("correct");
+            } else if (key === selectedOption) {
+                btn.classList.add("wrong");
+            }
+        });
+
+        // TÍNH ĐIỂM: Nếu trả lời đúng, cộng điểm dồn dựa trên thời gian phản ứng
+        if (selectedOption === dapAnDung) {
+            const basePoints = 100;
+            const bonusPoints = timeRemaining * 10;
+            const earned = basePoints + bonusPoints;
+            currentUser.Score = (currentUser.Score || 0) + earned;
+
+            // Cập nhật vào danh sách hiển thị cá nhân
+            const me = window.roomPlayers.find(p => p.idNguoiChoi === currentUser.IdNguoiChoi);
+            if (me) me.Score = currentUser.Score;
+
+            // Gửi SignalR đồng bộ cho các người chơi khác
+            if (connection && connection.state === signalR.HubConnectionState.Connected) {
+                connection.invoke("UpdatePlayerScore", currentRoomId, currentUser.IdNguoiChoi, currentUser.Score).catch(err => console.error(err));
+            }
+        }
+
+        renderScoreboard();
+
+        // Chờ 2.5 giây để xem đáp án trước khi qua câu mới
+        setTimeout(() => {
+            window.currentQuestionIndex++;
+            loadCurrentQuestion();
+        }, 2500);
+    }
+
+    // ==========================================
+    // 5. CẬP NHẬT BXH REALTIME & TỔNG KẾT
+    // ==========================================
+    function renderScoreboard() {
+        const board = document.getElementById("live-scoreboard");
+        board.innerHTML = "";
+
+        // Sắp xếp người chơi theo điểm giảm dần
+        const sorted = [...window.roomPlayers].sort((a, b) => (b.Score || 0) - (a.Score || 0));
+
+        sorted.forEach((p, idx) => {
+            const isMe = p.idNguoiChoi === currentUser.IdNguoiChoi;
+            const item = document.createElement("div");
+            item.className = "score-item";
+            item.innerHTML = `
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="fw-bold ${idx === 0 ? 'text-warning' : 'text-muted'}" style="width:20px;">#${idx + 1}</span>
+                        <img src="${p.avatar}" style="width:32px;height:32px;border-radius:50%;" alt="avt">
+                        <span class="fw-semibold ${isMe ? 'text-primary' : ''}">${p.tenNguoiChoi} ${isMe ? '(Bạn)' : ''}</span>
+                    </div>
+                    <span class="badge bg-primary rounded-pill fs-6">${p.Score || 0} đ</span>
+                `;
+            board.appendChild(item);
+        });
+    }
+
+    function ketThucTrangDau() {
+        clearInterval(timerInterval);
+        chuyenManHinh("result-screen");
+
+        const sorted = [...window.roomPlayers].sort((a, b) => (b.Score || 0) - (a.Score || 0));
+
+        // Render Podium Top 3
+        const podiumContainer = document.getElementById("final-podium");
+        podiumContainer.innerHTML = "";
+
+        const p1 = sorted[0];
+        const p2 = sorted[1];
+        const p3 = sorted[2];
+
+        let podiumHtml = "";
+
+        // Hạng 2
+        if (p2) {
+            podiumHtml += `
+                    <div class="podium-place place-2">
+                        <img src="${p2.avatar}" class="avatar" alt="Top 2">
+                        <div class="podium-block">
+                            <span class="fs-4">2</span>
+                            <small class="text-truncate px-1">${p2.tenNguoiChoi}</small>
+                            <span class="badge bg-light text-dark mx-auto mt-1">${p2.Score || 0}đ</span>
+                        </div>
+                    </div>
+                `;
+        }
+
+        // Hạng 1
+        if (p1) {
+            podiumHtml += `
+                    <div class="podium-place place-1">
+                        <img src="${p1.avatar}" class="avatar" alt="Top 1">
+                        <div class="podium-block">
+                            <i class="fas fa-crown text-warning mb-1 fs-5"></i>
+                            <span class="fs-3">1</span>
+                            <small class="text-truncate px-1">${p1.tenNguoiChoi}</small>
+                            <span class="badge bg-light text-dark mx-auto mt-1">${p1.Score || 0}đ</span>
+                        </div>
+                    </div>
+                `;
+        }
+
+        // Hạng 3
+        if (p3) {
+            podiumHtml += `
+                    <div class="podium-place place-3">
+                        <img src="${p3.avatar}" class="avatar" alt="Top 3">
+                        <div class="podium-block">
+                            <span class="fs-5">3</span>
+                            <small class="text-truncate px-1">${p3.tenNguoiChoi}</small>
+                            <span class="badge bg-light text-dark mx-auto mt-1">${p3.Score || 0}đ</span>
+                        </div>
+                    </div>
+                `;
+        }
+
+        podiumContainer.innerHTML = podiumHtml;
+
+        // Render toàn bộ danh sách
+        const leaderboardContainer = document.getElementById("final-leaderboard");
+        leaderboardContainer.innerHTML = "<h6 class='fw-bold border-bottom pb-2 text-secondary'>BẢNG XẾP HẠNG CHUNG CUỘC</h6>";
+
+        sorted.forEach((p, idx) => {
+            const isMe = p.idNguoiChoi === currentUser.IdNguoiChoi;
+            const row = document.createElement("div");
+            row.className = "d-flex justify-content-between align-items-center py-2 border-bottom";
+            row.innerHTML = `
+                    <div class="d-flex align-items-center gap-3">
+                        <span class="fw-bold text-muted px-2">#${idx + 1}</span>
+                        <img src="${p.avatar}" style="width:36px;height:36px;border-radius:50%;" alt="avatar">
+                        <span class="fw-bold ${isMe ? 'text-primary' : ''}">${p.tenNguoiChoi} ${isMe ? '(Bạn)' : ''}</span>
+                    </div>
+                    <span class="fw-bold fs-6 text-success">${p.Score || 0} Điểm</span>
+                `;
+            leaderboardContainer.appendChild(row);
+        });
+    }
+</script>

@@ -1,0 +1,53 @@
+﻿<div class="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+    <div class="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 text-center">
+        <div class="w-20 h-20 bg-green-100 text-green-500 rounded-full flex items-center justify-center mx-auto mb-6">
+            <i class="fa-solid fa-check text-4xl"></i>
+        </div>
+
+        <h1 class="text-2xl font-bold text-slate-800 mb-2">Thanh toán thành công!</h1>
+        <p class="text-slate-600 mb-8">Chúc mừng ngài đã nâng cấp thành công gói VIP. Tài khoản của ngài đã được mở khóa toàn bộ quyền lợi.</p>
+
+        <div class="bg-amber-50 border border-amber-200 rounded-lg p-4 mb-8">
+            <p class="text-sm text-amber-800 mb-3">
+                <i class="fa-solid fa-circle-info me-1"></i> Nếu gặp vấn đề về thanh toán hoặc chưa thấy quyền lợi được cập nhật, vui lòng liên hệ với chúng thần qua Facebook:
+            </p>
+            <a href="https://www.facebook.com/profile.php?id=61574367693623#"
+               class="inline-flex items-center justify-center w-12 h-12 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-all shadow-md">
+                <i class="fab fa-facebook-f text-xl"></i>
+            </a>
+        </div>
+
+        <a href="/" class="block w-full bg-slate-900 text-white font-semibold py-3 rounded-xl hover:bg-slate-800 transition-all">
+            Quay về trang chủ
+        </a>
+    </div>
+</div>
+<script>
+    document.addEventListener("DOMContentLoaded", async () => {
+        // Lấy orderCode từ URL ví dụ: thanh-toan-thanh-cong?orderCode=123456
+        const urlParams = new URLSearchParams(window.location.search);
+        const maGiaoDich = urlParams.get('orderCode');
+
+        if (maGiaoDich) {
+            checkPaymentStatus(maGiaoDich);
+        }
+    });
+
+    async function checkPaymentStatus(maGiaoDich) {
+        try {
+            // Gọi API kiểm tra
+            const res = await fetch(`/api/thanh-toan/kiem-tra-trang-thai/${maGiaoDich}`);
+            const data = await res.json();
+
+            if (data.isPaid) {
+                console.log("Xác nhận: Đơn hàng đã được xử lý thành công trên hệ thống.");
+                // Ngài có thể thêm hiệu ứng chúc mừng ở đây nếu muốn
+            } else {
+                console.warn("Đang chờ đồng bộ hóa dữ liệu...");
+                // Nếu Webhook chưa kịp về, có thể hiển thị icon loading nhỏ
+            }
+        } catch (e) {
+            console.error("Lỗi khi kết nối server:", e);
+        }
+    }
+</script>
